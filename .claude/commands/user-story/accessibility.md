@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with WCAG compliance and accessibility requirements
+description: Identifies WCAG compliance and accessibility requirements for inclusive design
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing WCAG compliance and accessibility requirements from a user experience perspective. This iteration adds acceptance criteria for keyboard navigation, screen reader compatibility, form accessibility, state change announcements, and visual accessibility.
+Enhance an existing user story by analyzing accessibility requirements. This iteration adds acceptance criteria for accessibility features, keyboard navigation, screen reader support, and WCAG compliance.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing WCAG compliance and accessibility re
 
 **Examples:**
 ```
-/user-story/accessibility stories/navigation-menu.md
-/user-story/accessibility tickets/USA-4.md
+/user-story/accessibility stories/example.md
+/user-story/accessibility tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -36,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Accessibility Iteration Prompt
+### Step 2: Apply Accessibility Requirements Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -189,13 +189,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the accessibility iteration prompt to identify:
-   - Keyboard navigation requirements
-   - Screen reader compatibility needs
-   - Form accessibility requirements
-   - State change announcements
-   - Visual accessibility considerations
-3. Add new acceptance criteria for accessibility
+2. Apply the Accessibility Requirements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -203,14 +198,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New accessibility acceptance criteria clearly marked with a "### Accessibility" section
-- Notes on WCAG compliance and inclusive design considerations
+- New acceptance criteria clearly marked with a "### Accessibility" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration ensures WCAG compliance and inclusive design
+- This iteration focuses on accessibility requirements
 - New criteria should be additive, not replacing existing requirements
-- Focus on user experience for people with disabilities
-- Consider keyboard, screen reader, and visual accessibility together
+- Focus on user experience for users with disabilities
+- Accessibility should be built-in, not an afterthought

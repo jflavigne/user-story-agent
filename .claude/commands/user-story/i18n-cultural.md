@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with cultural sensitivity and localization
+description: Identifies cultural sensitivity requirements focusing on user experience of culturally appropriate interfaces
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing cultural sensitivity requirements for internationalization. This iteration adds acceptance criteria for color meanings, icon and symbol interpretation, cultural sensitivity in imagery, name and title conventions, and cultural assumptions in workflows.
+Enhance an existing user story by analyzing cultural appropriateness and localization. This iteration adds acceptance criteria for culturally appropriate content, imagery, colors, symbols, and cultural sensitivity.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing cultural sensitivity requirements fo
 
 **Examples:**
 ```
-/user-story/i18n-cultural stories/profile-page.md
-/user-story/i18n-cultural tickets/USA-11.md
+/user-story/i18n-cultural stories/example.md
+/user-story/i18n-cultural tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -205,13 +205,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the cultural appropriateness iteration prompt to identify:
-   - Color meaning variations across cultures
-   - Icon and symbol interpretation differences
-   - Cultural sensitivity in imagery
-   - Name and title conventions
-   - Cultural assumptions in workflows
-3. Add new acceptance criteria for cultural appropriateness
+2. Apply the Cultural Appropriateness iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -219,14 +214,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New cultural appropriateness acceptance criteria clearly marked with a "### Cultural Considerations" section
-- Notes on regional and cultural adaptations
+- New acceptance criteria clearly marked with a "### Cultural Considerations" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on cultural sensitivity and appropriateness
+- This iteration focuses on cultural appropriateness and localization
 - New criteria should be additive, not replacing existing requirements
-- Consider colors, icons, imagery, names, and workflow assumptions
-- Focus on user experience across cultures, not technical implementation
+- Content should be respectful and appropriate for target cultures
+- Avoid cultural assumptions and stereotypes

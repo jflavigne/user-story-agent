@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with input validation rules and error handling
+description: Identifies form field validation rules and user feedback requirements
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing form field validation rules and how users experience validation feedback. This iteration adds acceptance criteria for email format validation, password requirements, required field handling, error states, and validation timing.
+Enhance an existing user story by analyzing input validation and error handling. This iteration adds acceptance criteria for validation rules, error messages, and user feedback.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing form field validation rules and how 
 
 **Examples:**
 ```
-/user-story/validation stories/registration-form.md
-/user-story/validation tickets/USA-3.md
+/user-story/validation stories/example.md
+/user-story/validation tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -36,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Validation Iteration Prompt
+### Step 2: Apply Validation Rules Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -157,13 +157,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the validation iteration prompt to identify:
-   - Form field validation requirements
-   - Error states and messages
-   - Validation timing (real-time, on blur, on submit)
-   - Format constraints and feedback
-   - Success states
-3. Add new acceptance criteria for validation
+2. Apply the Validation Rules iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -171,14 +166,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New validation acceptance criteria clearly marked with a "### Validation" section
-- Notes on error handling and user feedback
+- New acceptance criteria clearly marked with a "### Validation" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on validation rules and error handling from the user's perspective
+- This iteration focuses on input validation and error handling
 - New criteria should be additive, not replacing existing requirements
-- Focus on user experience of validation, not technical implementation
-- Include both error states and success states for complete coverage
+- Validation should be user-friendly and clear
+- Error messages should guide users to correct input

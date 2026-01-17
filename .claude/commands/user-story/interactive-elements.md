@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with interactive UI element documentation and states
+description: Documents buttons, inputs, links, icons and their interaction states
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by documenting all interactive UI elements, including their types, purposes, and interaction states. This iteration adds acceptance criteria for buttons, inputs, links, icons, and their various states (default, hover, focus, active, disabled, error).
+Enhance an existing user story by analyzing interactive elements and user interactions. This iteration adds acceptance criteria for interactive elements, user interactions, and element-specific behaviors.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by documenting all interactive UI elements, inclu
 
 **Examples:**
 ```
-/user-story/interactive-elements stories/login-form.md
-/user-story/interactive-elements tickets/USA-2.md
+/user-story/interactive-elements stories/example.md
+/user-story/interactive-elements tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -147,12 +147,8 @@ Provide a comprehensive inventory that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the interactive elements iteration prompt to identify:
-   - All interactive UI elements (buttons, inputs, links, icons)
-   - Element types and purposes
-   - Interaction states for each element
-   - Groupings and relationships
-3. Add new acceptance criteria for interactive elements
+2. Apply the Interactive Elements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -160,14 +156,14 @@ Provide a comprehensive inventory that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New interactive elements acceptance criteria clearly marked with a "### Interactive Elements" section
-- Notes on state behaviors and feedback mechanisms
+- New acceptance criteria clearly marked with a "### Interactive Elements" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on documenting UI elements and their behaviors
+- This iteration focuses on interactive elements and user interactions
 - New criteria should be additive, not replacing existing requirements
-- Include both visual states and functional behaviors
-- Consider keyboard and touch interactions alongside mouse interactions
+- Focus on user interactions, not technical implementation
+- Interactive elements should be clearly identifiable and testable

@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with regional formatting (dates, numbers, currency)
+description: Identifies locale-specific formatting requirements focusing on user experience of formatted data
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing locale-specific formatting requirements for internationalization. This iteration adds acceptance criteria for date and time display formats, number formatting, currency display, address and phone formats, and measurement units.
+Enhance an existing user story by analyzing locale-specific formatting requirements. This iteration adds acceptance criteria for date, time, number, currency, and address formatting based on locale.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing locale-specific formatting requireme
 
 **Examples:**
 ```
-/user-story/i18n-locale stories/order-summary.md
-/user-story/i18n-locale tickets/USA-10.md
+/user-story/i18n-locale stories/example.md
+/user-story/i18n-locale tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -205,13 +205,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the locale formatting iteration prompt to identify:
-   - Date and time format requirements
-   - Number formatting needs
-   - Currency display and symbols
-   - Address and phone number formats
-   - Measurement unit requirements
-3. Add new acceptance criteria for locale formatting
+2. Apply the Locale Formatting iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -219,14 +214,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New locale formatting acceptance criteria clearly marked with a "### Locale Formatting" section
-- Notes on regional format variations
+- New acceptance criteria clearly marked with a "### Locale Formatting" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on locale-specific data formatting
+- This iteration focuses on locale-specific formatting requirements
 - New criteria should be additive, not replacing existing requirements
-- Consider dates, numbers, currency, addresses, and measurement units
-- Focus on user experience of formatted data, not technical implementation
+- Formatting should match user expectations for their locale
+- Consider cultural differences in data presentation

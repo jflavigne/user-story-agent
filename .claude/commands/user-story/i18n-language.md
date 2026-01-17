@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with multi-language and i18n requirements
+description: Identifies language support requirements focusing on user experience of multi-language interfaces
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing language support requirements for internationalization. This iteration adds acceptance criteria for language selection mechanisms, RTL text display, character encoding, language-specific content, and fallback behavior when translations are missing.
+Enhance an existing user story by analyzing multi-language and i18n requirements. This iteration adds acceptance criteria for language selection mechanisms, RTL text display, character encoding, language-specific content, and fallback behavior when translations are missing.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing language support requirements for in
 
 **Examples:**
 ```
-/user-story/i18n-language stories/global-header.md
-/user-story/i18n-language tickets/USA-9.md
+/user-story/i18n-language stories/example.md
+/user-story/i18n-language tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -207,13 +207,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the language support iteration prompt to identify:
-   - Language selection and switching mechanisms
-   - RTL layout and interaction requirements
-   - Character encoding and special character handling
-   - Language-specific content needs
-   - Fallback behavior for missing translations
-3. Add new acceptance criteria for language support
+2. Apply the Language Support iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -221,14 +216,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New language support acceptance criteria clearly marked with a "### Language Support" section
-- Notes on RTL handling and translation completeness
+- New acceptance criteria clearly marked with a "### Language Support" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on multi-language user experience
+- This iteration focuses on multi-language and i18n requirements
 - New criteria should be additive, not replacing existing requirements
 - Consider RTL languages, special characters, and translation completeness
 - Focus on user experience, not technical i18n implementation

@@ -1,13 +1,13 @@
 ---
-description: Enhance user stories with tracking and measurement requirements
+description: Identifies analytics requirements focusing on user behavior patterns and experience insights
 allowed-tools: [read, write, search_replace]
 ---
 
-# /user-story/analytics - Analytics Requirements Iteration
+# /user-story/analytics - Analytics Iteration
 
 ## Purpose
 
-Enhance an existing user story by analyzing analytics requirements from a user experience perspective. This iteration adds acceptance criteria for user interaction tracking, duration and timing metrics, frequency analysis, user journey mapping, and engagement metrics.
+Enhance an existing user story by analyzing analytics and tracking requirements. This iteration adds acceptance criteria for analytics events, user tracking, and data collection.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing analytics requirements from a user e
 
 **Examples:**
 ```
-/user-story/analytics stories/checkout-flow.md
-/user-story/analytics tickets/USA-12.md
+/user-story/analytics stories/example.md
+/user-story/analytics tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -223,13 +223,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the analytics iteration prompt to identify:
-   - User interaction tracking requirements
-   - Duration and timing metrics
-   - Frequency analysis needs
-   - User journey mapping points
-   - Engagement metrics
-3. Add new acceptance criteria for analytics
+2. Apply the Analytics iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -237,14 +232,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New analytics acceptance criteria clearly marked with a "### Analytics" section
-- Notes on key user behavior metrics and insights
+- New acceptance criteria clearly marked with a "### Analytics" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on user behavior patterns and experience insights
+- This iteration focuses on analytics and tracking requirements
 - New criteria should be additive, not replacing existing requirements
-- Consider interaction tracking, timing, frequency, journeys, and engagement
-- Focus on understanding user behavior, not technical analytics implementation
+- Analytics should respect user privacy
+- Tracking should be transparent and configurable

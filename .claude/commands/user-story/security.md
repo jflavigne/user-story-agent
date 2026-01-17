@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with security requirements and data protection
+description: Identifies security requirements from a user trust and data protection experience perspective
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing security requirements from a user trust and data protection experience perspective. This iteration adds acceptance criteria for data handling transparency, authentication UX, authorization feedback, secure transmission indicators, and privacy controls.
+Enhance an existing user story by analyzing security requirements. This iteration adds acceptance criteria for security features, data protection, and secure user interactions.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing security requirements from a user tr
 
 **Examples:**
 ```
-/user-story/security stories/user-settings.md
-/user-story/security tickets/USA-6.md
+/user-story/security stories/example.md
+/user-story/security tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -36,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Security Iteration Prompt
+### Step 2: Apply Security Requirements Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -187,13 +187,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the security iteration prompt to identify:
-   - Data handling transparency requirements
-   - Authentication and authorization UX
-   - Secure transmission indicators
-   - Privacy controls and consent management
-   - Trust-building elements
-3. Add new acceptance criteria for security
+2. Apply the Security Requirements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -201,14 +196,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New security acceptance criteria clearly marked with a "### Security" section
-- Notes on user trust and data protection considerations
+- New acceptance criteria clearly marked with a "### Security" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on user-visible security experience, not implementation details
+- This iteration focuses on security requirements
 - New criteria should be additive, not replacing existing requirements
-- Consider authentication, authorization, and data privacy together
-- Focus on how users experience trust and security, not technical mechanisms
+- Security should be transparent to users when possible
+- Security criteria should be testable

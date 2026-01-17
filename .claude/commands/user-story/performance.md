@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with performance requirements and loading feedback
+description: Identifies user-perceived performance requirements including load times, response times, and loading feedback
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,7 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing user-perceived performance requirements. This iteration adds acceptance criteria for initial page load times, action response times, loading indicators, timeout handling, and perceived performance from the user's perspective.
+Enhance an existing user story by analyzing performance requirements. This iteration adds acceptance criteria for performance metrics, loading times, and responsiveness.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing user-perceived performance requireme
 
 **Examples:**
 ```
-/user-story/performance stories/dashboard.md
-/user-story/performance tickets/USA-5.md
+/user-story/performance stories/example.md
+/user-story/performance tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -36,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Performance Iteration Prompt
+### Step 2: Apply Performance Requirements Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -168,13 +168,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the performance iteration prompt to identify:
-   - Initial page load requirements
-   - Action response time expectations
-   - Loading indicators and progress feedback
-   - Timeout handling and error recovery
-   - Context-specific performance needs
-3. Add new acceptance criteria for performance
+2. Apply the Performance Requirements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -182,14 +177,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New performance acceptance criteria clearly marked with a "### Performance" section
-- Notes on loading states and user feedback mechanisms
+- New acceptance criteria clearly marked with a "### Performance" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on user-perceived performance, not technical metrics
+- This iteration focuses on performance requirements
 - New criteria should be additive, not replacing existing requirements
-- Include both loading states and timeout/error recovery scenarios
-- Consider different user contexts and device capabilities
+- Focus on user-perceived performance
+- Performance criteria should be measurable and realistic

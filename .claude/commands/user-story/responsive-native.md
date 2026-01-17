@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with native mobile UX patterns (mobile-native only)
+description: Identifies responsive design requirements for native mobile applications focusing on device-specific functional behaviors
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,9 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing responsive design requirements for native mobile applications. This iteration adds acceptance criteria for device capabilities, platform conventions (iOS vs Android), offline functionality, push notifications, and device orientation handling.
-
-**Platform Note:** This iteration applies only to `mobile-native` product types. For web applications, use `/user-story/responsive-web` instead.
+Enhance an existing user story by analyzing native mobile design requirements. This iteration adds acceptance criteria for native mobile layouts, device-specific features, and platform conventions.
 
 ## Usage
 
@@ -22,8 +20,8 @@ Enhance an existing user story by analyzing responsive design requirements for n
 
 **Examples:**
 ```
-/user-story/responsive-native stories/photo-gallery.md
-/user-story/responsive-native tickets/USA-8.md
+/user-story/responsive-native stories/example.md
+/user-story/responsive-native tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -38,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Responsive Native Iteration Prompt
+### Step 2: Apply Responsive Native Requirements Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -233,13 +231,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the responsive native iteration prompt to identify:
-   - Device capability requirements
-   - Platform conventions (iOS vs Android)
-   - Offline functionality needs
-   - Push notification and background behavior
-   - Device orientation handling
-3. Add new acceptance criteria for responsive native
+2. Apply the Responsive Native Requirements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -247,14 +240,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New responsive native acceptance criteria clearly marked with a "### Native Mobile" section
-- Notes on platform differences and device capabilities
+- New acceptance criteria clearly marked with a "### Native Mobile" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration applies only to mobile-native product types
-- Focus on functional behaviors specific to native mobile apps
+- This iteration focuses on native mobile design requirements
 - New criteria should be additive, not replacing existing requirements
-- Consider iOS and Android platform conventions separately
+- Follow platform-specific design guidelines
+- Consider device capabilities and constraints

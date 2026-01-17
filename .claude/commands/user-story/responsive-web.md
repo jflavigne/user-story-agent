@@ -1,5 +1,5 @@
 ---
-description: Enhance user stories with responsive web design requirements (web, mobile-web, desktop)
+description: Identifies responsive design requirements for web applications focusing on functional behaviors across breakpoints
 allowed-tools: [read, write, search_replace]
 ---
 
@@ -7,9 +7,7 @@ allowed-tools: [read, write, search_replace]
 
 ## Purpose
 
-Enhance an existing user story by analyzing responsive web design requirements for web applications. This iteration adds acceptance criteria for navigation behavior changes, touch vs click interactions, content reflow, feature availability by device type, and input method differences.
-
-**Platform Note:** This iteration applies to `web`, `mobile-web`, and `desktop` product types. For native mobile apps, use `/user-story/responsive-native` instead.
+Enhance an existing user story by analyzing responsive web design requirements. This iteration adds acceptance criteria for responsive layouts, breakpoints, and multi-device compatibility.
 
 ## Usage
 
@@ -22,8 +20,8 @@ Enhance an existing user story by analyzing responsive web design requirements f
 
 **Examples:**
 ```
-/user-story/responsive-web stories/product-catalog.md
-/user-story/responsive-web tickets/USA-7.md
+/user-story/responsive-web stories/example.md
+/user-story/responsive-web tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -38,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply Responsive Web Iteration Prompt
+### Step 2: Apply Responsive Web Requirements Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -211,13 +209,8 @@ Provide a comprehensive analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the responsive web iteration prompt to identify:
-   - Navigation behavior across breakpoints
-   - Touch vs click interaction requirements
-   - Content reflow and layout behavior
-   - Feature availability by device
-   - Input method differences
-3. Add new acceptance criteria for responsive web
+2. Apply the Responsive Web Requirements iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -225,14 +218,14 @@ Provide a comprehensive analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New responsive web acceptance criteria clearly marked with a "### Responsive Design" section
-- Notes on breakpoint behaviors and device-specific considerations
+- New acceptance criteria clearly marked with a "### Responsive Design" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration applies to web, mobile-web, and desktop product types
-- Focus on functional behaviors, not visual appearance
+- This iteration focuses on responsive web design requirements
 - New criteria should be additive, not replacing existing requirements
-- Consider navigation, interactions, content reflow, and feature availability
+- Consider different screen sizes and orientations
+- Layout should adapt gracefully across devices

@@ -1,13 +1,13 @@
 ---
-description: Enhance user stories with distinct user roles and permissions analysis
+description: Identifies distinct user roles and their interactions with the interface
 allowed-tools: [read, write, search_replace]
 ---
 
-# /user-story/user-roles - User Roles Iteration
+# /user-story/user-roles - User Roles Analysis Iteration
 
 ## Purpose
 
-Enhance an existing user story by analyzing and identifying distinct user roles and their specific interactions with the interface. This iteration adds role-based acceptance criteria covering user types, goals, permissions, and role-specific behaviors.
+Enhance an existing user story by analyzing user roles and permissions. This iteration adds role-based acceptance criteria covering user types, goals, permissions, and role-specific behaviors.
 
 ## Usage
 
@@ -20,8 +20,8 @@ Enhance an existing user story by analyzing and identifying distinct user roles 
 
 **Examples:**
 ```
-/user-story/user-roles stories/checkout-flow.md
-/user-story/user-roles tickets/USA-1.md
+/user-story/user-roles stories/example.md
+/user-story/user-roles tickets/USA-X.md
 ```
 
 If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
@@ -36,7 +36,7 @@ If `$1` is not provided, prompt the user: "Please provide the path to the user s
 2. If `$1` is story text, use it directly
 3. If `$1` is missing, prompt the user for the story path or text
 
-### Step 2: Apply User Roles Iteration Prompt
+### Step 2: Apply User Roles Analysis Iteration Prompt
 
 Analyze the user story using the following prompt:
 
@@ -101,12 +101,8 @@ Provide a structured analysis that:
 ### Step 3: Enhance Story
 
 1. Analyze the existing user story content
-2. Apply the user roles iteration prompt to identify:
-   - Distinct user types and roles
-   - Role goals and motivations
-   - Role-specific features and permissions
-   - Access control requirements
-3. Add new acceptance criteria for user roles
+2. Apply the User Roles Analysis iteration prompt to identify requirements
+3. Add new acceptance criteria
 4. Preserve all existing acceptance criteria
 
 ### Step 4: Output Enhanced Story
@@ -114,14 +110,14 @@ Provide a structured analysis that:
 Present the enhanced user story with:
 - Original user story template (As a [role], I want [goal], So that [reason])
 - All existing acceptance criteria preserved
-- New role-based acceptance criteria clearly marked with a "### User Roles" section
-- Notes on any role variations or considerations
+- New acceptance criteria clearly marked with a "### User Roles" section
+- Notes on any considerations
 
 ---
 
 ## Notes
 
-- This iteration focuses on identifying user roles and their permissions
+- This iteration focuses on user roles and permissions
 - New criteria should be additive, not replacing existing requirements
 - Consider whether the story needs to be split for different roles
 - Role-specific behaviors should be testable and specific
