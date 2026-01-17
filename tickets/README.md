@@ -36,8 +36,13 @@ Create a User Story Writer agent system with dual implementations:
 | [USA-20](./USA-20.md) | Skill Generation Script | Low | ✅ Done | USA-10, USA-19 |
 | [USA-21](./USA-21.md) | Logger Utility | Low | ✅ Done | USA-1 |
 | [USA-22](./USA-22.md) | Logger Integration | Low | ✅ Done | USA-21, USA-13, USA-16 |
+| [USA-26](./USA-26.md) | Structured Output Validation | Critical | ✅ Done | USA-13, USA-16 |
+| [USA-27](./USA-27.md) | Error Recovery & Retry Logic | Critical | ✅ Done | USA-13, USA-16 |
+| [USA-28](./USA-28.md) | Streaming Support | Medium | ✅ Done | USA-26, USA-27 |
+| [USA-29](./USA-29.md) | Evaluator-Optimizer Pattern | Medium | ✅ Done | USA-26 |
+| [USA-30](./USA-30.md) | Convert Iterations to Skills Format | High | ✅ Done | USA-10 |
 
-**Progress: 22/22 tickets complete (100%)**
+**Progress: 27/27 tickets complete (100%)** 🎉
 
 ---
 
@@ -75,6 +80,13 @@ Create a User Story Writer agent system with dual implementations:
 - USA-21: Logger Utility
 - USA-22: Logger Integration
 
+### Sprint 6 - Agent Improvements (Anthropic Patterns Alignment)
+- USA-26: Structured Output Validation (Critical)
+- USA-27: Error Recovery & Retry Logic (Critical)
+- USA-28: Streaming Support
+- USA-29: Evaluator-Optimizer Pattern
+- USA-30: Convert Iterations to Skills Format
+
 ---
 
 ## Dependency Graph
@@ -100,6 +112,16 @@ USA-1 (Project Setup)
 │       ├── USA-18 (Interactive Skill)
 │       └── USA-19 (Individual Skills)
 │           └── USA-20 (Generation Script)
-└── USA-21 (Logger Utility)
-    └── USA-22 (Logger Integration) ◄── USA-13, USA-16
+├── USA-21 (Logger Utility)
+│   └── USA-22 (Logger Integration) ◄── USA-13, USA-16
+│
+└── USA-13, USA-16
+    ├── USA-26 (Structured Output Validation)
+    │   ├── USA-28 (Streaming Support) ◄── USA-27
+    │   └── USA-29 (Evaluator-Optimizer)
+    └── USA-27 (Error Recovery & Retry)
+        └── USA-28 (Streaming Support)
+
+USA-10 (Registry)
+└── USA-30 (Skills Format Conversion)
 ```
