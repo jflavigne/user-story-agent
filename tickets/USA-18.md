@@ -11,11 +11,13 @@ Create the `/user-story/interactive` skill for selective enhancement.
 
 ## Acceptance Criteria
 
-- [ ] Create skill markdown with iteration selection menu
-- [ ] Group iterations by category (Core Structure, Quality, Platform, i18n, Insights)
-- [ ] Support checkbox-style selection
-- [ ] Apply selected iterations in logical order
-- [ ] Run consolidation after selections
+- [x] Create skill markdown with iteration selection menu
+- [x] Group iterations by category (Core Structure, Quality, Platform, i18n, Insights)
+- [x] Support checkbox-style selection
+- [x] Apply selected iterations in logical order
+- [x] Run consolidation after selections
+
+## Status: COMPLETE (2026-01-17)
 
 ## Files
 
