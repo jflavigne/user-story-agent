@@ -11,6 +11,7 @@ import { SYSTEM_PROMPT } from '../prompts/system.js';
 import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prompts/index.js';
 import { createInitialState } from './state/story-state.js';
 import { ClaudeClient } from './claude-client.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Main agent class for processing user stories through iterations
@@ -316,8 +317,16 @@ export class UserStoryAgent {
     iteration: IterationRegistryEntry,
     state: StoryState
   ): Promise<IterationResult> {
+    const startTime = Date.now();
+    logger.info(`Starting iteration: ${iteration.id}`);
+    logger.debug(`Iteration details: ${iteration.name} (category: ${iteration.category})`);
+
     // Build context prompt
     const contextPrompt = this.contextManager.buildContextPrompt(state);
+    logger.debug(
+      `Context prompt: ${contextPrompt ? contextPrompt.length : 0} chars, ` +
+        `appliedIterations: ${state.appliedIterations.length}`
+    );
 
     // Build the full user message with context and iteration prompt
     const userMessage = contextPrompt
@@ -335,8 +344,15 @@ export class UserStoryAgent {
     const enhancedStory = response.content.trim();
 
     if (!enhancedStory) {
+      logger.warn(`Iteration ${iteration.id} returned empty content`);
       throw new Error(`Iteration ${iteration.id} returned an empty story. This may indicate an API error or invalid response.`);
     }
+
+    const durationMs = Date.now() - startTime;
+    logger.info(
+      `Completed: ${iteration.id} (${(durationMs / 1000).toFixed(1)}s, ` +
+        `${response.usage.inputTokens} in / ${response.usage.outputTokens} out tokens)`
+    );
 
     // Create iteration result
     // Note: changesApplied is intentionally empty - change extraction is not implemented

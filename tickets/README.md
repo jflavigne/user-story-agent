@@ -34,8 +34,10 @@ Create a User Story Writer agent system with dual implementations:
 | [USA-18](./USA-18.md) | Claude Code Skill - Interactive Mode | Medium | ✅ Done | USA-17 |
 | [USA-19](./USA-19.md) | Claude Code Skills - Individual Iterations | Medium | ✅ Done | USA-17 |
 | [USA-20](./USA-20.md) | Skill Generation Script | Low | ✅ Done | USA-10, USA-19 |
+| [USA-21](./USA-21.md) | Logger Utility | Low | ✅ Done | USA-1 |
+| [USA-22](./USA-22.md) | Logger Integration | Low | ✅ Done | USA-21, USA-13, USA-16 |
 
-**Progress: 20/20 tickets complete (100%)** 🎉
+**Progress: 22/22 tickets complete (100%)**
 
 ---
 
@@ -69,6 +71,10 @@ Create a User Story Writer agent system with dual implementations:
 - USA-19: Claude Code Skills - Individual Iterations
 - USA-20: Skill Generation Script
 
+### Sprint 5 - Observability
+- USA-21: Logger Utility
+- USA-22: Logger Integration
+
 ---
 
 ## Dependency Graph
@@ -89,9 +95,11 @@ USA-1 (Project Setup)
 │               └── USA-14 (Workflow Mode)      │
 │                   └── USA-15 (Interactive)    │
 │                       └── USA-16 (Entry Point)│
-└── USA-3 (System Prompts)                      │
-    └── USA-17 (Unified Skill) ◄────────────────┘
-        ├── USA-18 (Interactive Skill)
-        └── USA-19 (Individual Skills)
-            └── USA-20 (Generation Script)
+├── USA-3 (System Prompts)                      │
+│   └── USA-17 (Unified Skill) ◄────────────────┘
+│       ├── USA-18 (Interactive Skill)
+│       └── USA-19 (Individual Skills)
+│           └── USA-20 (Generation Script)
+└── USA-21 (Logger Utility)
+    └── USA-22 (Logger Integration) ◄── USA-13, USA-16
 ```

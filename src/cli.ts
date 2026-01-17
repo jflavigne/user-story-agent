@@ -21,6 +21,7 @@ import {
 } from './index.js';
 import type { UserStoryAgentConfig, IterationOption, ProductContext } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
+import { logger, initializeLogger } from './utils/logger.js';
 
 /**
  * CLI argument definitions
@@ -35,6 +36,9 @@ interface CliArgs {
   model?: string;
   help?: boolean;
   version?: boolean;
+  verbose?: boolean;
+  debug?: boolean;
+  quiet?: boolean;
 }
 
 /**
@@ -56,8 +60,15 @@ Options:
   --api-key <key>         Anthropic API key (default: ANTHROPIC_API_KEY env var)
                           Note: Prefer env var; CLI args may be visible in process lists
   --model <model>         Claude model to use (default: claude-sonnet-4-20250514)
+  --verbose               Enable info-level logging (default)
+  --debug                 Enable debug-level logging (most verbose)
+  --quiet                 Suppress all output except errors
   --help                  Show this help message
   --version               Show version number
+
+Environment Variables:
+  ANTHROPIC_API_KEY       API key for Anthropic Claude API
+  LOG_LEVEL               Logging level: silent, error, warn, info, debug
 
 Available Iterations:
   ${WORKFLOW_ORDER.join(', ')}
@@ -129,6 +140,16 @@ function parseArgs(argv: string[]): CliArgs {
       case '--version':
       case '-v':
         args.version = true;
+        break;
+      case '--verbose':
+        args.verbose = true;
+        break;
+      case '--debug':
+        args.debug = true;
+        break;
+      case '--quiet':
+      case '-q':
+        args.quiet = true;
         break;
     }
   }
@@ -311,6 +332,13 @@ function validateArgs(args: CliArgs): string | null {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv);
 
+  // Initialize logger early (before any logging)
+  initializeLogger({
+    verbose: args.verbose,
+    debug: args.debug,
+    quiet: args.quiet,
+  });
+
   // Handle help and version
   if (args.help) {
     printUsage();
@@ -325,18 +353,23 @@ async function main(): Promise<void> {
   // Validate arguments
   const validationError = validateArgs(args);
   if (validationError) {
-    console.error(`Error: ${validationError}`);
+    logger.error(validationError);
     console.error('\nRun with --help for usage information.');
     process.exit(1);
   }
 
   try {
+    // Start session tracking
+    logger.startSession();
+    logger.debug(`Mode: ${args.mode}, Input: ${args.input || 'stdin'}, Output: ${args.output || 'stdout'}`);
+
     // Read input story
     const story = await readInput(args.input);
     if (!story.trim()) {
-      console.error('Error: Input story is empty');
+      logger.error('Input story is empty');
       process.exit(1);
     }
+    logger.debug(`Input story: ${story.length} characters`);
 
     // Build configuration
     const partialConfig: Partial<UserStoryAgentConfig> = {
@@ -374,17 +407,21 @@ async function main(): Promise<void> {
 
     if (result.success) {
       await writeOutput(result.enhancedStory, args.output);
+      logger.info(`Processed ${result.appliedIterations.length} iterations`);
+      logger.endSession();
       if (!args.output) {
         console.error(`\n--- Processing Summary ---`);
         console.error(result.summary);
       }
     } else {
-      console.error(`Error: ${result.summary}`);
+      logger.error(result.summary);
+      logger.endSession();
       process.exit(1);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error(`Error: ${message}`);
+    logger.error(message);
+    logger.endSession();
     process.exit(1);
   }
 }

@@ -3,6 +3,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '../utils/logger.js';
 
 /**
  * Usage statistics from a Claude API call
@@ -74,6 +75,9 @@ export class ClaudeClient {
     const { systemPrompt, messages, model, maxTokens = 4096 } = options;
     const modelToUse = model || this.defaultModel;
 
+    const startTime = Date.now();
+    logger.debug(`API call starting (model: ${modelToUse}, maxTokens: ${maxTokens})`);
+
     try {
       const response = await this.client.messages.create({
         model: modelToUse,
@@ -85,11 +89,22 @@ export class ClaudeClient {
         })),
       });
 
+      const durationMs = Date.now() - startTime;
+      const inputTokens = response.usage?.input_tokens ?? 0;
+      const outputTokens = response.usage?.output_tokens ?? 0;
+
+      // Track token usage
+      logger.addTokenUsage(inputTokens, outputTokens);
+      logger.debug(
+        `API call completed (${(durationMs / 1000).toFixed(2)}s, ${inputTokens} in / ${outputTokens} out tokens)`
+      );
+
       // Extract text content from the response
       // The response.content is an array of content blocks
       const textBlocks = response.content.filter((block) => block.type === 'text');
-      
+
       if (textBlocks.length === 0) {
+        logger.warn('Claude response contained no text content');
         throw new Error('No text content in Claude response');
       }
 
@@ -100,16 +115,19 @@ export class ClaudeClient {
         content,
         stopReason: response.stop_reason || 'unknown',
         usage: {
-          inputTokens: response.usage?.input_tokens ?? 0,
-          outputTokens: response.usage?.output_tokens ?? 0,
+          inputTokens,
+          outputTokens,
         },
       };
     } catch (error) {
+      const durationMs = Date.now() - startTime;
       if (error instanceof Error) {
+        logger.error(`API call failed after ${(durationMs / 1000).toFixed(2)}s: ${error.message}`);
         const apiError = new Error(`Claude API error: ${error.message}`);
         apiError.cause = error;
         throw apiError;
       }
+      logger.error(`API call failed after ${(durationMs / 1000).toFixed(2)}s: Unknown error`);
       throw new Error('Unknown error calling Claude API');
     }
   }
