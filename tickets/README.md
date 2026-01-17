@@ -42,7 +42,34 @@ Create a User Story Writer agent system with dual implementations:
 | [USA-29](./USA-29.md) | Evaluator-Optimizer Pattern | Medium | ✅ Done | USA-26 |
 | [USA-30](./USA-30.md) | Convert Iterations to Skills Format | High | ✅ Done | USA-10 |
 
-**Progress: 27/27 tickets complete (100%)** 🎉
+**Core Agent Progress: 27/27 tickets complete (100%)** 🎉
+
+---
+
+## Enterprise Deployment (Phase 2)
+
+| Ticket | Title | Priority | Status | Dependencies |
+|--------|-------|----------|--------|--------------|
+| [USA-31](./USA-31.md) | Enterprise API Dependencies & Config | High | Ready | USA-30 |
+| [USA-32](./USA-32.md) | Database Schema & Migrations | High | Ready | USA-31 |
+| [USA-33](./USA-33.md) | PostgreSQL Client & Connection Pool | High | Ready | USA-32 |
+| [USA-34](./USA-34.md) | Express Server Foundation | High | Ready | USA-31 |
+| [USA-35](./USA-35.md) | Authentication Middleware (OIDC + API Keys) | High | Ready | USA-33, USA-34 |
+| [USA-36](./USA-36.md) | Rate Limiting & Quota Management | High | Ready | USA-33, USA-35 |
+| [USA-37](./USA-37.md) | Job Queue System | High | Ready | USA-32, USA-33 |
+| [USA-38](./USA-38.md) | Worker Pool Implementation | High | Ready | USA-37 |
+| [USA-39](./USA-39.md) | SSE Streaming Adapter | High | Ready | USA-34, USA-38 |
+| [USA-40](./USA-40.md) | API Routes - Jobs | High | Ready | USA-35, USA-36, USA-37, USA-39 |
+| [USA-41](./USA-41.md) | API Routes - Iterations & Workflow | Medium | Ready | USA-34, USA-35 |
+| [USA-42](./USA-42.md) | API Routes - Usage & Health | Medium | Ready | USA-33, USA-35, USA-36 |
+| [USA-43](./USA-43.md) | Azure Blob Storage for Mockups | Medium | Ready | USA-31, USA-37 |
+| [USA-44](./USA-44.md) | Azure Key Vault Integration | High | Ready | USA-31 |
+| [USA-45](./USA-45.md) | Observability (OpenTelemetry + App Insights) | Medium | Ready | USA-34 |
+| [USA-46](./USA-46.md) | OpenAPI Specification | Medium | Ready | USA-40, USA-41, USA-42 |
+| [USA-47](./USA-47.md) | Docker & Infrastructure Files | High | Ready | USA-34 |
+| [USA-48](./USA-48.md) | API Layer Tests | High | Ready | USA-40, USA-41, USA-42 |
+
+**Enterprise Deployment Progress: 0/18 tickets complete (0%)**
 
 ---
 
@@ -89,6 +116,38 @@ Create a User Story Writer agent system with dual implementations:
 
 ---
 
+## Enterprise Deployment Sprints
+
+### Sprint 7 - API Foundation
+- USA-31: Enterprise API Dependencies & Config
+- USA-32: Database Schema & Migrations
+- USA-33: PostgreSQL Client & Connection Pool
+- USA-34: Express Server Foundation
+- USA-44: Azure Key Vault Integration
+
+### Sprint 8 - Authentication & Security
+- USA-35: Authentication Middleware (OIDC + API Keys)
+- USA-36: Rate Limiting & Quota Management
+- USA-37: Job Queue System
+
+### Sprint 9 - Job Processing
+- USA-38: Worker Pool Implementation
+- USA-39: SSE Streaming Adapter
+- USA-40: API Routes - Jobs
+
+### Sprint 10 - API Routes & Storage
+- USA-41: API Routes - Iterations & Workflow
+- USA-42: API Routes - Usage & Health
+- USA-43: Azure Blob Storage for Mockups
+
+### Sprint 11 - Observability & Deployment
+- USA-45: Observability (OpenTelemetry + App Insights)
+- USA-46: OpenAPI Specification
+- USA-47: Docker & Infrastructure Files
+- USA-48: API Layer Tests
+
+---
+
 ## Dependency Graph
 
 ```
@@ -124,4 +183,35 @@ USA-1 (Project Setup)
 
 USA-10 (Registry)
 └── USA-30 (Skills Format Conversion)
+```
+
+### Enterprise Deployment Dependency Graph
+
+```
+USA-30 (Skills Format) ─────────────────────────────────────────┐
+                                                                │
+USA-31 (Dependencies) ◄─────────────────────────────────────────┘
+├── USA-32 (Database Schema)
+│   └── USA-33 (PostgreSQL Client)
+│       ├── USA-35 (Auth Middleware) ◄── USA-34
+│       │   └── USA-36 (Rate Limiting)
+│       │       └── USA-40 (Jobs Routes) ◄── USA-37, USA-39
+│       └── USA-37 (Job Queue)
+│           └── USA-38 (Worker Pool)
+│               └── USA-39 (SSE Streaming) ◄── USA-34
+│
+├── USA-34 (Express Server)
+│   ├── USA-35 (Auth) ◄─────────────────────┐
+│   ├── USA-41 (Iterations Routes) ◄────────┤
+│   ├── USA-45 (Observability)              │
+│   └── USA-47 (Docker & Infra)             │
+│                                           │
+├── USA-43 (Blob Storage) ◄── USA-37        │
+├── USA-44 (Key Vault)                      │
+│                                           │
+└── USA-42 (Usage Routes) ◄── USA-33, USA-35, USA-36
+
+USA-40, USA-41, USA-42
+└── USA-46 (OpenAPI Spec)
+    └── USA-48 (API Tests)
 ```
