@@ -1,0 +1,184 @@
+---
+description: Enhance user stories with input validation rules and error handling
+allowed-tools: [read, write, search_replace]
+---
+
+# /user-story/validation - Validation Rules Iteration
+
+## Purpose
+
+Enhance an existing user story by analyzing form field validation rules and how users experience validation feedback. This iteration adds acceptance criteria for email format validation, password requirements, required field handling, error states, and validation timing.
+
+## Usage
+
+```
+/user-story/validation [story-path]
+```
+
+**Arguments:**
+- `$1` (story-path): Path to user story file or story text to enhance
+
+**Examples:**
+```
+/user-story/validation stories/registration-form.md
+/user-story/validation tickets/USA-3.md
+```
+
+If `$1` is not provided, prompt the user: "Please provide the path to the user story file or paste the story text:"
+
+---
+
+## Instructions
+
+### Step 1: Read Story
+
+1. If `$1` is a file path, use the `read` tool to load the file content
+2. If `$1` is story text, use it directly
+3. If `$1` is missing, prompt the user for the story path or text
+
+### Step 2: Apply Validation Iteration Prompt
+
+Analyze the user story using the following prompt:
+
+```
+Analyze the mockup or design to identify form field validation rules and how users experience validation feedback.
+
+## Validation Requirements
+
+1. **Email Format Validation**: Identify email input fields and determine:
+   - What feedback does the user receive when entering an invalid email format?
+   - When does validation occur (as they type, on blur, on submit)?
+   - What error message is shown to help the user correct their input?
+   - Is there visual feedback (red border, error icon) in addition to text?
+   - Can the user see examples of valid email formats?
+
+2. **Password Requirements**: For password fields, identify:
+   - What password requirements are communicated to the user?
+   - How are password strength indicators displayed (weak, medium, strong)?
+   - When are password requirements shown (before typing, during typing, on error)?
+   - What feedback helps users understand why their password doesn't meet requirements?
+   - Are there visual indicators (progress bars, checkmarks) for meeting requirements?
+
+3. **Required Field Handling**: Document required field indicators:
+   - How are required fields marked (asterisk, label text, visual indicator)?
+   - When do users learn a field is required (always visible, on submit, on blur)?
+   - What happens when a user tries to submit with missing required fields?
+   - Are required fields clearly distinguishable from optional fields?
+   - Is there consistent visual language for required field indicators?
+
+## Error States and Messages
+
+4. **Error Message Presentation**: Analyze how validation errors are communicated:
+   - Where do error messages appear (below field, above field, inline, tooltip)?
+   - What is the tone and clarity of error messages?
+   - Do error messages explain what went wrong and how to fix it?
+   - Are error messages persistent or do they disappear automatically?
+   - Is there visual distinction between different error types (format, required, constraint)?
+
+5. **Error State Indicators**: Identify visual error indicators:
+   - Color changes (red borders, backgrounds)
+   - Icons (error icons, warning symbols)
+   - Field highlighting or emphasis
+   - Disabled submit buttons when errors exist
+   - Summary of errors at top of form (if applicable)
+
+## Validation Timing
+
+6. **Real-Time vs Submit-Time Validation**: Determine when validation occurs:
+   - Which fields validate as the user types (real-time)?
+   - Which fields validate when the user leaves the field (on blur)?
+   - Which fields validate only when the form is submitted?
+   - How does the user experience differ between these approaches?
+   - Are there loading states or delays during validation?
+
+7. **Progressive Validation**: Identify if validation is progressive:
+   - Do users see validation feedback incrementally as they complete fields?
+   - Can users see which fields still need attention?
+   - Is there a clear path to resolving all validation errors?
+
+## Field Format Constraints
+
+8. **Format-Specific Validation**: For fields with format requirements:
+   - Phone number formats and validation feedback
+   - Date format requirements and date picker behavior
+   - Number ranges (min/max) and how limits are communicated
+   - Character limits (max length) and remaining character indicators
+   - Pattern requirements (e.g., username rules, credit card formats)
+   - File upload constraints (size, type) and error handling
+
+9. **Format Feedback**: How are format requirements communicated:
+   - Placeholder text showing expected format
+   - Helper text explaining requirements
+   - Examples of valid input
+   - Format masks or auto-formatting (e.g., phone number formatting)
+   - Clear indication of what format is expected
+
+## User Experience Considerations
+
+10. **Validation Success States**: Identify positive feedback:
+    - Visual confirmation when fields are valid (green checkmarks, success icons)
+    - Clear indication when all validation passes
+    - Enabled submit buttons when form is valid
+    - Success messages after successful submission
+
+11. **Accessibility of Validation**: Consider how validation is accessible:
+    - Are error messages announced to screen readers?
+    - Can users navigate to error messages via keyboard?
+    - Are error states clearly visible with sufficient color contrast?
+    - Do error messages use clear, non-technical language?
+
+## User Story Implications
+
+12. **Story Requirements**: For each validation rule, determine:
+    - What user actions trigger validation?
+    - What feedback does the user receive?
+    - How does the user know what to do to fix errors?
+    - What prevents form submission when validation fails?
+    - What indicates successful validation?
+
+13. **Acceptance Criteria**: Document acceptance criteria that cover:
+    - All validation rules and their triggers
+    - Error message content and placement
+    - Visual error indicators
+    - Validation timing (real-time, on blur, on submit)
+    - Success states and positive feedback
+    - Accessibility of validation feedback
+
+## Output
+
+Provide a comprehensive analysis that:
+- Lists all form fields and their validation requirements
+- Describes validation timing and user experience
+- Documents error messages and visual indicators
+- Explains how users learn about and resolve validation errors
+- Maps validation requirements to user story acceptance criteria
+```
+
+### Step 3: Enhance Story
+
+1. Analyze the existing user story content
+2. Apply the validation iteration prompt to identify:
+   - Form field validation requirements
+   - Error states and messages
+   - Validation timing (real-time, on blur, on submit)
+   - Format constraints and feedback
+   - Success states
+3. Add new acceptance criteria for validation
+4. Preserve all existing acceptance criteria
+
+### Step 4: Output Enhanced Story
+
+Present the enhanced user story with:
+- Original user story template (As a [role], I want [goal], So that [reason])
+- All existing acceptance criteria preserved
+- New validation acceptance criteria clearly marked with a "### Validation" section
+- Notes on error handling and user feedback
+
+---
+
+## Notes
+
+- This iteration focuses on validation rules and error handling from the user's perspective
+- New criteria should be additive, not replacing existing requirements
+- Focus on user experience of validation, not technical implementation
+- Include both error states and success states for complete coverage
