@@ -17,6 +17,7 @@ import { IterationOutputSchema, type IterationOutput } from '../shared/schemas.j
 import { extractJSON } from '../shared/json-utils.js';
 import { AgentError } from '../shared/errors.js';
 import { StreamingHandler } from './streaming.js';
+import { Evaluator } from './evaluator.js';
 
 /**
  * Main agent class for processing user stories through iterations
@@ -25,6 +26,7 @@ export class UserStoryAgent extends EventEmitter {
   private config: UserStoryAgentConfig;
   private claudeClient: ClaudeClient;
   private contextManager: ContextManager;
+  private evaluator?: Evaluator;
   /** Whether streaming is enabled */
   public readonly streaming: boolean;
 
@@ -41,6 +43,11 @@ export class UserStoryAgent extends EventEmitter {
     this.validateConfig();
     this.claudeClient = new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
     this.contextManager = new ContextManager();
+    
+    // Create evaluator if verification is enabled
+    if (config.verify === true) {
+      this.evaluator = new Evaluator(this.claudeClient);
+    }
   }
 
   /**
@@ -415,6 +422,35 @@ export class UserStoryAgent extends EventEmitter {
         changesApplied: parsedOutput.changesApplied,
         timestamp: new Date().toISOString(),
       };
+
+      // Verify the iteration output if evaluator is enabled
+      if (this.evaluator) {
+        try {
+          const verification = await this.evaluator.verify(
+            state.currentStory,
+            parsedOutput.enhancedStory,
+            iteration.id,
+            iteration.description
+          );
+          result.verification = verification;
+
+          // Log warning if verification failed, but continue (non-blocking)
+          if (!verification.passed) {
+            logger.warn(
+              `Verification failed for iteration "${iteration.id}": ${verification.reasoning} ` +
+                `(score: ${verification.score}, issues: ${verification.issues.length})`
+            );
+          } else {
+            logger.debug(
+              `Verification passed for iteration "${iteration.id}": score=${verification.score}`
+            );
+          }
+        } catch (error) {
+          // Log error but don't block the workflow
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.warn(`Verification error for iteration "${iteration.id}": ${errorMessage}`);
+        }
+      }
 
       return result;
     } catch (error) {

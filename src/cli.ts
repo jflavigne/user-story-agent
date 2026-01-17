@@ -41,6 +41,7 @@ interface CliArgs {
   debug?: boolean;
   quiet?: boolean;
   stream?: boolean;
+  verify?: boolean;
 }
 
 /**
@@ -64,6 +65,7 @@ Options:
   --model <model>         Claude model to use (default: claude-sonnet-4-20250514)
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --stream                Enable streaming output for real-time progress
+  --verify                Enable verification of each iteration's output quality
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
   --quiet                 Suppress all output except errors
@@ -162,6 +164,9 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--stream':
         args.stream = true;
+        break;
+      case '--verify':
+        args.verify = true;
         break;
     }
   }
@@ -427,6 +432,11 @@ async function main(): Promise<void> {
       partialConfig.streaming = true;
     }
 
+    // Add verification option
+    if (args.verify) {
+      partialConfig.verify = true;
+    }
+
     // Create and run agent
     const config = mergeConfigWithDefaults(partialConfig);
     const agent = createAgent(config);
@@ -456,6 +466,28 @@ async function main(): Promise<void> {
     if (result.success) {
       await writeOutput(result.enhancedStory, args.output);
       logger.info(`Processed ${result.appliedIterations.length} iterations`);
+      
+      // Show verification results if enabled
+      if (args.verify) {
+        const verifiedIterations = result.iterationResults.filter((r) => r.verification);
+        const passedCount = verifiedIterations.filter((r) => r.verification?.passed).length;
+        const failedCount = verifiedIterations.length - passedCount;
+        
+        if (verifiedIterations.length > 0) {
+          logger.info(`Verification: ${passedCount} passed, ${failedCount} failed`);
+          
+          // Log details for failed verifications
+          for (const iterResult of verifiedIterations) {
+            if (iterResult.verification && !iterResult.verification.passed) {
+              logger.warn(
+                `  ${iterResult.iterationId}: ${iterResult.verification.reasoning} ` +
+                  `(score: ${iterResult.verification.score.toFixed(2)})`
+              );
+            }
+          }
+        }
+      }
+      
       logger.endSession();
       if (!args.output) {
         console.error(`\n--- Processing Summary ---`);

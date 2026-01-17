@@ -48,6 +48,8 @@ export interface UserStoryAgentConfig {
   maxRetries?: number;
   /** Whether to enable streaming output (defaults to false) */
   streaming?: boolean;
+  /** Whether to verify each iteration's output (defaults to false) */
+  verify?: boolean;
 }
 
 /**

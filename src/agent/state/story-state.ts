@@ -4,6 +4,7 @@
 
 import type { ProductContext, StoryMetadata, ChangeApplied } from '../../shared/types.js';
 import type { FailedIteration } from '../types.js';
+import type { VerificationResult } from '../../shared/schemas.js';
 
 /**
  * Error thrown when story validation fails
@@ -29,6 +30,8 @@ export interface IterationResult {
   changesApplied: ChangeApplied[];
   /** Timestamp when this iteration was applied (ISO 8601 string, e.g., from `new Date().toISOString()`) */
   timestamp: string;
+  /** Optional verification result for this iteration */
+  verification?: VerificationResult;
 }
 
 /**
