@@ -9,6 +9,7 @@ import { ClaudeClient } from '../../src/agent/claude-client.js';
 import { getIterationById, WORKFLOW_ORDER } from '../../src/shared/iteration-registry.js';
 import type { ProductContext } from '../../src/shared/types.js';
 import type { IterationId } from '../../src/shared/iteration-registry.js';
+import { StreamingHandler } from '../../src/agent/streaming.js';
 
 // Mock ClaudeClient
 vi.mock('../../src/agent/claude-client.js', () => {
@@ -19,7 +20,8 @@ vi.mock('../../src/agent/claude-client.js', () => {
 
 describe('UserStoryAgent', () => {
   let mockSendMessage: ReturnType<typeof vi.fn>;
-  let mockClaudeClient: { sendMessage: ReturnType<typeof vi.fn> };
+  let mockSendMessageStreaming: ReturnType<typeof vi.fn>;
+  let mockClaudeClient: { sendMessage: ReturnType<typeof vi.fn>; sendMessageStreaming: ReturnType<typeof vi.fn> };
   let validConfig: UserStoryAgentConfig;
   let productContext: ProductContext;
 
@@ -29,10 +31,12 @@ describe('UserStoryAgent', () => {
 
     // Create mock sendMessage function
     mockSendMessage = vi.fn();
+    mockSendMessageStreaming = vi.fn();
 
     // Create mock ClaudeClient instance
     mockClaudeClient = {
       sendMessage: mockSendMessage,
+      sendMessageStreaming: mockSendMessageStreaming,
     };
 
     // Make ClaudeClient constructor return our mock
@@ -56,9 +60,12 @@ describe('UserStoryAgent', () => {
       businessContext: 'Test business context',
     };
 
-    // Default mock response
+    // Default mock response (JSON format)
     mockSendMessage.mockResolvedValue({
-      content: 'Enhanced user story with improvements',
+      content: JSON.stringify({
+        enhancedStory: 'Enhanced user story with improvements',
+        changesApplied: [],
+      }),
       stopReason: 'end_turn',
       usage: {
         inputTokens: 100,
@@ -175,17 +182,26 @@ describe('UserStoryAgent', () => {
       // Mock different responses for each iteration
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with user roles',
+          content: JSON.stringify({
+            enhancedStory: 'Story with user roles',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with user roles and validation',
+          content: JSON.stringify({
+            enhancedStory: 'Story with user roles and validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with user roles, validation, and accessibility',
+          content: JSON.stringify({
+            enhancedStory: 'Story with user roles, validation, and accessibility',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 200, outputTokens: 100 },
         });
@@ -234,12 +250,18 @@ describe('UserStoryAgent', () => {
 
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Enhanced story with roles',
+          content: JSON.stringify({
+            enhancedStory: 'Enhanced story with roles',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Enhanced story with roles and validation',
+          content: JSON.stringify({
+            enhancedStory: 'Enhanced story with roles and validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         });
@@ -278,7 +300,10 @@ describe('UserStoryAgent', () => {
       // First iteration succeeds, second fails
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with roles',
+          content: JSON.stringify({
+            enhancedStory: 'Story with roles',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
@@ -355,12 +380,18 @@ describe('UserStoryAgent', () => {
 
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with roles',
+          content: JSON.stringify({
+            enhancedStory: 'Story with roles',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with roles and validation',
+          content: JSON.stringify({
+            enhancedStory: 'Story with roles and validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         });
@@ -414,12 +445,18 @@ describe('UserStoryAgent', () => {
 
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Enhanced story',
+          content: JSON.stringify({
+            enhancedStory: 'Enhanced story',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'More enhanced story',
+          content: JSON.stringify({
+            enhancedStory: 'More enhanced story',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         });
@@ -544,17 +581,26 @@ describe('UserStoryAgent', () => {
       // Mock API responses for selected iterations + consolidation
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with validation',
+          content: JSON.stringify({
+            enhancedStory: 'Story with validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with validation and accessibility',
+          content: JSON.stringify({
+            enhancedStory: 'Story with validation and accessibility',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         })
         .mockResolvedValueOnce({
-          content: 'Consolidated story',
+          content: JSON.stringify({
+            enhancedStory: 'Consolidated story',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 200, outputTokens: 100 },
         });
@@ -584,22 +630,34 @@ describe('UserStoryAgent', () => {
       // Mock API responses for 3 iterations + consolidation
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with user roles',
+          content: JSON.stringify({
+            enhancedStory: 'Story with user roles',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with validation',
+          content: JSON.stringify({
+            enhancedStory: 'Story with validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         })
         .mockResolvedValueOnce({
-          content: 'Story with accessibility',
+          content: JSON.stringify({
+            enhancedStory: 'Story with accessibility',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 200, outputTokens: 100 },
         })
         .mockResolvedValueOnce({
-          content: 'Consolidated story',
+          content: JSON.stringify({
+            enhancedStory: 'Consolidated story',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 250, outputTokens: 125 },
         });
@@ -622,12 +680,18 @@ describe('UserStoryAgent', () => {
 
       mockSendMessage
         .mockResolvedValueOnce({
-          content: 'Story with validation',
+          content: JSON.stringify({
+            enhancedStory: 'Story with validation',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 100, outputTokens: 50 },
         })
         .mockResolvedValueOnce({
-          content: 'Consolidated story',
+          content: JSON.stringify({
+            enhancedStory: 'Consolidated story',
+            changesApplied: [],
+          }),
           stopReason: 'end_turn',
           usage: { inputTokens: 150, outputTokens: 75 },
         });
@@ -712,6 +776,102 @@ describe('UserStoryAgent', () => {
       expect(() => new UserStoryAgent(config)).toThrow(
         /Individual mode requires at least one iteration ID/
       );
+    });
+  });
+
+  describe('Streaming support', () => {
+    it('should extend EventEmitter', () => {
+      const agent = new UserStoryAgent(validConfig);
+      expect(agent).toBeInstanceOf(UserStoryAgent);
+      // EventEmitter methods should be available
+      expect(typeof agent.on).toBe('function');
+      expect(typeof agent.emit).toBe('function');
+    });
+
+    it('should have streaming property set from config', () => {
+      const configWithStreaming: UserStoryAgentConfig = {
+        ...validConfig,
+        streaming: true,
+      };
+      const agent = new UserStoryAgent(configWithStreaming);
+      expect(agent.streaming).toBe(true);
+    });
+
+    it('should default streaming to false', () => {
+      const agent = new UserStoryAgent(validConfig);
+      expect(agent.streaming).toBe(false);
+    });
+
+    it('should use sendMessageStreaming when streaming is enabled', async () => {
+      const configWithStreaming: UserStoryAgentConfig = {
+        ...validConfig,
+        streaming: true,
+      };
+      const agent = new UserStoryAgent(configWithStreaming);
+
+      // Mock streaming response
+      mockSendMessageStreaming.mockImplementation(async (options, handler: StreamingHandler) => {
+        handler.start();
+        handler.chunk('{"enhancedStory": "');
+        handler.chunk('Enhanced story');
+        handler.chunk('", "changesApplied": []}');
+        handler.complete({ inputTokens: 100, outputTokens: 50 });
+        return {
+          content: '{"enhancedStory": "Enhanced story", "changesApplied": []}',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        };
+      });
+
+      const initialStory = 'As a user, I want to login';
+      const result = await agent.processUserStory(initialStory);
+
+      expect(result.success).toBe(true);
+      expect(mockSendMessageStreaming).toHaveBeenCalled();
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should emit stream events when streaming is enabled', async () => {
+      const configWithStreaming: UserStoryAgentConfig = {
+        ...validConfig,
+        streaming: true,
+      };
+      const agent = new UserStoryAgent(configWithStreaming);
+
+      const streamEvents: any[] = [];
+      agent.on('stream', (event) => {
+        streamEvents.push(event);
+      });
+
+      // Mock streaming response
+      mockSendMessageStreaming.mockImplementation(async (options, handler: StreamingHandler) => {
+        handler.start();
+        handler.chunk('chunk1');
+        handler.chunk('chunk2');
+        handler.complete({ inputTokens: 10, outputTokens: 5 });
+        return {
+          content: 'chunk1chunk2',
+          usage: { inputTokens: 10, outputTokens: 5 },
+        };
+      });
+
+      await agent.processUserStory('As a user, I want to login');
+
+      // Should have received start, chunk, chunk, and complete events
+      expect(streamEvents.length).toBeGreaterThanOrEqual(4);
+      expect(streamEvents[0].type).toBe('start');
+      expect(streamEvents[1].type).toBe('chunk');
+      expect(streamEvents[2].type).toBe('chunk');
+      expect(streamEvents[streamEvents.length - 1].type).toBe('complete');
+    });
+
+    it('should use regular sendMessage when streaming is disabled', async () => {
+      const agent = new UserStoryAgent(validConfig);
+      const initialStory = 'As a user, I want to login';
+
+      await agent.processUserStory(initialStory);
+
+      expect(mockSendMessage).toHaveBeenCalled();
+      expect(mockSendMessageStreaming).not.toHaveBeenCalled();
     });
   });
 });

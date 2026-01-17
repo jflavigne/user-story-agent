@@ -19,7 +19,7 @@ import {
   WORKFLOW_ORDER,
   getIterationById,
 } from './index.js';
-import type { UserStoryAgentConfig, IterationOption, ProductContext } from './index.js';
+import type { UserStoryAgentConfig, IterationOption, ProductContext, StreamEventUnion } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
 import { logger, initializeLogger } from './utils/logger.js';
 
@@ -40,6 +40,7 @@ interface CliArgs {
   verbose?: boolean;
   debug?: boolean;
   quiet?: boolean;
+  stream?: boolean;
 }
 
 /**
@@ -62,6 +63,7 @@ Options:
                           Note: Prefer env var; CLI args may be visible in process lists
   --model <model>         Claude model to use (default: claude-sonnet-4-20250514)
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
+  --stream                Enable streaming output for real-time progress
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
   --quiet                 Suppress all output except errors
@@ -157,6 +159,9 @@ function parseArgs(argv: string[]): CliArgs {
       case '--quiet':
       case '-q':
         args.quiet = true;
+        break;
+      case '--stream':
+        args.stream = true;
         break;
     }
   }
@@ -417,9 +422,35 @@ async function main(): Promise<void> {
       partialConfig.onIterationSelection = createInteractiveSelectionCallback();
     }
 
+    // Add streaming option
+    if (args.stream) {
+      partialConfig.streaming = true;
+    }
+
     // Create and run agent
     const config = mergeConfigWithDefaults(partialConfig);
     const agent = createAgent(config);
+
+    // Set up streaming output if enabled
+    if (args.stream) {
+      agent.on('stream', (event: StreamEventUnion) => {
+        switch (event.type) {
+          case 'start':
+            process.stderr.write(`\n[${event.iterationId}] Starting...\n`);
+            break;
+          case 'chunk':
+            process.stderr.write(event.content);
+            break;
+          case 'complete':
+            process.stderr.write(`\n[${event.iterationId}] Complete (${event.tokenUsage.input} in / ${event.tokenUsage.output} out tokens)\n`);
+            break;
+          case 'error':
+            process.stderr.write(`\n[${event.iterationId}] Error: ${event.error.message}\n`);
+            break;
+        }
+      });
+    }
+
     const result = await agent.processUserStory(story);
 
     if (result.success) {

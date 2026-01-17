@@ -46,6 +46,8 @@ export interface UserStoryAgentConfig {
   onIterationSelection?: IterationSelectionCallback;
   /** Maximum number of retry attempts for API calls (defaults to 3) */
   maxRetries?: number;
+  /** Whether to enable streaming output (defaults to false) */
+  streaming?: boolean;
 }
 
 /**
@@ -75,3 +77,58 @@ export interface AgentResult {
   /** Human-readable summary of the processing */
   summary: string;
 }
+
+/**
+ * Base interface for streaming events
+ */
+export interface StreamEvent {
+  /** Type of streaming event */
+  type: 'start' | 'chunk' | 'complete' | 'error';
+  /** ID of the iteration being streamed */
+  iterationId: string;
+  /** Timestamp when the event occurred */
+  timestamp: number;
+}
+
+/**
+ * Event emitted when streaming starts
+ */
+export interface StreamStartEvent extends StreamEvent {
+  type: 'start';
+}
+
+/**
+ * Event emitted for each chunk of content
+ */
+export interface StreamChunkEvent extends StreamEvent {
+  type: 'chunk';
+  /** The new content chunk */
+  content: string;
+  /** Accumulated content so far */
+  accumulated: string;
+}
+
+/**
+ * Event emitted when streaming completes
+ */
+export interface StreamCompleteEvent extends StreamEvent {
+  type: 'complete';
+  /** Full accumulated content */
+  fullContent: string;
+  /** Token usage statistics */
+  tokenUsage: { input: number; output: number };
+}
+
+/**
+ * Event emitted when an error occurs during streaming
+ */
+export interface StreamErrorEvent extends StreamEvent {
+  type: 'error';
+  /** The error that occurred */
+  error: Error;
+}
+
+/**
+ * Union type of all streaming events
+ */
+export type StreamEventUnion = StreamStartEvent | StreamChunkEvent | StreamCompleteEvent | StreamErrorEvent;

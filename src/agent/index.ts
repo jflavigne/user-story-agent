@@ -8,6 +8,13 @@ export type {
   AgentResult,
   IterationOption,
   IterationSelectionCallback,
+  FailedIteration,
+  StreamEvent,
+  StreamStartEvent,
+  StreamChunkEvent,
+  StreamCompleteEvent,
+  StreamErrorEvent,
+  StreamEventUnion,
 } from './types.js';
 
 // Claude client

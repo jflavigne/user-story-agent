@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../utils/logger.js';
 import { withRetry, type RetryOptions } from '../utils/retry.js';
 import { APIError, TimeoutError, AgentError } from '../shared/errors.js';
+import { StreamingHandler } from './streaming.js';
 
 /**
  * Error structure that may include an HTTP status code (e.g., from Anthropic SDK)
@@ -58,6 +59,8 @@ export interface SendMessageOptions {
   model?: string;
   /** Optional max tokens */
   maxTokens?: number;
+  /** Whether to stream the response */
+  stream?: boolean;
 }
 
 /**
@@ -269,6 +272,86 @@ export class ClaudeClient {
       logger.error(
         `API call failed after ${(durationMs / 1000).toFixed(2)}s: ${normalizedError.message}`
       );
+      throw normalizedError;
+    }
+  }
+
+  /**
+   * Sends a message to Claude with streaming support
+   *
+   * @param options - Message options including system prompt and user messages
+   * @param handler - Streaming handler to emit events
+   * @returns Promise resolving to the content and usage statistics
+   */
+  async sendMessageStreaming(
+    options: SendMessageOptions,
+    handler: StreamingHandler
+  ): Promise<{ content: string; usage: ClaudeUsage }> {
+    const { systemPrompt, messages, model, maxTokens = 4096 } = options;
+    const modelToUse = model || this.defaultModel;
+
+    const startTime = Date.now();
+    logger.debug(`Streaming API call starting (model: ${modelToUse}, maxTokens: ${maxTokens})`);
+
+    try {
+      handler.start();
+
+      // Create streaming request
+      const stream = await this.client.messages.stream({
+        model: modelToUse,
+        max_tokens: maxTokens,
+        system: systemPrompt,
+        messages: messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      });
+
+      // Process stream events
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          const delta = event.delta;
+          if (delta.type === 'text_delta') {
+            handler.chunk(delta.text);
+          }
+        }
+      }
+
+      // Get final message with usage stats
+      const finalMessage = await stream.finalMessage();
+      const inputTokens = finalMessage.usage?.input_tokens ?? 0;
+      const outputTokens = finalMessage.usage?.output_tokens ?? 0;
+
+      const durationMs = Date.now() - startTime;
+      logger.addTokenUsage(inputTokens, outputTokens);
+      logger.debug(
+        `Streaming API call completed (${(durationMs / 1000).toFixed(2)}s, ${inputTokens} in / ${outputTokens} out tokens)`
+      );
+
+      handler.complete({
+        inputTokens,
+        outputTokens,
+      });
+
+      // Check for empty content before returning
+      if (!handler.accumulated.trim()) {
+        const errorMsg = 'Streaming response contained no text content';
+        logger.warn(errorMsg);
+        handler.error(new Error(errorMsg));
+        throw new Error(errorMsg);
+      }
+
+      return {
+        content: handler.accumulated,
+        usage: { inputTokens, outputTokens },
+      };
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      const normalizedError = this.normalizeError(error);
+      logger.error(
+        `Streaming API call failed after ${(durationMs / 1000).toFixed(2)}s: ${normalizedError.message}`
+      );
+      handler.error(normalizedError);
       throw normalizedError;
     }
   }

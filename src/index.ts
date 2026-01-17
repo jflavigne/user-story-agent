@@ -20,6 +20,7 @@ export type {
   AgentResult,
   IterationOption,
   IterationSelectionCallback,
+  StreamEventUnion,
 } from './agent/index.js';
 
 // Re-export shared types

@@ -2,6 +2,7 @@
  * User Story Agent - Main agent class for processing user stories
  */
 
+import { EventEmitter } from 'events';
 import type { UserStoryAgentConfig, AgentResult, IterationOption } from './types.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
@@ -15,14 +16,17 @@ import { logger } from '../utils/logger.js';
 import { IterationOutputSchema, type IterationOutput } from '../shared/schemas.js';
 import { extractJSON } from '../shared/json-utils.js';
 import { AgentError } from '../shared/errors.js';
+import { StreamingHandler } from './streaming.js';
 
 /**
  * Main agent class for processing user stories through iterations
  */
-export class UserStoryAgent {
+export class UserStoryAgent extends EventEmitter {
   private config: UserStoryAgentConfig;
   private claudeClient: ClaudeClient;
   private contextManager: ContextManager;
+  /** Whether streaming is enabled */
+  public readonly streaming: boolean;
 
   /**
    * Creates a new UserStoryAgent instance
@@ -31,7 +35,9 @@ export class UserStoryAgent {
    * @throws {Error} If iteration IDs are invalid or API key is missing
    */
   constructor(config: UserStoryAgentConfig) {
+    super();
     this.config = config;
+    this.streaming = config.streaming ?? false;
     this.validateConfig();
     this.claudeClient = new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
     this.contextManager = new ContextManager();
@@ -347,20 +353,58 @@ export class UserStoryAgent {
         ? `${contextPrompt}\n\n---\n\n${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`
         : `${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`;
 
-      // Call Claude API (with retry logic already in place)
-      const response = await this.claudeClient.sendMessage({
-        systemPrompt: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
-        model: this.config.model,
-      });
+      let responseContent: string;
+      let tokenUsage: { inputTokens: number; outputTokens: number };
+
+      // Use streaming if enabled
+      if (this.streaming) {
+        const handler = new StreamingHandler(iteration.id);
+        
+        // Forward streaming events to agent listeners
+        // Set up error listener BEFORE calling sendMessageStreaming to ensure early errors propagate
+        handler.on('start', (event) => {
+          this.emit('stream', event);
+        });
+        handler.on('chunk', (event) => {
+          this.emit('stream', event);
+        });
+        handler.on('complete', (event) => {
+          this.emit('stream', event);
+        });
+        handler.on('error', (event) => {
+          this.emit('stream', event);
+        });
+
+        const response = await this.claudeClient.sendMessageStreaming(
+          {
+            systemPrompt: SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userMessage }],
+            model: this.config.model,
+          },
+          handler
+        );
+
+        // Get content and usage directly from the return value
+        responseContent = response.content;
+        tokenUsage = response.usage;
+      } else {
+        // Call Claude API (with retry logic already in place)
+        const response = await this.claudeClient.sendMessage({
+          systemPrompt: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userMessage }],
+          model: this.config.model,
+        });
+        responseContent = response.content;
+        tokenUsage = response.usage;
+      }
 
       // Parse and validate structured output
-      const parsedOutput = this.parseIterationOutput(response.content, iteration.id);
+      const parsedOutput = this.parseIterationOutput(responseContent, iteration.id);
 
       const durationMs = Date.now() - startTime;
       logger.info(
         `Completed: ${iteration.id} (${(durationMs / 1000).toFixed(1)}s, ` +
-          `${response.usage.inputTokens} in / ${response.usage.outputTokens} out tokens)`
+          `${tokenUsage.inputTokens} in / ${tokenUsage.outputTokens} out tokens)`
       );
 
       // Create iteration result with parsed changes
