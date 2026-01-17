@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "cursor-agent": {
+      "command": "/Users/jflavigne/mcp-servers/scripts/env-wrap.sh",
+      "args": [
+        "/Users/jflavigne/mcp-servers/pack/.env",
+        "node",
+        "/Users/jflavigne/projects/cursor-agent-mcp/server.js"
+      ],
+      "env": {
+        "CURSOR_AGENT_PATH": "/Users/jflavigne/.local/bin/cursor-agent",
+        "CURSOR_AGENT_MODEL": "auto",
+        "CURSOR_AGENT_TIMEOUT_MS": "300000"
+      }
+    },
+    "ast-grep": {
+      "command": "/Users/jflavigne/.pyenv/versions/3.11.0/bin/uv",
+      "args": [
+        "--directory",
+        "/Users/jflavigne/MCP-servers/servers/ast-grep-mcp",
+        "run",
+        "main.py"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "env": {
+        "CONTEXT7_API_KEY": "ctx7sk-426cebf8-b6d1-47f4-a1b2-076968a65e89"
+      }
+    }
+  }
+}
