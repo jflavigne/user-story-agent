@@ -1,0 +1,40 @@
+# Dictionary Key Detection Rule
+# Finds dictionary access with string literal keys
+# Useful for identifying JSON/API contract strings
+#
+# Usage with ast-grep MCP:
+#   mcp__ast-grep__find_code_by_rule:
+#     project_folder: /path/to/project
+#     yaml: <contents of this file>
+#
+# Post-processing: Group by key value, filter for repeated keys
+
+id: dict-keys
+language: python
+message: "Dict key literal: $KEY"
+severity: hint
+rule:
+  any:
+    # dict["key"]
+    - kind: subscript
+      has:
+        kind: string
+        field: subscript
+        stopBy: end
+    # dict.get("key") or dict.get("key", default)
+    - pattern: $DICT.get($KEY)
+      has:
+        kind: string
+        field: arguments
+        stopBy: end
+    - pattern: $DICT.get($KEY, $DEFAULT)
+      has:
+        kind: string
+        field: arguments
+        stopBy: end
+    # dict.pop("key")
+    - pattern: $DICT.pop($KEY)
+      has:
+        kind: string
+        field: arguments
+        stopBy: end

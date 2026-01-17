@@ -1,0 +1,41 @@
+# Magic Numbers Detection Rule
+# Finds numeric literals in conditionals and assignments that may need extraction
+#
+# Usage with ast-grep MCP:
+#   mcp__ast-grep__find_code_by_rule:
+#     project_folder: /path/to/project
+#     yaml: <contents of this file>
+#
+# Excludes: 0, 1, -1, 2 (common arithmetic identities)
+
+id: magic-numbers
+language: python
+message: "Magic number in comparison/assignment: $NUM"
+severity: hint
+rule:
+  any:
+    # Comparisons: if x == 42, if x > 100
+    - kind: comparison_operator
+      has:
+        kind: integer
+        pattern: $NUM
+        stopBy: end
+    # Assignments: timeout = 5.0
+    - kind: assignment
+      has:
+        any:
+          - kind: integer
+          - kind: float
+        pattern: $NUM
+        stopBy: end
+    # Keyword arguments: func(timeout=30)
+    - kind: keyword_argument
+      has:
+        any:
+          - kind: integer
+          - kind: float
+        stopBy: end
+constraints:
+  NUM:
+    # Exclude common arithmetic identities
+    regex: "^(?!-?[012]$).+"

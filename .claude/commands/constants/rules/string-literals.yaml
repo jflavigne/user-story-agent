@@ -1,0 +1,18 @@
+# String Literals Detection Rule
+# Finds all string literals for frequency analysis
+#
+# Usage with ast-grep MCP:
+#   mcp__ast-grep__find_code_by_rule:
+#     project_folder: /path/to/project
+#     yaml: <contents of this file>
+#
+# Post-processing: Group by value, filter for 3+ occurrences
+
+id: string-literals
+language: python
+message: "String literal: $STR"
+severity: hint
+rule:
+  kind: string
+  # Exclude empty strings and single characters
+  regex: "^['\"][^'\"]{2,}['\"]$"
