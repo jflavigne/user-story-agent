@@ -195,6 +195,7 @@ export class ContextManager {
       productContext: productContext || null,
       iterationResults: [],
       metadata: null,
+      failedIterations: [],
     };
   }
 
@@ -243,22 +244,41 @@ export class ContextManager {
    * ```
    */
   buildConclusionSummary(state: StoryState): string {
-    if (state.appliedIterations.length === 0) {
+    const parts: string[] = [];
+
+    if (state.appliedIterations.length > 0) {
+      const iterationNames = state.appliedIterations
+        .map((id) => {
+          const iteration = getIterationById(id);
+          return iteration?.name || id;
+        })
+        .filter(Boolean);
+
+      const count = state.appliedIterations.length;
+      const plural = count === 1 ? 'iteration' : 'iterations';
+      const list = iterationNames.join(', ');
+      parts.push(`Applied ${count} ${plural} (${list})`);
+    }
+
+    if (state.failedIterations.length > 0) {
+      const failedNames = state.failedIterations
+        .map((failed) => {
+          const iteration = getIterationById(failed.id);
+          return iteration?.name || failed.id;
+        })
+        .filter(Boolean);
+
+      const count = state.failedIterations.length;
+      const plural = count === 1 ? 'iteration' : 'iterations';
+      const list = failedNames.join(', ');
+      parts.push(`Skipped ${count} failed ${plural} (${list})`);
+    }
+
+    if (parts.length === 0) {
       return '';
     }
 
-    const iterationNames = state.appliedIterations
-      .map((id) => {
-        const iteration = getIterationById(id);
-        return iteration?.name || id;
-      })
-      .filter(Boolean);
-
-    const count = state.appliedIterations.length;
-    const plural = count === 1 ? 'iteration' : 'iterations';
-    const list = iterationNames.join(', ');
-
-    return `Summary: Applied ${count} ${plural} (${list})`;
+    return `Summary: ${parts.join('. ')}`;
   }
 }
 

@@ -2,7 +2,8 @@
  * Story state management for tracking user story through enhancement iterations
  */
 
-import type { ProductContext, StoryMetadata } from '../../shared/types.js';
+import type { ProductContext, StoryMetadata, ChangeApplied } from '../../shared/types.js';
+import type { FailedIteration } from '../types.js';
 
 /**
  * Error thrown when story validation fails
@@ -25,7 +26,7 @@ export interface IterationResult {
   /** The story content after this iteration was applied */
   outputStory: string;
   /** List of changes that were made in this iteration */
-  changesApplied: string[];
+  changesApplied: ChangeApplied[];
   /** Timestamp when this iteration was applied (ISO 8601 string, e.g., from `new Date().toISOString()`) */
   timestamp: string;
 }
@@ -46,6 +47,8 @@ export interface StoryState {
   iterationResults: IterationResult[];
   /** Extracted metadata from the story, if available */
   metadata: StoryMetadata | null;
+  /** Array of iterations that failed after retries */
+  failedIterations: FailedIteration[];
 }
 
 /**
@@ -62,8 +65,8 @@ export interface StoryState {
  * ```
  */
 export function createInitialState(story: string): StoryState {
-  if (!story || story.trim().length === 0) {
-    throw new StoryValidationError('Story cannot be empty or whitespace-only');
+  if (typeof story !== 'string' || story.trim().length === 0) {
+    throw new StoryValidationError('Story must be a non-empty string');
   }
 
   return {
@@ -73,5 +76,6 @@ export function createInitialState(story: string): StoryState {
     productContext: null,
     iterationResults: [],
     metadata: null,
+    failedIterations: [],
   };
 }

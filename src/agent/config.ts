@@ -51,6 +51,7 @@ export function mergeConfigWithDefaults(
     apiKey: partial.apiKey ?? envConfig.apiKey,
     model: partial.model ?? DEFAULT_MODEL,
     onIterationSelection: partial.onIterationSelection,
+    maxRetries: partial.maxRetries ?? 3,
   };
 
   return merged;

@@ -34,6 +34,7 @@ interface CliArgs {
   output?: string;
   apiKey?: string;
   model?: string;
+  maxRetries?: string;
   help?: boolean;
   version?: boolean;
   verbose?: boolean;
@@ -60,6 +61,7 @@ Options:
   --api-key <key>         Anthropic API key (default: ANTHROPIC_API_KEY env var)
                           Note: Prefer env var; CLI args may be visible in process lists
   --model <model>         Claude model to use (default: claude-sonnet-4-20250514)
+  --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
   --quiet                 Suppress all output except errors
@@ -131,6 +133,11 @@ function parseArgs(argv: string[]): CliArgs {
       case '--model':
         if (i + 1 < argv.length) {
           args.model = argv[++i];
+        }
+        break;
+      case '--max-retries':
+        if (i + 1 < argv.length) {
+          args.maxRetries = argv[++i];
         }
         break;
       case '--help':
@@ -377,6 +384,16 @@ async function main(): Promise<void> {
       apiKey: args.apiKey,
       model: args.model,
     };
+
+    // Parse maxRetries if provided
+    if (args.maxRetries) {
+      const maxRetries = parseInt(args.maxRetries, 10);
+      if (isNaN(maxRetries) || maxRetries < 1) {
+        logger.error(`Invalid --max-retries value: ${args.maxRetries}. Must be a positive integer.`);
+        process.exit(1);
+      }
+      partialConfig.maxRetries = maxRetries;
+    }
 
     // Add iterations for individual mode (already validated)
     if (args.mode === 'individual' && args.iterations) {

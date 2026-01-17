@@ -44,6 +44,18 @@ export interface UserStoryAgentConfig {
   model?: string;
   /** Callback for iteration selection (required for interactive mode) */
   onIterationSelection?: IterationSelectionCallback;
+  /** Maximum number of retry attempts for API calls (defaults to 3) */
+  maxRetries?: number;
+}
+
+/**
+ * Information about a failed iteration
+ */
+export interface FailedIteration {
+  /** ID of the iteration that failed */
+  id: string;
+  /** Error message describing the failure */
+  error: string;
 }
 
 /**

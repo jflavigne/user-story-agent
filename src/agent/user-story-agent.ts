@@ -12,6 +12,9 @@ import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prom
 import { createInitialState } from './state/story-state.js';
 import { ClaudeClient } from './claude-client.js';
 import { logger } from '../utils/logger.js';
+import { IterationOutputSchema, type IterationOutput } from '../shared/schemas.js';
+import { extractJSON } from '../shared/json-utils.js';
+import { AgentError } from '../shared/errors.js';
 
 /**
  * Main agent class for processing user stories through iterations
@@ -30,7 +33,7 @@ export class UserStoryAgent {
   constructor(config: UserStoryAgentConfig) {
     this.config = config;
     this.validateConfig();
-    this.claudeClient = new ClaudeClient(config.apiKey, config.model);
+    this.claudeClient = new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
     this.contextManager = new ContextManager();
   }
 
@@ -109,7 +112,7 @@ export class UserStoryAgent {
         throw new Error(`Unsupported mode: ${this.config.mode}`);
       }
 
-      // Build summary
+      // Build summary (includes failed iterations if any)
       const summary = this.contextManager.buildConclusionSummary(state);
 
       return {
@@ -146,20 +149,22 @@ export class UserStoryAgent {
     // Using non-null assertion since validation ensures this is defined
     const iterations = this.config.iterations!;
 
-    // Apply each iteration in the configured order
-    for (const iterationId of iterations) {
-      const iteration = getIterationById(iterationId);
-      if (!iteration) {
-        throw new Error(`Iteration not found: ${iterationId}`);
+      // Apply each iteration in the configured order
+      for (const iterationId of iterations) {
+        const iteration = getIterationById(iterationId);
+        if (!iteration) {
+          throw new Error(`Iteration not found: ${iterationId}`);
+        }
+
+        // Apply the iteration (may return null if it failed after retries)
+        const result = await this.applyIteration(iteration, currentState);
+
+        // Only update context if the iteration succeeded
+        if (result !== null) {
+          const { state: updatedState } = this.contextManager.updateContext(currentState, result);
+          currentState = updatedState;
+        }
       }
-
-      // Apply the iteration
-      const result = await this.applyIteration(iteration, currentState);
-
-      // Update context with the result
-      const { state: updatedState } = this.contextManager.updateContext(currentState, result);
-      currentState = updatedState;
-    }
 
     return currentState;
   }
@@ -233,8 +238,10 @@ export class UserStoryAgent {
       }
 
       const result = await this.applyIteration(iteration, currentState);
-      const { state: updatedState } = this.contextManager.updateContext(currentState, result);
-      currentState = updatedState;
+      if (result !== null) {
+        const { state: updatedState } = this.contextManager.updateContext(currentState, result);
+        currentState = updatedState;
+      }
     }
 
     // 4. Run consolidation as final step
@@ -271,8 +278,10 @@ export class UserStoryAgent {
     let currentState = state;
     for (const iteration of iterations) {
       const result = await this.applyIteration(iteration, currentState);
-      const { state: updatedState } = this.contextManager.updateContext(currentState, result);
-      currentState = updatedState;
+      if (result !== null) {
+        const { state: updatedState } = this.contextManager.updateContext(currentState, result);
+        currentState = updatedState;
+      }
     }
 
     // 5. Run consolidation as final step
@@ -302,8 +311,12 @@ export class UserStoryAgent {
 
     // Apply using existing machinery
     const result = await this.applyIteration(consolidationEntry, state);
-    const { state: updatedState } = this.contextManager.updateContext(state, result);
-    return updatedState;
+    if (result !== null) {
+      const { state: updatedState } = this.contextManager.updateContext(state, result);
+      return updatedState;
+    }
+    // If consolidation failed, return state as-is
+    return state;
   }
 
   /**
@@ -311,61 +324,137 @@ export class UserStoryAgent {
    *
    * @param iteration - The iteration to apply
    * @param state - Current story state
-   * @returns Promise resolving to the iteration result
+   * @returns Promise resolving to the iteration result, or null if the iteration failed after retries
    */
   private async applyIteration(
     iteration: IterationRegistryEntry,
     state: StoryState
-  ): Promise<IterationResult> {
+  ): Promise<IterationResult | null> {
     const startTime = Date.now();
     logger.info(`Starting iteration: ${iteration.id}`);
     logger.debug(`Iteration details: ${iteration.name} (category: ${iteration.category})`);
 
-    // Build context prompt
-    const contextPrompt = this.contextManager.buildContextPrompt(state);
-    logger.debug(
-      `Context prompt: ${contextPrompt ? contextPrompt.length : 0} chars, ` +
-        `appliedIterations: ${state.appliedIterations.length}`
-    );
+    try {
+      // Build context prompt
+      const contextPrompt = this.contextManager.buildContextPrompt(state);
+      logger.debug(
+        `Context prompt: ${contextPrompt ? contextPrompt.length : 0} chars, ` +
+          `appliedIterations: ${state.appliedIterations.length}`
+      );
 
-    // Build the full user message with context and iteration prompt
-    const userMessage = contextPrompt
-      ? `${contextPrompt}\n\n---\n\n${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`
-      : `${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`;
+      // Build the full user message with context and iteration prompt
+      const userMessage = contextPrompt
+        ? `${contextPrompt}\n\n---\n\n${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`
+        : `${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`;
 
-    // Call Claude API
-    const response = await this.claudeClient.sendMessage({
-      systemPrompt: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
-      model: this.config.model,
-    });
+      // Call Claude API (with retry logic already in place)
+      const response = await this.claudeClient.sendMessage({
+        systemPrompt: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }],
+        model: this.config.model,
+      });
 
-    // Extract the enhanced story from the response
-    const enhancedStory = response.content.trim();
+      // Parse and validate structured output
+      const parsedOutput = this.parseIterationOutput(response.content, iteration.id);
 
-    if (!enhancedStory) {
-      logger.warn(`Iteration ${iteration.id} returned empty content`);
-      throw new Error(`Iteration ${iteration.id} returned an empty story. This may indicate an API error or invalid response.`);
+      const durationMs = Date.now() - startTime;
+      logger.info(
+        `Completed: ${iteration.id} (${(durationMs / 1000).toFixed(1)}s, ` +
+          `${response.usage.inputTokens} in / ${response.usage.outputTokens} out tokens)`
+      );
+
+      // Create iteration result with parsed changes
+      const result: IterationResult = {
+        iterationId: iteration.id,
+        inputStory: state.currentStory,
+        outputStory: parsedOutput.enhancedStory,
+        changesApplied: parsedOutput.changesApplied,
+        timestamp: new Date().toISOString(),
+      };
+
+      return result;
+    } catch (error) {
+      const durationMs = Date.now() - startTime;
+      
+      // Graceful degradation: if it's an AgentError (after retries), skip this iteration
+      if (error instanceof AgentError) {
+        logger.warn(
+          `Iteration "${iteration.id}" failed after ${(durationMs / 1000).toFixed(1)}s and retries, skipping (${error.code}: ${error.message})`
+        );
+        
+        // Track failed iteration in state
+        state.failedIterations.push({
+          id: iteration.id,
+          error: error.message,
+        });
+        
+        return null; // Signal that this iteration was skipped
+      }
+      
+      // Re-throw unexpected errors (shouldn't happen, but be safe)
+      throw error;
     }
+  }
 
-    const durationMs = Date.now() - startTime;
-    logger.info(
-      `Completed: ${iteration.id} (${(durationMs / 1000).toFixed(1)}s, ` +
-        `${response.usage.inputTokens} in / ${response.usage.outputTokens} out tokens)`
-    );
+  /**
+   * Parses and validates structured output from Claude response.
+   * Falls back gracefully if parsing fails.
+   *
+   * @param response - Raw response text from Claude
+   * @param iterationId - ID of the iteration for logging
+   * @returns Parsed and validated iteration output
+   */
+  private parseIterationOutput(response: string, iterationId: string): IterationOutput {
+    try {
+      // Extract JSON from the response
+      const json = extractJSON(response);
+      if (!json) {
+        throw new Error('No JSON found in response');
+      }
 
-    // Create iteration result
-    // Note: changesApplied is intentionally empty - change extraction is not implemented
-    // as it would require structured output parsing from the Claude response
-    const result: IterationResult = {
-      iterationId: iteration.id,
-      inputStory: state.currentStory,
-      outputStory: enhancedStory,
-      changesApplied: [],
-      timestamp: new Date().toISOString(),
-    };
+      // Validate against schema
+      const parsed = IterationOutputSchema.parse(json);
 
-    return result;
+      // Log if confidence is provided
+      if (parsed.confidence !== undefined) {
+        logger.debug(`Iteration ${iterationId} confidence: ${parsed.confidence}`);
+      }
+
+      // Log changes applied
+      if (parsed.changesApplied.length > 0) {
+        logger.debug(
+          `Iteration ${iterationId} applied ${parsed.changesApplied.length} changes: ` +
+            parsed.changesApplied.map((c) => `${c.category}: ${c.description}`).join(', ')
+        );
+      }
+
+      return parsed;
+    } catch (error) {
+      // Graceful fallback: use raw text as enhanced story
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(
+        `Failed to parse structured output for iteration ${iterationId}, using raw text as fallback: ${errorMessage}`
+      );
+
+      // Return fallback structure - use response text or empty string
+      const fallbackStory = response.trim();
+      if (!fallbackStory) {
+        throw new Error(`Iteration ${iterationId} returned an empty story. This may indicate an API error or invalid response.`);
+      }
+
+      // Check if the response is an error message before using it as fallback
+      const errorIndicators = ['error:', 'failed:', 'i apologize', 'i cannot', 'sorry,'];
+      const lowerResponse = fallbackStory.toLowerCase();
+      if (errorIndicators.some(indicator => lowerResponse.includes(indicator))) {
+        throw new Error(`Iteration ${iterationId} returned an error response: ${fallbackStory.substring(0, 100)}...`);
+      }
+
+      return {
+        enhancedStory: fallbackStory,
+        changesApplied: [],
+        confidence: undefined,
+      };
+    }
   }
 }
 
