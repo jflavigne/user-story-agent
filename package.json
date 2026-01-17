@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "generate-skills": "tsx src/skills/generate.ts",
-    "agent": "tsx src/agent/index.ts",
+    "agent": "tsx src/cli.ts",
     "dev": "tsx watch src/agent/index.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",

@@ -4,10 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UserStoryAgent, createAgent } from '../../src/agent/user-story-agent.js';
-import type { UserStoryAgentConfig } from '../../src/agent/types.js';
+import type { UserStoryAgentConfig, IterationOption } from '../../src/agent/types.js';
 import { ClaudeClient } from '../../src/agent/claude-client.js';
-import { getIterationById } from '../../src/shared/iteration-registry.js';
+import { getIterationById, WORKFLOW_ORDER } from '../../src/shared/iteration-registry.js';
 import type { ProductContext } from '../../src/shared/types.js';
+import type { IterationId } from '../../src/shared/iteration-registry.js';
 
 // Mock ClaudeClient
 vi.mock('../../src/agent/claude-client.js', () => {
@@ -474,19 +475,15 @@ describe('UserStoryAgent', () => {
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle empty iterations array', async () => {
+    it('should reject empty iterations array in individual mode', () => {
       const config: UserStoryAgentConfig = {
         ...validConfig,
         iterations: [],
       };
-      const agent = new UserStoryAgent(config);
 
-      const result = await agent.processUserStory('As a user, I want to login');
-
-      expect(result.success).toBe(true);
-      expect(result.appliedIterations).toEqual([]);
-      expect(result.enhancedStory).toBe('As a user, I want to login');
-      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(() => new UserStoryAgent(config)).toThrow(
+        /Individual mode requires at least one iteration ID/
+      );
     });
 
     it('should handle very long story', async () => {
@@ -509,6 +506,212 @@ describe('UserStoryAgent', () => {
       expect(mockSendMessage).toHaveBeenCalled();
       const callArgs = mockSendMessage.mock.calls[0][0];
       expect(callArgs.messages[0].content).toContain(specialStory);
+    });
+  });
+
+  describe('Interactive Mode', () => {
+    it('should throw error for interactive mode without callback', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: undefined,
+      };
+
+      expect(() => new UserStoryAgent(config)).toThrow(
+        /Interactive mode requires onIterationSelection callback/
+      );
+    });
+
+    it('should accept interactive mode with callback', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: async () => [],
+      };
+
+      expect(() => new UserStoryAgent(config)).not.toThrow();
+    });
+
+    it('should call selection callback with available iterations', async () => {
+      const mockCallback = vi.fn().mockResolvedValue(['validation', 'accessibility']);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+      };
+      const agent = new UserStoryAgent(config);
+
+      // Mock API responses for selected iterations + consolidation
+      mockSendMessage
+        .mockResolvedValueOnce({
+          content: 'Story with validation',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Story with validation and accessibility',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 150, outputTokens: 75 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Consolidated story',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 200, outputTokens: 100 },
+        });
+
+      await agent.processUserStory('As a user, I want to login');
+
+      // Verify callback was called with iteration options
+      expect(mockCallback).toHaveBeenCalledTimes(1);
+      const options = mockCallback.mock.calls[0][0] as IterationOption[];
+      expect(options.length).toBeGreaterThan(0);
+      expect(options[0]).toHaveProperty('id');
+      expect(options[0]).toHaveProperty('name');
+      expect(options[0]).toHaveProperty('description');
+      expect(options[0]).toHaveProperty('category');
+    });
+
+    it('should apply selected iterations in WORKFLOW_ORDER', async () => {
+      // Select iterations out of WORKFLOW_ORDER
+      const mockCallback = vi.fn().mockResolvedValue(['accessibility', 'user-roles', 'validation']);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+      };
+      const agent = new UserStoryAgent(config);
+
+      // Mock API responses for 3 iterations + consolidation
+      mockSendMessage
+        .mockResolvedValueOnce({
+          content: 'Story with user roles',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Story with validation',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 150, outputTokens: 75 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Story with accessibility',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 200, outputTokens: 100 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Consolidated story',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 250, outputTokens: 125 },
+        });
+
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      // Iterations should be applied in WORKFLOW_ORDER: user-roles, validation, accessibility
+      expect(result.appliedIterations).toEqual(['user-roles', 'validation', 'accessibility', 'consolidation']);
+    });
+
+    it('should run consolidation after selected iterations', async () => {
+      const mockCallback = vi.fn().mockResolvedValue(['validation']);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+      };
+      const agent = new UserStoryAgent(config);
+
+      mockSendMessage
+        .mockResolvedValueOnce({
+          content: 'Story with validation',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValueOnce({
+          content: 'Consolidated story',
+          stopReason: 'end_turn',
+          usage: { inputTokens: 150, outputTokens: 75 },
+        });
+
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      expect(result.appliedIterations).toContain('consolidation');
+      expect(mockSendMessage).toHaveBeenCalledTimes(2); // validation + consolidation
+    });
+
+    it('should return original story when no iterations selected', async () => {
+      const mockCallback = vi.fn().mockResolvedValue([]);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+      };
+      const agent = new UserStoryAgent(config);
+      const initialStory = 'As a user, I want to login';
+
+      const result = await agent.processUserStory(initialStory);
+
+      expect(result.success).toBe(true);
+      expect(result.enhancedStory).toBe(initialStory);
+      expect(result.appliedIterations).toEqual([]);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should filter iterations by product type when provided', async () => {
+      const mockCallback = vi.fn().mockResolvedValue([]);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+        productContext: {
+          productName: 'TestApp',
+          productType: 'mobile-native',
+          clientInfo: 'Test Client',
+          targetAudience: 'Mobile users',
+          keyFeatures: [],
+          businessContext: 'Mobile app',
+        },
+      };
+      const agent = new UserStoryAgent(config);
+
+      await agent.processUserStory('As a user, I want to login');
+
+      // Verify callback was called with filtered options
+      const options = mockCallback.mock.calls[0][0] as IterationOption[];
+      const optionIds = options.map((opt: IterationOption) => opt.id);
+
+      // mobile-native should include responsive-native but not responsive-web
+      expect(optionIds).toContain('responsive-native');
+      expect(optionIds).not.toContain('responsive-web');
+    });
+
+    it('should reject invalid iteration ID selections', async () => {
+      const mockCallback = vi.fn().mockResolvedValue(['validation', 'invalid-id']);
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'interactive',
+        onIterationSelection: mockCallback,
+      };
+      const agent = new UserStoryAgent(config);
+
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(false);
+      expect(result.summary).toContain('Invalid iteration ID selected');
+    });
+  });
+
+  describe('Individual mode validation', () => {
+    it('should throw error for individual mode without iterations', () => {
+      const config: UserStoryAgentConfig = {
+        mode: 'individual',
+        iterations: undefined,
+        apiKey: 'test-api-key',
+      };
+
+      expect(() => new UserStoryAgent(config)).toThrow(
+        /Individual mode requires at least one iteration ID/
+      );
     });
   });
 });

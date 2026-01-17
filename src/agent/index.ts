@@ -3,7 +3,12 @@
  */
 
 // Agent types
-export type { UserStoryAgentConfig, AgentResult } from './types.js';
+export type {
+  UserStoryAgentConfig,
+  AgentResult,
+  IterationOption,
+  IterationSelectionCallback,
+} from './types.js';
 
 // Claude client
 export { ClaudeClient } from './claude-client.js';
@@ -11,6 +16,9 @@ export type { ClaudeMessageResult, ClaudeUsage, SendMessageOptions } from './cla
 
 // User story agent
 export { UserStoryAgent, createAgent } from './user-story-agent.js';
+
+// Configuration utilities
+export { loadConfigFromEnv, mergeConfigWithDefaults, DEFAULT_MODEL } from './config.js';
 
 // Re-export state management for convenience
 export * from './state/index.js';
