@@ -258,15 +258,59 @@ mcp__cursor-agent__cursor_agent_analyze_files({
 
 ## Available Skills
 
+### Code Quality
+
 | Skill | Purpose |
 |-------|---------|
-| `/code-review` | Steve McConnell-style code review |
-| `/doc-write` | Generate documentation |
-| `/doc-review` | Review documentation |
-| `/constant-audit` | Find magic literals |
-| `/constant-extract` | Extract constants |
-| `/audit-module` | Comprehensive code audit |
-| `/ast-grep` | Structural code search |
+| `/code-review` | Steve McConnell-style code review (levels 1-3) |
+| `/constant-audit` | Scan for magic literals that should be constants |
+| `/constant-extract` | Extract identified literals to constant modules |
+
+### Security & Audit
+
+| Skill | Purpose |
+|-------|---------|
+| `/audit` | Overview of audit skill family |
+| `/audit-module` | Comprehensive audit of a single module |
+| `/find-silent-errors` | Find empty catch blocks, swallowed exceptions |
+| `/find-dead-code` | Find unreachable code, unused functions |
+| `/find-injection-risks` | Find command/SQL/template injection risks |
+| `/find-hardcoded-secrets` | Find API keys, passwords in code |
+| `/find-resource-leaks` | Find unclosed files, connections, streams |
+| `/find-type-gaps` | Find missing type annotations, `any` types |
+
+### Code Analysis
+
+| Skill | Purpose |
+|-------|---------|
+| `/ast-grep` | Guide for structural code search with AST patterns |
+
+### Documentation
+
+| Skill | Purpose |
+|-------|---------|
+| `/doc-write` | Generate documentation (README, spec, ADR, etc.) |
+| `/doc-review` | Fresh-eyes documentation quality review |
+
+### User Story Generation
+
+| Skill | Purpose |
+|-------|---------|
+| `/user-story/write` | Generate user stories from mockups (full workflow) |
+| `/user-story/interactive` | Interactive iteration selection |
+| `/user-story/consolidate` | Refine and consolidate user stories |
+| `/user-story/user-roles` | Analyze user roles and permissions |
+| `/user-story/interactive-elements` | Document buttons, inputs, navigation |
+| `/user-story/validation` | Identify validation rules and feedback |
+| `/user-story/accessibility` | WCAG compliance and a11y requirements |
+| `/user-story/performance` | Load times, responsiveness requirements |
+| `/user-story/security` | Security UX and data protection |
+| `/user-story/responsive-web` | Responsive web design requirements |
+| `/user-story/responsive-native` | Native mobile design requirements |
+| `/user-story/i18n-language` | Multi-language support requirements |
+| `/user-story/i18n-locale` | Locale-specific formatting (dates, numbers) |
+| `/user-story/i18n-cultural` | Cultural appropriateness requirements |
+| `/user-story/analytics` | Analytics and tracking requirements |
 
 ---
 
