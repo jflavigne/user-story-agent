@@ -28,14 +28,14 @@ Create a User Story Writer agent system with dual implementations:
 | [USA-12](./USA-12.md) | Context Manager | High | ✅ Done | USA-11 |
 | [USA-13](./USA-13.md) | Core Agent Class - Individual Mode | High | ✅ Done | USA-10, USA-12 |
 | [USA-14](./USA-14.md) | Core Agent Class - Workflow Mode | High | ✅ Done | USA-13 |
-| [USA-15](./USA-15.md) | Core Agent Class - Interactive Mode | Medium | 🔲 Todo | USA-14 |
-| [USA-16](./USA-16.md) | Agent Entry Point | High | 🔲 Todo | USA-15 |
+| [USA-15](./USA-15.md) | Core Agent Class - Interactive Mode | Medium | ✅ Done | USA-14 |
+| [USA-16](./USA-16.md) | Agent Entry Point | High | ✅ Done | USA-15 |
 | [USA-17](./USA-17.md) | Claude Code Skill - Unified Workflow | High | 🔲 Todo | USA-3, USA-10 |
 | [USA-18](./USA-18.md) | Claude Code Skill - Interactive Mode | Medium | 🔲 Todo | USA-17 |
 | [USA-19](./USA-19.md) | Claude Code Skills - Individual Iterations | Medium | 🔲 Todo | USA-17 |
 | [USA-20](./USA-20.md) | Skill Generation Script | Low | 🔲 Todo | USA-10, USA-19 |
 
-**Progress: 14/20 tickets complete (70%)**
+**Progress: 16/20 tickets complete (80%)**
 
 ---
 
