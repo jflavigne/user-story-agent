@@ -55,5 +55,5 @@ rule:
 
 ## Related
 
-- **Best Practices:** `.claude/skills/constants/best-practices.md`
-- **ast-grep SKILL:** `.claude/skills/ast-grep/SKILL.md`
+- **Best Practices:** `.claude/commands/constants/best-practices.md`
+- **ast-grep SKILL:** `.claude/commands/ast-grep/SKILL.md`
