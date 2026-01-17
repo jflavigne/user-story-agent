@@ -6,8 +6,9 @@ import type { UserStoryAgentConfig, AgentResult } from './types.js';
 import type { IterationRegistryEntry } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
 import { ContextManager } from './state/context-manager.js';
-import { ITERATION_REGISTRY, getIterationById } from '../shared/iteration-registry.js';
+import { ITERATION_REGISTRY, getIterationById, getApplicableIterations, PRODUCT_TYPES, type ProductType } from '../shared/iteration-registry.js';
 import { SYSTEM_PROMPT } from '../prompts/system.js';
+import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prompts/index.js';
 import { createInitialState } from './state/story-state.js';
 import { ClaudeClient } from './claude-client.js';
 
@@ -38,19 +39,26 @@ export class UserStoryAgent {
    * @throws {Error} If configuration is invalid
    */
   private validateConfig(): void {
-    // Validate that all iteration IDs exist in the registry
-    for (const iterationId of this.config.iterations) {
-      const iteration = getIterationById(iterationId);
-      if (!iteration) {
-        throw new Error(
-          `Invalid iteration ID: ${iterationId}. Available iterations: ${Object.keys(ITERATION_REGISTRY).join(', ')}`
-        );
+    // Validate mode
+    if (this.config.mode !== 'individual' && this.config.mode !== 'workflow') {
+      throw new Error(`Unsupported mode: ${this.config.mode}. Supported modes: 'individual', 'workflow'.`);
+    }
+
+    // Validate iterations for individual mode
+    if (this.config.mode === 'individual') {
+      for (const iterationId of this.config.iterations) {
+        const iteration = getIterationById(iterationId);
+        if (!iteration) {
+          throw new Error(
+            `Invalid iteration ID: ${iterationId}. Available iterations: ${Object.keys(ITERATION_REGISTRY).join(', ')}`
+          );
+        }
       }
     }
 
-    // Validate mode
-    if (this.config.mode !== 'individual') {
-      throw new Error(`Unsupported mode: ${this.config.mode}. Only 'individual' mode is currently supported.`);
+    // Workflow mode requires productContext with productType
+    if (this.config.mode === 'workflow' && !this.config.productContext?.productType) {
+      throw new Error('Workflow mode requires productContext with productType');
     }
   }
 
@@ -80,8 +88,14 @@ export class UserStoryAgent {
     }
 
     try {
-      // Run in individual mode
-      state = await this.runIndividualMode(state);
+      // Run in the configured mode
+      if (this.config.mode === 'individual') {
+        state = await this.runIndividualMode(state);
+      } else if (this.config.mode === 'workflow') {
+        state = await this.runWorkflowMode(state);
+      } else {
+        throw new Error(`Unsupported mode: ${this.config.mode}`);
+      }
 
       // Build summary
       const summary = this.contextManager.buildConclusionSummary(state);
@@ -132,6 +146,69 @@ export class UserStoryAgent {
     }
 
     return currentState;
+  }
+
+  /**
+   * Runs the agent in workflow mode, applying all applicable iterations sequentially
+   * based on product type, then consolidating the result
+   *
+   * @param state - Initial story state
+   * @returns Promise resolving to the final story state
+   */
+  private async runWorkflowMode(state: StoryState): Promise<StoryState> {
+    // 1. Get product type from config (required for workflow mode)
+    const productType = this.config.productContext?.productType;
+    if (!productType) {
+      throw new Error('Workflow mode requires productContext with productType');
+    }
+
+    // 2. Validate product type is a known value
+    if (!PRODUCT_TYPES.includes(productType as ProductType)) {
+      throw new Error(
+        `Invalid productType: '${productType}'. Valid types: ${PRODUCT_TYPES.join(', ')}`
+      );
+    }
+
+    // 3. Get applicable iterations filtered by product type
+    const iterations = getApplicableIterations(productType as ProductType);
+
+    // 4. Apply each iteration sequentially
+    let currentState = state;
+    for (const iteration of iterations) {
+      const result = await this.applyIteration(iteration, currentState);
+      const { state: updatedState } = this.contextManager.updateContext(currentState, result);
+      currentState = updatedState;
+    }
+
+    // 5. Run consolidation as final step
+    currentState = await this.runConsolidation(currentState);
+
+    return currentState;
+  }
+
+  /**
+   * Runs consolidation as the final step in workflow mode
+   *
+   * @param state - Current story state
+   * @returns Promise resolving to the consolidated story state
+   */
+  private async runConsolidation(state: StoryState): Promise<StoryState> {
+    // Create consolidation "iteration" entry for post-processing
+    const consolidationEntry: IterationRegistryEntry = {
+      id: 'consolidation',
+      name: 'Consolidation',
+      description: 'Final cleanup and formatting',
+      prompt: POST_PROCESSING_PROMPT,
+      category: 'post-processing',
+      applicableTo: 'all',
+      order: 999,
+      tokenEstimate: POST_PROCESSING_PROMPT_METADATA.tokenEstimate,
+    };
+
+    // Apply using existing machinery
+    const result = await this.applyIteration(consolidationEntry, state);
+    const { state: updatedState } = this.contextManager.updateContext(state, result);
+    return updatedState;
   }
 
   /**

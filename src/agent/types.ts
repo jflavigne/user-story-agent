@@ -11,7 +11,7 @@ import type { IterationResult } from './state/story-state.js';
  */
 export interface UserStoryAgentConfig {
   /** Mode in which the agent operates */
-  mode: 'individual';
+  mode: 'individual' | 'workflow';
   /** List of iteration IDs to apply in order */
   iterations: IterationId[];
   /** Optional product context for enhanced story generation */

@@ -13,6 +13,7 @@ export const ITERATION_CATEGORIES = [
   'responsive',
   'i18n',
   'analytics',
+  'post-processing',
 ] as const;
 
 /**

@@ -81,12 +81,40 @@ describe('UserStoryAgent', () => {
     it('should throw error for unsupported mode', () => {
       const invalidConfig = {
         ...validConfig,
-        mode: 'workflow' as const, // Force unsupported mode
+        mode: 'invalid-mode' as any,
       } as UserStoryAgentConfig;
 
       expect(() => new UserStoryAgent(invalidConfig)).toThrow(
-        /Unsupported mode: workflow/
+        /Unsupported mode: invalid-mode/
       );
+    });
+
+    it('should throw error for workflow mode without productType', () => {
+      const invalidConfig: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'workflow',
+        productContext: {
+          productName: 'TestApp',
+          productType: undefined as any,
+        },
+      };
+
+      expect(() => new UserStoryAgent(invalidConfig)).toThrow(
+        /Workflow mode requires productContext with productType/
+      );
+    });
+
+    it('should accept workflow mode with productType', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'workflow',
+        productContext: {
+          productName: 'TestApp',
+          productType: 'web',
+        },
+      };
+
+      expect(() => new UserStoryAgent(config)).not.toThrow();
     });
 
     it('should accept valid config with valid iteration IDs', () => {
