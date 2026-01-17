@@ -1,0 +1,65 @@
+---
+name: User Roles Analysis
+id: user-roles
+description: Identifies distinct user roles and their interactions with the interface
+category: roles
+order: 1
+applicableWhen: When the mockup shows features that may vary by user type
+applicableTo: all
+---
+
+Analyze the mockup or design to identify distinct user roles and their specific interactions with the interface.
+
+## Role Identification
+
+1. **Identify User Types**: Examine the interface to determine what types of users might interact with it:
+   - Anonymous visitors or guests
+   - Registered or authenticated users
+   - Administrators or power users
+   - Specific role-based users (e.g., editors, moderators, customers, vendors)
+
+2. **Role Goals and Motivations**: For each identified role, determine:
+   - What are their primary goals when using this interface?
+   - What motivates them to interact with specific features?
+   - What outcomes are they trying to achieve?
+
+3. **Role-Specific Interactions**: Map how each role interacts with UI elements:
+   - Which features are visible or accessible to each role?
+   - What actions can each role perform?
+   - Are there role-specific workflows or navigation paths?
+   - Do different roles see different content or layouts?
+
+## Access and Permissions
+
+4. **Role-Based Access Control**: Identify any role-based restrictions:
+   - Features that are only available to certain roles
+   - Content that varies by user role
+   - Actions that require specific permissions
+   - UI elements that appear or disappear based on role
+
+5. **Permission Indicators**: Note any visual indicators of permissions:
+   - Disabled buttons or features for unauthorized roles
+   - Different navigation menus or options
+   - Role-specific dashboards or views
+   - Access level indicators or badges
+
+## User Story Implications
+
+6. **Story Variations**: Consider how user stories might differ by role:
+   - Should separate stories be created for each role?
+   - Can a single story accommodate multiple roles with variations?
+   - What role-specific acceptance criteria are needed?
+
+7. **Role Context in Stories**: When documenting user stories:
+   - Clearly specify the role in the "As a [role]" format
+   - Include role-specific acceptance criteria
+   - Document any role-based constraints or permissions
+   - Note any differences in behavior or access between roles
+
+## Output
+
+Provide a structured analysis that:
+- Lists all identified user roles
+- Describes each role's goals and interactions
+- Maps role-specific features and permissions
+- Recommends how to structure user stories to accommodate role differences

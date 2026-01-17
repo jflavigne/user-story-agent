@@ -18,6 +18,7 @@ import {
   PRODUCT_TYPES,
   WORKFLOW_ORDER,
   getIterationById,
+  loadSkills,
 } from './index.js';
 import type { UserStoryAgentConfig, IterationOption, ProductContext, StreamEventUnion } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
@@ -42,6 +43,7 @@ interface CliArgs {
   quiet?: boolean;
   stream?: boolean;
   verify?: boolean;
+  listSkills?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ Options:
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --stream                Enable streaming output for real-time progress
   --verify                Enable verification of each iteration's output quality
+  --list-skills           List all available skills and exit
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
   --quiet                 Suppress all output except errors
@@ -167,6 +170,9 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--verify':
         args.verify = true;
+        break;
+      case '--list-skills':
+        args.listSkills = true;
         break;
     }
   }
@@ -305,6 +311,50 @@ function createInteractiveSelectionCallback(): (options: IterationOption[]) => P
 }
 
 /**
+ * Lists all available skills
+ */
+async function listSkills(): Promise<void> {
+  try {
+    const skills = await loadSkills('.claude/skills/user-story');
+    
+    // Group by category
+    const byCategory = new Map<string, typeof skills>();
+    for (const skill of skills) {
+      const cat = skill.metadata.category;
+      if (!byCategory.has(cat)) {
+        byCategory.set(cat, []);
+      }
+      byCategory.get(cat)!.push(skill);
+    }
+    
+    console.log('\nAvailable Skills (User Story Iterations):\n');
+    
+    // Sort categories for consistent output
+    const categories = Array.from(byCategory.keys()).sort();
+    
+    for (const category of categories) {
+      console.log(`  Category: ${category}`);
+      const categorySkills = byCategory.get(category)!;
+      
+      for (const skill of categorySkills) {
+        const id = skill.metadata.id.padEnd(25);
+        const name = skill.metadata.name;
+        const desc = skill.metadata.description;
+        console.log(`    ${id} ${name}`);
+        console.log(`    ${' '.repeat(27)}${desc}`);
+        if (skill.metadata.applicableWhen) {
+          console.log(`    ${' '.repeat(27)}When: ${skill.metadata.applicableWhen}`);
+        }
+        console.log();
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to load skills: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    process.exit(1);
+  }
+}
+
+/**
  * Validates CLI arguments and returns an error message if invalid
  *
  * @param args - Parsed CLI arguments
@@ -364,6 +414,12 @@ async function main(): Promise<void> {
 
   if (args.version) {
     console.log(`User Story Agent v${VERSION}`);
+    process.exit(0);
+  }
+
+  // Handle --list-skills
+  if (args.listSkills) {
+    await listSkills();
     process.exit(0);
   }
 

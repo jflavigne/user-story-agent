@@ -3,9 +3,14 @@
  * 
  * Central registry for all iteration definitions with product type applicability
  * and helper functions for querying iterations.
+ * 
+ * Supports both:
+ * - Synchronous loading from TypeScript metadata (backward compatible)
+ * - Async loading from Anthropic Agent Skills format (SKILL.md files)
  */
 
 import type { IterationDefinition, IterationCategory } from './types.js';
+import { ITERATION_CATEGORIES } from './types.js';
 import {
   USER_ROLES_METADATA,
   INTERACTIVE_ELEMENTS_METADATA,
@@ -20,6 +25,7 @@ import {
   CULTURAL_APPROPRIATENESS_METADATA,
   ANALYTICS_METADATA,
 } from '../prompts/index.js';
+import { loadSkills, type LoadedSkill } from './skill-loader.js';
 
 /**
  * Valid product types that iterations can apply to
@@ -162,4 +168,94 @@ export function getIterationById(id: string): IterationRegistryEntry | undefined
  */
 export function getAllIterations(): IterationRegistryEntry[] {
   return WORKFLOW_ORDER.map((id) => ITERATION_REGISTRY[id]);
+}
+
+/**
+ * Cache for skills-loaded iterations (populated by loadIterationsFromSkills)
+ */
+let skillsCache: IterationRegistryEntry[] | null = null;
+
+/**
+ * Validates that a string is a valid ProductType
+ */
+function isValidProductType(value: string): value is ProductType {
+  return PRODUCT_TYPES.includes(value as ProductType);
+}
+
+/**
+ * Validates that a string is a valid IterationCategory
+ */
+function isValidIterationCategory(value: string): value is IterationCategory {
+  return ITERATION_CATEGORIES.includes(value as IterationCategory);
+}
+
+/**
+ * Converts a LoadedSkill to an IterationRegistryEntry
+ */
+function skillToRegistryEntry(skill: LoadedSkill): IterationRegistryEntry {
+  // Validate and filter applicableTo values
+  let applicableTo: ProductType[] | 'all' = 'all';
+  if (skill.metadata.applicableTo !== 'all' && Array.isArray(skill.metadata.applicableTo)) {
+    const validTypes = skill.metadata.applicableTo.filter(isValidProductType);
+    applicableTo = validTypes.length > 0 ? validTypes : 'all';
+  }
+
+  // Validate category with fallback
+  const category: IterationCategory = isValidIterationCategory(skill.metadata.category)
+    ? skill.metadata.category
+    : 'quality'; // Default fallback category
+
+  return {
+    id: skill.metadata.id,
+    name: skill.metadata.name,
+    description: skill.metadata.description,
+    prompt: skill.prompt,
+    category,
+    applicableWhen: skill.metadata.applicableWhen,
+    order: skill.metadata.order,
+    applicableTo,
+    tokenEstimate: Math.ceil(skill.prompt.length / 4), // Rough estimate: ~4 chars per token
+  };
+}
+
+/**
+ * Loads iterations from Anthropic Agent Skills format (SKILL.md files)
+ * 
+ * @param skillsDir - Directory containing skill subdirectories (default: .claude/skills/user-story)
+ * @returns Array of iteration registry entries loaded from skills
+ */
+export async function loadIterationsFromSkills(
+  skillsDir: string = '.claude/skills/user-story'
+): Promise<IterationRegistryEntry[]> {
+  const skills = await loadSkills(skillsDir);
+  const entries = skills.map(skillToRegistryEntry);
+  
+  // Sort by order to match WORKFLOW_ORDER
+  entries.sort((a, b) => a.order - b.order);
+  
+  // Cache the result
+  skillsCache = entries;
+  
+  return entries;
+}
+
+/**
+ * Gets iterations from cache if available, otherwise falls back to synchronous registry
+ * 
+ * @returns Array of iteration registry entries
+ */
+export function getIterations(): IterationRegistryEntry[] {
+  return skillsCache ?? getAllIterations();
+}
+
+/**
+ * Pre-populates the skills cache by loading from skills directory
+ * Call this at application startup if you want to use skills instead of TypeScript metadata
+ * 
+ * @param skillsDir - Directory containing skill subdirectories (default: .claude/skills/user-story)
+ */
+export async function initializeSkillsCache(
+  skillsDir: string = '.claude/skills/user-story'
+): Promise<void> {
+  await loadIterationsFromSkills(skillsDir);
 }

@@ -10,7 +10,19 @@ export type {
   ProductContext,
   AgentMode,
   StoryMetadata,
+  ChangeApplied,
+  IterationOutput,
 } from './types.js';
+
+/**
+ * Error types
+ */
+export {
+  AgentError,
+  APIError,
+  ValidationError,
+  TimeoutError,
+} from './errors.js';
 
 /**
  * Iteration registry exports
