@@ -61,7 +61,8 @@ export class ClaudeClient {
         'Anthropic API key is required. Provide it via apiKey parameter or ANTHROPIC_API_KEY environment variable.'
       );
     }
-    this.client = new Anthropic({ apiKey: key });
+    const baseURL = process.env.ANTHROPIC_BASE_URL || undefined;
+    this.client = new Anthropic({ apiKey: key, baseURL });
     this.defaultModel = defaultModel;
   }
 

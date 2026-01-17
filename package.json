@@ -14,7 +14,8 @@
     "dev": "tsx watch src/agent/index.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
