@@ -5,7 +5,7 @@
   "description": "Create user stories from mockups and designs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jflavigne/user-story-agent.git"
+    "url": "https://github.com/jflavigne-sidlee/user-story-agent.git"
   },
   "scripts": {
     "build": "tsc",
