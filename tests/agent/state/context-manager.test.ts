@@ -288,20 +288,8 @@ describe('ContextManager', () => {
     });
 
     it('clears all iterations and results', () => {
-      const stateWithIterations: StoryState = {
-        ...basicState,
-        appliedIterations: ['user-roles', 'validation'],
-        iterationResults: [
-          {
-            iterationId: 'user-roles',
-            inputStory: 'Input',
-            outputStory: 'Output',
-            changesApplied: [],
-            timestamp: new Date().toISOString(),
-          },
-        ],
-      };
-      
+      // resetContext() without args always returns fresh empty state
+      // regardless of what previous state looked like
       const newState = manager.resetContext();
       
       expect(newState.appliedIterations).toEqual([]);
