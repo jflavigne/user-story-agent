@@ -1,63 +1,45 @@
-# USA-58: Extract Contract ID Patterns to Shared Constants
+# USA-58: Refactor applyIteration to Return State Slice Instead of Mutating
 
 **Status**: READY TO START
+**Priority**: P3 (Technical Debt)
 **Depends on**: None
-**Size**: Tiny (~30 lines)
-**Track**: Technical Debt
+**Size**: Small (~100 lines)
 
-## Description
+## Problem
 
-Contract ID prefixes (COMP-*, C-STATE-*, E-*, DF-*) are hardcoded in multiple prompt files. Extract to shared constants to ensure consistency and make changes easier.
+`applyIteration()` in `src/agent/user-story-agent.ts` mutates the shared `state` parameter directly:
 
-## Current State
+```typescript
+state.storyStructure = newStructure;
+state.lastIterationUsedPatchWorkflow = true;
+state.currentStory = renderer.toMarkdown(state.storyStructure);
+```
 
-Contract ID patterns are duplicated in:
-- `src/prompts/system.ts`
-- `src/prompts/iterations/system-discovery.ts`
-- `src/prompts/iterations/story-interconnection.ts`
-- `src/prompts/judge-rubrics/global-consistency.ts`
+Then later, `updateContext()` spreads `state` to create the next state. This works today but is fragile:
+- Relies on mutation + spread order
+- If any caller clones state before calling `updateContext`, mutations are lost
+- Implicit contract makes refactoring risky
 
-## Tasks
+## Solution
 
-1. Create `src/shared/contract-id-patterns.ts` with:
-   ```typescript
-   export const CONTRACT_ID_PATTERNS = {
-     component: 'COMP-*',
-     clientState: 'C-STATE-*',
-     event: 'E-*',
-     dataFlow: 'DF-*',
-   };
-   
-   export const CONTRACT_ID_EXAMPLES = {
-     component: 'COMP-LOGIN-FORM',
-     clientState: 'C-STATE-USER-PROFILE',
-     event: 'E-USER-AUTHENTICATED',
-     dataFlow: 'DF-LOGIN-TO-DASHBOARD',
-   };
-   ```
-
-2. Update all 4 prompts to reference these constants via template interpolation
+Refactor `applyIteration()` to return the updated state slice instead of mutating.
 
 ## Acceptance Criteria
 
-- Constants file created
-- All 4 prompts updated to use constants
-- No hardcoded prefix patterns remain
-- TypeScript compiles without errors
+- `applyIteration()` returns `{ result, stateUpdates }` instead of mutating state
+- Both patch-based and markdown branches return appropriate stateUpdates
+- All callers updated to merge stateUpdates before calling updateContext
+- All existing tests still pass
+- No behavior changes - pure refactor
 
-## Files Created
+## Benefits
 
-- `src/shared/contract-id-patterns.ts`
-
-## Files Modified
-
-- `src/prompts/system.ts`
-- `src/prompts/iterations/system-discovery.ts`
-- `src/prompts/iterations/story-interconnection.ts`
-- `src/prompts/judge-rubrics/global-consistency.ts`
+- Explicit contract: clear what fields are updated
+- Safer for refactoring: no hidden mutations
+- Easier to test: can verify stateUpdates without side effects
+- Better aligns with functional state management patterns
 
 ## Notes
 
-- Low priority but improves maintainability
-- Can be done anytime (not blocking other work)
-- Identified during code review of USA-31/41/43/48/50
+- Identified during USA-39 code review (Issue #2, P3 Contracts)
+- Not urgent - can be done as part of future state management cleanup

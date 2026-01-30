@@ -13,7 +13,7 @@ import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prom
 import { createInitialState } from './state/story-state.js';
 import { ClaudeClient } from './claude-client.js';
 import { logger } from '../utils/logger.js';
-import { IterationOutputSchema, SystemDiscoveryMentionsSchema, type IterationOutput } from '../shared/schemas.js';
+import { IterationOutputSchema, AdvisorOutputSchema, SystemDiscoveryMentionsSchema, type IterationOutput } from '../shared/schemas.js';
 import { extractJSON } from '../shared/json-utils.js';
 import { AgentError } from '../shared/errors.js';
 import { StreamingHandler } from './streaming.js';
@@ -38,6 +38,7 @@ import type {
   FixPatch,
   StoryStructure,
   SectionPatch,
+  AdvisorOutput,
 } from '../shared/types.js';
 import { PatchOrchestrator } from './patch-orchestrator.js';
 
@@ -164,6 +165,49 @@ export class UserStoryAgent extends EventEmitter {
     if (this.config.mode === 'interactive' && !this.config.onIterationSelection) {
       throw new Error('Interactive mode requires onIterationSelection callback');
     }
+  }
+
+  /**
+   * Creates an empty StoryStructure for patch-based workflow.
+   * Extracts title from markdown if present, otherwise uses 'Untitled'.
+   * All other fields initialized as empty arrays or empty strings.
+   *
+   * Note: Does NOT parse full markdown content - only title extraction.
+   *
+   * @param markdown - Initial story markdown (may be empty)
+   * @returns StoryStructure for patch-based workflow
+   */
+  private parseOrInitializeStructure(markdown: string): StoryStructure {
+    return {
+      storyStructureVersion: '1.0',
+      systemContextDigest: '',
+      generatedAt: new Date().toISOString(),
+      title: this.extractTitle(markdown) || 'Untitled',
+      story: { asA: '', iWant: '', soThat: '' },
+      userVisibleBehavior: [],
+      outcomeAcceptanceCriteria: [],
+      systemAcceptanceCriteria: [],
+      implementationNotes: {
+        stateOwnership: [],
+        dataFlow: [],
+        apiContracts: [],
+        loadingStates: [],
+        performanceNotes: [],
+        securityNotes: [],
+        telemetryNotes: [],
+      },
+    };
+  }
+
+  /**
+   * Extracts title from markdown (first # heading).
+   *
+   * @param markdown - Story markdown
+   * @returns Title string or null if none
+   */
+  private extractTitle(markdown: string): string | null {
+    const match = markdown.match(/^#\s+(.+)$/m);
+    return match ? match[1].trim() : null;
   }
 
   /**
@@ -378,6 +422,9 @@ export class UserStoryAgent extends EventEmitter {
       state.productContext = this.config.productContext;
     }
 
+    // Initialize StoryStructure for patch-based workflow
+    state.storyStructure = this.parseOrInitializeStructure(initialStory);
+
     try {
       // Run in the configured mode
       if (this.config.mode === 'individual') {
@@ -388,6 +435,13 @@ export class UserStoryAgent extends EventEmitter {
         state = await this.runInteractiveMode(state);
       } else {
         throw new Error(`Unsupported mode: ${this.config.mode}`);
+      }
+
+      // Final rendering from StoryStructure when last iteration used patches
+      // Only render if the most recent iteration used patch-based workflow
+      if (state.storyStructure && state.lastIterationUsedPatchWorkflow) {
+        const renderer = new StoryRenderer();
+        state.currentStory = renderer.toMarkdown(state.storyStructure);
       }
 
       // Build summary (includes failed iterations if any)
@@ -613,6 +667,8 @@ export class UserStoryAgent extends EventEmitter {
     logger.debug(`Iteration details: ${iteration.name} (category: ${iteration.category})`);
 
     try {
+      const inputStoryForResult = state.currentStory;
+
       // Build context prompt
       const contextPrompt = this.contextManager.buildContextPrompt(state);
       logger.debug(
@@ -670,30 +726,69 @@ export class UserStoryAgent extends EventEmitter {
         tokenUsage = response.usage;
       }
 
-      // Parse and validate structured output
-      const parsedOutput = this.parseIterationOutput(responseContent, iteration.id);
-
       const durationMs = Date.now() - startTime;
       logger.info(
         `Completed: ${iteration.id} (${(durationMs / 1000).toFixed(1)}s, ` +
           `${tokenUsage.inputTokens} in / ${tokenUsage.outputTokens} out tokens)`
       );
 
-      // Create iteration result with parsed changes
-      const result: IterationResult = {
-        iterationId: iteration.id,
-        inputStory: state.currentStory,
-        outputStory: parsedOutput.enhancedStory,
-        changesApplied: parsedOutput.changesApplied,
-        timestamp: new Date().toISOString(),
-      };
+      // Try patch-based workflow first (AdvisorOutput)
+      const advisorOutput = this.parseAdvisorOutput(responseContent);
+      let result: IterationResult;
+      if (advisorOutput && state.storyStructure) {
+        const orchestrator = new PatchOrchestrator();
+        const allowedPaths = iteration.allowedPaths ?? [];
+        const { result: newStructure, metrics } = orchestrator.applyPatches(
+          state.storyStructure,
+          advisorOutput.patches,
+          allowedPaths
+        );
+        state.storyStructure = newStructure;
+        // Only set flag when patches were actually applied (not just valid AdvisorOutput with 0 patches applied)
+        if (metrics.applied > 0) {
+          state.lastIterationUsedPatchWorkflow = true;
+        } else {
+          state.lastIterationUsedPatchWorkflow = false;
+        }
+        const renderer = new StoryRenderer();
+        state.currentStory = renderer.toMarkdown(state.storyStructure);
+
+        if (metrics.rejectedPath > 0 || metrics.rejectedValidation > 0) {
+          logger.info(
+            `Iteration ${iteration.id}: applied ${metrics.applied}/${metrics.totalPatches} patches ` +
+              `(${metrics.rejectedPath} rejected: path, ${metrics.rejectedValidation} rejected: validation)`
+          );
+        }
+
+        result = {
+          iterationId: iteration.id,
+          inputStory: inputStoryForResult,
+          outputStory: state.currentStory,
+          changesApplied:
+            metrics.applied > 0
+              ? [{ category: 'patches', description: `Applied ${metrics.applied} patch(es)` }]
+              : [],
+          timestamp: new Date().toISOString(),
+        };
+      } else {
+        // Fallback: treat response as IterationOutput (markdown-based)
+        state.lastIterationUsedPatchWorkflow = false;
+        const parsedOutput = this.parseIterationOutput(responseContent, iteration.id);
+        result = {
+          iterationId: iteration.id,
+          inputStory: inputStoryForResult,
+          outputStory: parsedOutput.enhancedStory,
+          changesApplied: parsedOutput.changesApplied,
+          timestamp: new Date().toISOString(),
+        };
+      }
 
       // Verify the iteration output if evaluator is enabled
       if (this.evaluator) {
         try {
           const verification = await this.evaluator.verify(
-            state.currentStory,
-            parsedOutput.enhancedStory,
+            inputStoryForResult,
+            result.outputStory,
             iteration.id,
             iteration.description
           );
@@ -799,6 +894,32 @@ export class UserStoryAgent extends EventEmitter {
         changesApplied: [],
         confidence: undefined,
       };
+    }
+  }
+
+  /**
+   * Parses LLM response as AdvisorOutput (structured patches).
+   * Returns null if content is not valid AdvisorOutput.
+   *
+   * @param content - Raw response text from Claude
+   * @returns Parsed AdvisorOutput or null
+   */
+  private parseAdvisorOutput(content: string): AdvisorOutput | null {
+    try {
+      const json = extractJSON(content);
+      if (!json || typeof json !== 'object') return null;
+
+      const parsed = AdvisorOutputSchema.safeParse(json);
+      if (!parsed.success) {
+        logger.debug(`Failed to parse AdvisorOutput: ${parsed.error.message}`);
+        return null;
+      }
+
+      return parsed.data as AdvisorOutput;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.debug(`Error parsing AdvisorOutput: ${message}`);
+      return null;
     }
   }
 

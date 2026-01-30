@@ -51,6 +51,8 @@ export interface StoryState {
   currentStory: string;
   /** Structured representation (used in system-workflow; re-rendered after consistency fixes) */
   storyStructure?: StoryStructure;
+  /** Whether the last iteration used the patch-based workflow (for deciding whether to render from StoryStructure) */
+  lastIterationUsedPatchWorkflow?: boolean;
   /** Array of iteration IDs that have been applied to this story */
   appliedIterations: string[];
   /** Product context information, if available */
