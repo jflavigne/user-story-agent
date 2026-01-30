@@ -41,6 +41,8 @@ import type {
   AdvisorOutput,
 } from '../shared/types.js';
 import { PatchOrchestrator } from './patch-orchestrator.js';
+import { StoryJudge } from './story-judge.js';
+import { StoryRewriter } from './story-rewriter.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -444,6 +446,9 @@ export class UserStoryAgent extends EventEmitter {
         state.currentStory = renderer.toMarkdown(state.storyStructure);
       }
 
+      // Pass 1c: Judge and potentially rewrite
+      state = await this.judgeAndRewrite(state);
+
       // Build summary (includes failed iterations if any)
       const summary = this.contextManager.buildConclusionSummary(state);
 
@@ -454,6 +459,8 @@ export class UserStoryAgent extends EventEmitter {
         appliedIterations: state.appliedIterations,
         iterationResults: state.iterationResults,
         summary: summary || 'No iterations were applied.',
+        judgeResults: state.judgeResults,
+        needsManualReview: state.needsManualReview,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -464,6 +471,8 @@ export class UserStoryAgent extends EventEmitter {
         appliedIterations: state.appliedIterations,
         iterationResults: state.iterationResults,
         summary: `Error processing user story: ${errorMessage}`,
+        judgeResults: state.judgeResults,
+        needsManualReview: state.needsManualReview,
       };
     }
   }
@@ -921,6 +930,97 @@ export class UserStoryAgent extends EventEmitter {
       logger.debug(`Error parsing AdvisorOutput: ${message}`);
       return null;
     }
+  }
+
+  /**
+   * Judges the current story and rewrites if quality is below threshold.
+   * Pass 1c: Judge after generation
+   * Pass 1b: Rewrite if needed
+   *
+   * @param state - Current story state
+   * @param systemContext - System discovery context (optional)
+   * @returns Updated state with judge results
+   */
+  private async judgeAndRewrite(
+    state: StoryState,
+    systemContext?: SystemDiscoveryContext
+  ): Promise<StoryState> {
+    const QUALITY_THRESHOLD = 3.5;
+
+    const judge = new StoryJudge(this.claudeClient);
+    const judgeResult = await judge.judgeStory(
+      state.currentStory,
+      systemContext ?? this.buildEmptySystemContext()
+    );
+
+    logger.info(
+      `Story quality score: ${judgeResult.overallScore}/5 (threshold: ${QUALITY_THRESHOLD})`
+    );
+
+    let updatedState: StoryState = {
+      ...state,
+      judgeResults: {
+        pass1c: judgeResult,
+      },
+    };
+
+    if (judgeResult.overallScore < QUALITY_THRESHOLD) {
+      logger.info(`Score below threshold, triggering rewrite (Pass 1b)`);
+
+      const rewriter = new StoryRewriter(this.claudeClient);
+      const rewrittenStory = await rewriter.rewriteForSectionSeparation(
+        state.currentStory,
+        judgeResult,
+        systemContext ?? this.buildEmptySystemContext()
+      );
+
+      updatedState.currentStory = rewrittenStory;
+
+      const rejudgeResult = await judge.judgeStory(
+        rewrittenStory,
+        systemContext ?? this.buildEmptySystemContext()
+      );
+
+      logger.info(`Quality after rewrite: ${rejudgeResult.overallScore}/5`);
+
+      updatedState.judgeResults = {
+        pass1c: judgeResult,
+        pass1cAfterRewrite: rejudgeResult,
+      };
+
+      if (rejudgeResult.overallScore < QUALITY_THRESHOLD) {
+        logger.warn(`Story still below quality threshold after rewrite`);
+        updatedState.needsManualReview = {
+          reason: 'low-quality-after-rewrite',
+          score: rejudgeResult.overallScore,
+        };
+      }
+    }
+
+    return updatedState;
+  }
+
+  /**
+   * Builds an empty SystemDiscoveryContext for judge/rewrite when none available.
+   */
+  private buildEmptySystemContext(): SystemDiscoveryContext {
+    return {
+      componentGraph: {
+        components: {},
+        compositionEdges: [],
+        coordinationEdges: [],
+        dataFlows: [],
+      },
+      sharedContracts: {
+        stateModels: [],
+        eventRegistry: [],
+        standardStates: [],
+        dataFlows: [],
+      },
+      componentRoles: [],
+      productVocabulary: {},
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**

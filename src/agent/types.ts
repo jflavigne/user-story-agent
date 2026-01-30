@@ -3,7 +3,7 @@
  */
 
 import type { IterationId } from '../shared/iteration-registry.js';
-import type { ProductContext, IterationCategory, StoryInterconnections } from '../shared/types.js';
+import type { ProductContext, IterationCategory, StoryInterconnections, JudgeRubric } from '../shared/types.js';
 import type { IterationResult } from './state/story-state.js';
 
 /**
@@ -78,6 +78,18 @@ export interface AgentResult {
   iterationResults: IterationResult[];
   /** Human-readable summary of the processing */
   summary: string;
+
+  /** Judge results from Pass 1c */
+  judgeResults?: {
+    pass1c?: JudgeRubric;
+    pass1cAfterRewrite?: JudgeRubric;
+  };
+
+  /** Manual review flag when quality remains low */
+  needsManualReview?: {
+    reason: string;
+    score: number;
+  };
 }
 
 /**

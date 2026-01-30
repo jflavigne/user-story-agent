@@ -9,6 +9,7 @@ import type {
   SystemDiscoveryContext,
   StoryInterconnections,
   StoryStructure,
+  JudgeRubric,
 } from '../../shared/types.js';
 import type { FailedIteration } from '../types.js';
 import type { VerificationResult } from '../../shared/schemas.js';
@@ -67,6 +68,18 @@ export interface StoryState {
   systemContext?: SystemDiscoveryContext | null;
   /** Pass 2 interconnection metadata when run (UI mapping, contracts, ownership, related stories) */
   interconnections?: StoryInterconnections | null;
+
+  /** Judge results for quality assessment */
+  judgeResults?: {
+    pass1c?: JudgeRubric;
+    pass1cAfterRewrite?: JudgeRubric;
+  };
+
+  /** Manual review flag when quality remains low after rewrite */
+  needsManualReview?: {
+    reason: string;
+    score: number;
+  };
 }
 
 /**

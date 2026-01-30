@@ -9,6 +9,7 @@ import { ClaudeClient } from '../../src/agent/claude-client.js';
 import { getIterationById, WORKFLOW_ORDER } from '../../src/shared/iteration-registry.js';
 import type { ProductContext } from '../../src/shared/types.js';
 import type { IterationId } from '../../src/shared/iteration-registry.js';
+import type { JudgeRubric } from '../../src/shared/types.js';
 import { StreamingHandler } from '../../src/agent/streaming.js';
 
 // Mock ClaudeClient
@@ -17,6 +18,40 @@ vi.mock('../../src/agent/claude-client.js', () => {
     ClaudeClient: vi.fn(),
   };
 });
+
+// Mock StoryJudge and StoryRewriter so judge/rewrite don't call API; tests override return values
+const mockJudgeStory = vi.fn();
+const mockRewriteForSectionSeparation = vi.fn();
+
+vi.mock('../../src/agent/story-judge.js', () => ({
+  StoryJudge: vi.fn().mockImplementation(() => ({
+    judgeStory: mockJudgeStory,
+  })),
+}));
+
+vi.mock('../../src/agent/story-rewriter.js', () => ({
+  StoryRewriter: vi.fn().mockImplementation(() => ({
+    rewriteForSectionSeparation: mockRewriteForSectionSeparation,
+  })),
+}));
+
+/** Minimal JudgeRubric for tests (overallScore 0-5) */
+function minimalJudgeRubric(overallScore: 0 | 1 | 2 | 3 | 4 | 5): JudgeRubric {
+  return {
+    sectionSeparation: { score: overallScore, reasoning: '', violations: [] },
+    correctnessVsSystemContext: { score: overallScore, reasoning: '' },
+    testability: {
+      outcomeAC: { score: overallScore, reasoning: '' },
+      systemAC: { score: overallScore, reasoning: '' },
+    },
+    completeness: { score: overallScore, reasoning: '' },
+    overallScore,
+    recommendation: overallScore >= 3.5 ? 'approve' : 'rewrite',
+    newRelationships: [],
+    needsSystemContextUpdate: false,
+    confidenceByRelationship: {},
+  };
+}
 
 describe('UserStoryAgent', () => {
   let mockSendMessage: ReturnType<typeof vi.fn>;
@@ -72,6 +107,10 @@ describe('UserStoryAgent', () => {
         outputTokens: 50,
       },
     });
+
+    // Default: judge returns high score so no rewrite (Pass 1c only)
+    mockJudgeStory.mockResolvedValue(minimalJudgeRubric(5));
+    mockRewriteForSectionSeparation.mockResolvedValue('Rewritten story');
   });
 
   describe('Config Validation', () => {
@@ -872,6 +911,72 @@ describe('UserStoryAgent', () => {
 
       expect(mockSendMessage).toHaveBeenCalled();
       expect(mockSendMessageStreaming).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Judge-First Workflow (Pass 1c)', () => {
+    it('should call judge after story generation and not trigger rewrite when score above threshold', async () => {
+      mockJudgeStory.mockResolvedValue(minimalJudgeRubric(4));
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      expect(mockJudgeStory).toHaveBeenCalledTimes(1);
+      expect(mockRewriteForSectionSeparation).not.toHaveBeenCalled();
+      expect(result.judgeResults?.pass1c?.overallScore).toBe(4);
+      expect(result.judgeResults?.pass1cAfterRewrite).toBeUndefined();
+      expect(result.needsManualReview).toBeUndefined();
+    });
+
+    it('should trigger rewrite when score below threshold and re-judge once', async () => {
+      mockJudgeStory
+        .mockResolvedValueOnce(minimalJudgeRubric(2))
+        .mockResolvedValueOnce(minimalJudgeRubric(4));
+      mockRewriteForSectionSeparation.mockResolvedValue('Rewritten story markdown');
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      expect(mockJudgeStory).toHaveBeenCalledTimes(2);
+      expect(mockRewriteForSectionSeparation).toHaveBeenCalledTimes(1);
+      expect(result.judgeResults?.pass1c?.overallScore).toBe(2);
+      expect(result.judgeResults?.pass1cAfterRewrite?.overallScore).toBe(4);
+      expect(result.enhancedStory).toBe('Rewritten story markdown');
+      expect(result.needsManualReview).toBeUndefined();
+    });
+
+    it('should set needsManualReview when score still below threshold after rewrite', async () => {
+      mockJudgeStory
+        .mockResolvedValueOnce(minimalJudgeRubric(2))
+        .mockResolvedValueOnce(minimalJudgeRubric(3));
+      mockRewriteForSectionSeparation.mockResolvedValue('Rewritten story markdown');
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      expect(mockJudgeStory).toHaveBeenCalledTimes(2);
+      expect(mockRewriteForSectionSeparation).toHaveBeenCalledTimes(1);
+      expect(result.judgeResults?.pass1cAfterRewrite?.overallScore).toBe(3);
+      expect(result.needsManualReview).toEqual({
+        reason: 'low-quality-after-rewrite',
+        score: 3,
+      });
+    });
+
+    it('should not call rewrite when score above threshold and not set manual review flag', async () => {
+      mockJudgeStory.mockResolvedValue(minimalJudgeRubric(4));
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.processUserStory('As a user, I want to login');
+
+      expect(result.success).toBe(true);
+      expect(mockJudgeStory).toHaveBeenCalledTimes(1);
+      expect(mockRewriteForSectionSeparation).not.toHaveBeenCalled();
+      expect(result.judgeResults?.pass1c?.overallScore).toBe(4);
+      expect(result.needsManualReview).toBeUndefined();
     });
   });
 });
