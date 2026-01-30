@@ -152,7 +152,14 @@ export class PatchValidator {
     }
 
     if (patch.op === 'replace' || patch.op === 'remove') {
-      if (!patch.match?.id && !patch.match?.textEquals) {
+      // Story line paths (asA, iWant, soThat) are string fields - they only support replace, not remove
+      if (isStoryLinePath(patch.path)) {
+        if (patch.op === 'remove') {
+          errors.push('remove operation not supported on story line paths (use replace instead)');
+          return { valid: false, errors };
+        }
+        // For replace on story lines, no match is needed
+      } else if (!patch.match?.id && !patch.match?.textEquals) {
         errors.push('replace/remove must specify match.id or match.textEquals');
         return { valid: false, errors };
       }

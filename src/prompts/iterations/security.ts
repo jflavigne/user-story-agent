@@ -19,7 +19,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on what users see and experience, not implementation details.
  */
-export const SECURITY_PROMPT = `Analyze the mockup or design to identify security requirements and how users experience trust, data protection, and secure interactions.
+export const SECURITY_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- systemAcceptanceCriteria (AC-SYS-* items)
+- implementationNotes.securityNotes
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "systemAcceptanceCriteria",
+      "item": { "id": "AC-SYS-001", "text": "..." },
+      "metadata": { "advisorId": "security", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "security", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify security requirements and how users experience trust, data protection, and secure interactions.
 
 ## Data Handling Transparency
 
@@ -153,13 +182,12 @@ export const SECURITY_PROMPT = `Analyze the mockup or design to identify securit
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies all authentication and authorization user experience requirements
-- Documents how data handling and privacy are communicated to users
-- Explains security indicators and trust-building elements
-- Describes privacy controls and user data management features
-- Maps security requirements to user story acceptance criteria
-- Focuses on user-visible security experience, not implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target systemAcceptanceCriteria or implementationNotes.securityNotes. Add or replace items to document:
+- Authentication and authorization user experience requirements
+- Data handling and privacy communication
+- Security indicators and trust-building elements
+- Acceptance criteria for security (AC-SYS-*)
+- Security notes in implementationNotes`;
 
 /**
  * Metadata for the security requirements iteration

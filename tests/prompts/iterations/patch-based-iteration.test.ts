@@ -55,6 +55,7 @@ export function runPatchBasedIterationHarness(
   applied: number;
   rejectedPath: number;
   rejectedValidation: number;
+  rejectedReasons: string[];
 } {
   const entry = getIterationById(iterationId);
   if (!entry?.allowedPaths?.length) {
@@ -79,6 +80,7 @@ export function runPatchBasedIterationHarness(
     applied: metrics.applied,
     rejectedPath: metrics.rejectedPath,
     rejectedValidation: metrics.rejectedValidation,
+    rejectedReasons: metrics.rejectedReasons,
   };
 }
 
@@ -206,6 +208,312 @@ describe('patch-based iteration harness (reusable for USA-38)', () => {
       expect(markdownBefore).not.toContain('Button has focus visible state');
       expect(markdownAfter).toContain('# Login');
       expect(markdownAfter).toContain('As a user');
+    });
+  });
+
+  describe('user-roles iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'replace',
+            path: 'story.asA',
+            item: { id: 'role-1', text: 'registered user' },
+            metadata: { advisorId: 'user-roles' },
+          },
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'Role-specific access criterion' },
+            metadata: { advisorId: 'user-roles' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('user-roles')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('user-roles', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.story.asA).toBe('registered user');
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('registered user');
+      expect(result.markdownAfter).toContain('Role-specific access criterion');
+    });
+  });
+
+  describe('validation iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'Email format validated on blur' },
+            metadata: { advisorId: 'validation' },
+          },
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'System shows error for invalid email' },
+            metadata: { advisorId: 'validation' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('validation')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('validation', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Email format validated on blur');
+      expect(result.markdownAfter).toContain('System shows error for invalid email');
+    });
+  });
+
+  describe('accessibility iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'All controls focusable via keyboard' },
+            metadata: { advisorId: 'accessibility' },
+          },
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Focus order follows visual order' },
+            metadata: { advisorId: 'accessibility' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('accessibility')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('accessibility', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('All controls focusable via keyboard');
+      expect(result.markdownAfter).toContain('Focus order follows visual order');
+    });
+  });
+
+  describe('performance iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Page shows skeleton within 200ms' },
+            metadata: { advisorId: 'performance' },
+          },
+          {
+            op: 'add',
+            path: 'implementationNotes.performanceNotes',
+            item: { id: 'IMPL-PERF-001', text: 'LCP target under 2.5s' },
+            metadata: { advisorId: 'performance' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('performance')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('performance', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.implementationNotes.performanceNotes).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Page shows skeleton within 200ms');
+      expect(result.markdownAfter).toContain('LCP target under 2.5s');
+    });
+  });
+
+  describe('security iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Login form served over HTTPS' },
+            metadata: { advisorId: 'security' },
+          },
+          {
+            op: 'add',
+            path: 'implementationNotes.securityNotes',
+            item: { id: 'IMPL-SEC-001', text: 'Sensitive fields not logged' },
+            metadata: { advisorId: 'security' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('security')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('security', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.implementationNotes.securityNotes).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Login form served over HTTPS');
+      expect(result.markdownAfter).toContain('Sensitive fields not logged');
+    });
+  });
+
+  describe('responsive-web iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'userVisibleBehavior',
+            item: { id: 'UVB-NEW', text: 'Hamburger menu on viewport under 768px' },
+            metadata: { advisorId: 'responsive-web' },
+          },
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Touch targets at least 44px' },
+            metadata: { advisorId: 'responsive-web' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('responsive-web')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('responsive-web', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.userVisibleBehavior).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Hamburger menu on viewport under 768px');
+      expect(result.markdownAfter).toContain('Touch targets at least 44px');
+    });
+  });
+
+  describe('responsive-native iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'userVisibleBehavior',
+            item: { id: 'UVB-NEW', text: 'Biometric auth option on supported devices' },
+            metadata: { advisorId: 'responsive-native' },
+          },
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Offline queue syncs when online' },
+            metadata: { advisorId: 'responsive-native' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('responsive-native')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('responsive-native', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.userVisibleBehavior).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Biometric auth option on supported devices');
+      expect(result.markdownAfter).toContain('Offline queue syncs when online');
+    });
+  });
+
+  describe('language-support iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'UI language switch persists across sessions' },
+            metadata: { advisorId: 'language-support' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('language-support')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('language-support', mockOutput, baseStory);
+      expect(result.applied).toBe(1);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.markdownAfter).toContain('UI language switch persists across sessions');
+    });
+  });
+
+  describe('locale-formatting iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'Dates shown in user locale format' },
+            metadata: { advisorId: 'locale-formatting' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('locale-formatting')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('locale-formatting', mockOutput, baseStory);
+      expect(result.applied).toBe(1);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.markdownAfter).toContain('Dates shown in user locale format');
+    });
+  });
+
+  describe('cultural-appropriateness iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'outcomeAcceptanceCriteria',
+            item: { id: 'AC-OUT-NEW', text: 'Icons avoid culture-specific gestures' },
+            metadata: { advisorId: 'cultural-appropriateness' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('cultural-appropriateness')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('cultural-appropriateness', mockOutput, baseStory);
+      expect(result.applied).toBe(1);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.outcomeAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.markdownAfter).toContain('Icons avoid culture-specific gestures');
+    });
+  });
+
+  describe('analytics iteration', () => {
+    it('applies mock advisor patches and only allowed paths are used', () => {
+      const mockOutput: AdvisorOutput = {
+        patches: [
+          {
+            op: 'add',
+            path: 'systemAcceptanceCriteria',
+            item: { id: 'AC-SYS-NEW', text: 'Submit events tracked with context' },
+            metadata: { advisorId: 'analytics' },
+          },
+          {
+            op: 'add',
+            path: 'implementationNotes.telemetryNotes',
+            item: { id: 'IMPL-TEL-001', text: 'No PII in event payloads' },
+            metadata: { advisorId: 'analytics' },
+          },
+        ],
+      };
+      const allowedPaths = getIterationById('analytics')?.allowedPaths ?? [];
+      assertOnlyAllowedPaths(mockOutput.patches, allowedPaths);
+      const result = runPatchBasedIterationHarness('analytics', mockOutput, baseStory);
+      expect(result.applied).toBe(2);
+      expect(result.rejectedPath).toBe(0);
+      expect(result.result.systemAcceptanceCriteria).toContainEqual(mockOutput.patches[0].item);
+      expect(result.result.implementationNotes.telemetryNotes).toContainEqual(mockOutput.patches[1].item);
+      expect(result.markdownAfter).toContain('Submit events tracked with context');
+      expect(result.markdownAfter).toContain('No PII in event payloads');
     });
   });
 });

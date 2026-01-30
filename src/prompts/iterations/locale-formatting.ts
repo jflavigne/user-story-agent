@@ -19,7 +19,35 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on USER EXPERIENCE behaviors, not technical implementation details.
  */
-export const LOCALE_FORMATTING_PROMPT = `Analyze the mockup or design to identify locale-specific formatting requirements and how users experience formatted data in different regions.
+export const LOCALE_FORMATTING_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "locale-formatting", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "locale-formatting", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify locale-specific formatting requirements and how users experience formatted data in different regions.
 
 ## Date and Time Display Formats
 
@@ -171,13 +199,12 @@ export const LOCALE_FORMATTING_PROMPT = `Analyze the mockup or design to identif
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies date and time display format requirements by region
-- Documents number formatting with appropriate separators
-- Explains currency display and symbol positioning
-- Describes address and phone number format variations
-- Maps measurement unit system requirements
-- Covers user experience of locale-specific formatting, not technical implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria. Add or replace items to document:
+- Date and time display format requirements by region
+- Number formatting with appropriate separators
+- Currency display and symbol positioning
+- Address and phone number format variations
+- Acceptance criteria for locale formatting (AC-OUT-*)`;
 
 /**
  * Metadata for the locale formatting iteration

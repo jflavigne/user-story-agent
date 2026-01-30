@@ -16,7 +16,38 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Mapping role-specific interactions with UI elements
  * - Considering role-based access and permissions
  */
-export const USER_ROLES_PROMPT = `Analyze the mockup or design to identify distinct user roles and their specific interactions with the interface.
+export const USER_ROLES_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- story.asA
+- story.iWant
+- story.soThat
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "user-roles", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "user-roles", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify distinct user roles and their specific interactions with the interface.
 
 ## Role Identification
 
@@ -66,11 +97,10 @@ export const USER_ROLES_PROMPT = `Analyze the mockup or design to identify disti
 
 ## Output
 
-Provide a structured analysis that:
-- Lists all identified user roles
-- Describes each role's goals and interactions
-- Maps role-specific features and permissions
-- Recommends how to structure user stories to accommodate role differences`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target story.asA, story.iWant, story.soThat, or outcomeAcceptanceCriteria. Add or replace items to document:
+- Identified user roles (story.asA, story.iWant, story.soThat)
+- Role-specific acceptance criteria (AC-OUT-* in outcomeAcceptanceCriteria)
+- Role-based features and permissions`;
 
 /**
  * Metadata for the user roles iteration

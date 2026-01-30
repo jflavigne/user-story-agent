@@ -19,7 +19,35 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on USER EXPERIENCE behaviors, not technical implementation details.
  */
-export const LANGUAGE_SUPPORT_PROMPT = `Analyze the mockup or design to identify language support requirements and how users experience multi-language interfaces.
+export const LANGUAGE_SUPPORT_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "language-support", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "language-support", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify language support requirements and how users experience multi-language interfaces.
 
 ## Language Selection and Switching
 
@@ -172,14 +200,13 @@ export const LANGUAGE_SUPPORT_PROMPT = `Analyze the mockup or design to identify
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies language selection and switching mechanisms from a user perspective
-- Documents RTL text display and interaction requirements
-- Explains character encoding and special character handling
-- Describes language-specific content adaptation
-- Maps fallback behavior when translations are missing
-- Covers partial translation and mixed-language scenarios
-- Focuses on user experience behaviors, not technical implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria. Add or replace items to document:
+- Language selection and switching mechanisms
+- RTL text display and interaction requirements
+- Character encoding and special character handling
+- Language-specific content adaptation
+- Fallback behavior when translations are missing
+- Acceptance criteria for language support (AC-OUT-*)`;
 
 /**
  * Metadata for the language support iteration

@@ -18,7 +18,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Real-time vs submit-time validation feedback
  * - Field format constraints (phone, date, etc.)
  */
-export const VALIDATION_PROMPT = `Analyze the mockup or design to identify form field validation rules and how users experience validation feedback.
+export const VALIDATION_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+- systemAcceptanceCriteria (AC-SYS-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "validation", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "validation", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify form field validation rules and how users experience validation feedback.
 
 ## Validation Requirements
 
@@ -123,12 +152,11 @@ export const VALIDATION_PROMPT = `Analyze the mockup or design to identify form 
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Lists all form fields and their validation requirements
-- Describes validation timing and user experience
-- Documents error messages and visual indicators
-- Explains how users learn about and resolve validation errors
-- Maps validation requirements to user story acceptance criteria`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria or systemAcceptanceCriteria. Add or replace items to document:
+- Form fields and validation requirements
+- Validation timing and user experience
+- Error messages and visual indicators
+- Acceptance criteria for validation (AC-OUT-*, AC-SYS-*)`;
 
 /**
  * Metadata for the validation rules iteration

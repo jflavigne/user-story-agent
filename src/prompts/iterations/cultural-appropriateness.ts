@@ -19,7 +19,35 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on USER EXPERIENCE behaviors, not technical implementation details.
  */
-export const CULTURAL_APPROPRIATENESS_PROMPT = `Analyze the mockup or design to identify cultural appropriateness requirements and how users from different cultural backgrounds experience and interpret interface elements.
+export const CULTURAL_APPROPRIATENESS_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "cultural-appropriateness", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "cultural-appropriateness", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify cultural appropriateness requirements and how users from different cultural backgrounds experience and interpret interface elements.
 
 ## Color Meanings Across Cultures
 
@@ -171,13 +199,12 @@ export const CULTURAL_APPROPRIATENESS_PROMPT = `Analyze the mockup or design to 
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies color meanings and usage that respect cultural differences
-- Documents icon and symbol interpretation across cultures
-- Explains cultural sensitivity requirements for imagery
-- Describes name and title convention adaptations
-- Maps cultural assumptions in workflows that need consideration
-- Covers user experience of culturally appropriate interfaces, not technical implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria. Add or replace items to document:
+- Color meanings and usage that respect cultural differences
+- Icon and symbol interpretation across cultures
+- Cultural sensitivity requirements for imagery
+- Name and title convention adaptations
+- Acceptance criteria for cultural appropriateness (AC-OUT-*)`;
 
 /**
  * Metadata for the cultural appropriateness iteration

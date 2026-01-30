@@ -18,7 +18,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Color contrast and visual accessibility
  * - Focus indicators
  */
-export const ACCESSIBILITY_PROMPT = `Analyze the mockup or design to identify accessibility requirements and how users with disabilities will experience the interface.
+export const ACCESSIBILITY_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+- systemAcceptanceCriteria (AC-SYS-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "outcomeAcceptanceCriteria",
+      "item": { "id": "AC-OUT-001", "text": "..." },
+      "metadata": { "advisorId": "accessibility", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "accessibility", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify accessibility requirements and how users with disabilities will experience the interface.
 
 ## Keyboard Navigation
 
@@ -154,13 +183,12 @@ export const ACCESSIBILITY_PROMPT = `Analyze the mockup or design to identify ac
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Lists all accessibility requirements for keyboard users
-- Documents screen reader compatibility needs
-- Identifies form accessibility requirements
-- Describes state change announcements needed
-- Explains visual accessibility considerations
-- Maps accessibility requirements to user story acceptance criteria`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria or systemAcceptanceCriteria. Add or replace items to document:
+- Accessibility requirements for keyboard users
+- Screen reader compatibility needs
+- Form accessibility and state change announcements
+- Visual accessibility considerations
+- Acceptance criteria for accessibility (AC-OUT-*, AC-SYS-*)`;
 
 /**
  * Metadata for the accessibility requirements iteration

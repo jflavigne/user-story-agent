@@ -17,7 +17,37 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Timeout handling and error recovery
  * - Balance between technical metrics and user experience
  */
-export const PERFORMANCE_PROMPT = `Analyze the mockup or design to identify performance requirements and how users experience speed, responsiveness, and feedback during waits.
+export const PERFORMANCE_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- systemAcceptanceCriteria (AC-SYS-* items)
+- implementationNotes.performanceNotes
+- implementationNotes.loadingStates
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "systemAcceptanceCriteria",
+      "item": { "id": "AC-SYS-001", "text": "..." },
+      "metadata": { "advisorId": "performance", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "performance", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify performance requirements and how users experience speed, responsiveness, and feedback during waits.
 
 ## Initial Page Load
 
@@ -132,13 +162,12 @@ export const PERFORMANCE_PROMPT = `Analyze the mockup or design to identify perf
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies all loading states and indicators needed
-- Documents response time expectations for different actions
-- Explains how users experience performance during waits
-- Describes timeout and error recovery mechanisms
-- Maps performance requirements to user story acceptance criteria
-- Balances technical metrics with user experience considerations`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target systemAcceptanceCriteria, implementationNotes.performanceNotes, or implementationNotes.loadingStates. Add or replace items to document:
+- Loading states and indicators needed
+- Response time expectations for different actions
+- Timeout and error recovery mechanisms
+- Acceptance criteria for performance (AC-SYS-*)
+- Performance and loading notes in implementationNotes`;
 
 /**
  * Metadata for the performance requirements iteration

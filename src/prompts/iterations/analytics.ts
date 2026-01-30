@@ -20,7 +20,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on USER EXPERIENCE behaviors, not technical analytics implementation details.
  */
-export const ANALYTICS_PROMPT = `Analyze the mockup or design to identify analytics requirements and how user behavior patterns can be understood to improve the experience.
+export const ANALYTICS_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- systemAcceptanceCriteria (AC-SYS-* items)
+- implementationNotes.telemetryNotes
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "systemAcceptanceCriteria",
+      "item": { "id": "AC-SYS-001", "text": "..." },
+      "metadata": { "advisorId": "analytics", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "analytics", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify analytics requirements and how user behavior patterns can be understood to improve the experience.
 
 ## User Interaction Tracking
 
@@ -190,13 +219,13 @@ export const ANALYTICS_PROMPT = `Analyze the mockup or design to identify analyt
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies user interaction tracking requirements from a user behavior perspective
-- Documents duration and timing metrics that reveal user experience patterns
-- Explains frequency analysis that shows usage patterns and user needs
-- Describes user journey mapping that reveals navigation paths and drop-off points
-- Maps engagement metrics that indicate feature adoption and content consumption
-- Focuses on user experience behaviors and insights, not technical analytics implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target systemAcceptanceCriteria or implementationNotes.telemetryNotes. Add or replace items to document:
+- User interaction tracking requirements
+- Duration and timing metrics
+- Frequency analysis and usage patterns
+- User journey mapping and drop-off points
+- Acceptance criteria for analytics (AC-SYS-*)
+- Telemetry notes in implementationNotes`;
 
 /**
  * Metadata for the analytics iteration

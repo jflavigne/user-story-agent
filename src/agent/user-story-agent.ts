@@ -34,7 +34,12 @@ import type {
   StandardState,
   ComponentRole,
   StoryInterconnections,
+  GlobalConsistencyReport,
+  FixPatch,
+  StoryStructure,
+  SectionPatch,
 } from '../shared/types.js';
+import { PatchOrchestrator } from './patch-orchestrator.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -795,6 +800,87 @@ export class UserStoryAgent extends EventEmitter {
         confidence: undefined,
       };
     }
+  }
+
+  /**
+   * Applies a single consistency fix to a story structure via PatchOrchestrator.
+   *
+   * @param story - Current story structure
+   * @param fix - Fix patch from global consistency report
+   * @returns Updated story structure and whether the patch was applied
+   */
+  private applyConsistencyFix(
+    story: StoryStructure,
+    fix: FixPatch
+  ): { structure: StoryStructure; applied: boolean } {
+    const patch: SectionPatch = {
+      op: fix.operation,
+      path: fix.path,
+      item: fix.item,
+      match: fix.match,
+      metadata: { advisorId: 'global-consistency', reasoning: fix.reasoning },
+    };
+
+    const orchestrator = new PatchOrchestrator();
+    const { result, metrics } = orchestrator.applyPatches(story, [patch], [fix.path]);
+
+    return {
+      structure: result,
+      applied: metrics.applied > 0,
+    };
+  }
+
+  /**
+   * Auto-applies high-confidence consistency fixes from a global consistency report.
+   * Only applies fixes with confidence > 0.8 and allowed types. Updates StoryStructure
+   * then re-renders markdown for each affected story.
+   *
+   * @param stories - Map of storyId to { structure, markdown }
+   * @param report - Global consistency report (issues + fixes)
+   * @returns Map of storyId to updated { structure, markdown }
+   */
+  async applyGlobalConsistencyFixes(
+    stories: Map<string, { structure: StoryStructure; markdown: string }>,
+    report: GlobalConsistencyReport
+  ): Promise<Map<string, { structure: StoryStructure; markdown: string }>> {
+    const HIGH_CONFIDENCE_THRESHOLD = 0.8;
+    const ALLOWED_TYPES = [
+      'add-bidirectional-link',
+      'normalize-contract-id',
+      'normalize-term-to-vocabulary',
+    ] as const;
+
+    const applicableFixes = report.fixes.filter(
+      (f) => f.confidence > HIGH_CONFIDENCE_THRESHOLD && ALLOWED_TYPES.includes(f.type)
+    );
+
+    logger.info(
+      `Auto-applying ${applicableFixes.length} high-confidence fixes (${report.fixes.length - applicableFixes.length} flagged for manual review)`
+    );
+
+    const updated = new Map(stories);
+
+    for (const fix of applicableFixes) {
+      const entry = updated.get(fix.storyId);
+      if (!entry) {
+        logger.warn(`Story ${fix.storyId} not found, skipping fix`);
+        continue;
+      }
+
+      const { structure: updatedStructure, applied } = this.applyConsistencyFix(entry.structure, fix);
+
+      if (applied) {
+        const renderer = new StoryRenderer();
+        const updatedMarkdown = renderer.toMarkdown(updatedStructure);
+        updated.set(fix.storyId, { structure: updatedStructure, markdown: updatedMarkdown });
+        logger.info(`Auto-applied fix: ${fix.type} to story ${fix.storyId} at ${fix.path}`);
+      } else {
+        // Patch didn't apply - keep existing entry unchanged
+        logger.warn(`Failed to apply fix: ${fix.type} to ${fix.storyId}`);
+      }
+    }
+
+    return updated;
   }
 }
 

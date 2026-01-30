@@ -19,7 +19,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on FUNCTIONAL behaviors users experience, not visual appearance.
  */
-export const RESPONSIVE_WEB_PROMPT = `Analyze the mockup or design to identify responsive web requirements and how users experience functional behaviors across different screen sizes (mobile, tablet, desktop).
+export const RESPONSIVE_WEB_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- userVisibleBehavior (UVB-* items)
+- systemAcceptanceCriteria (AC-SYS-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "userVisibleBehavior",
+      "item": { "id": "UVB-001", "text": "..." },
+      "metadata": { "advisorId": "responsive-web", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "responsive-web", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify responsive web requirements and how users experience functional behaviors across different screen sizes (mobile, tablet, desktop).
 
 ## Navigation Behavior Across Breakpoints
 
@@ -174,14 +203,12 @@ export const RESPONSIVE_WEB_PROMPT = `Analyze the mockup or design to identify r
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies navigation behavior changes across breakpoints
-- Documents touch vs. click interaction differences
-- Explains content reflow and layout behavior
-- Describes feature availability by device type
-- Maps input method differences to user experience
-- Covers breakpoint transitions and orientation handling
-- Focuses on functional behaviors users experience, not visual design details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target userVisibleBehavior or systemAcceptanceCriteria. Add or replace items to document:
+- Navigation behavior changes across breakpoints
+- Touch vs. click interaction differences
+- Content reflow and layout behavior
+- Feature availability by device type
+- Acceptance criteria for responsive web (UVB-*, AC-SYS-*)`;
 
 /**
  * Metadata for the responsive web requirements iteration

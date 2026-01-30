@@ -2,7 +2,14 @@
  * Story state management for tracking user story through enhancement iterations
  */
 
-import type { ProductContext, StoryMetadata, ChangeApplied, SystemDiscoveryContext, StoryInterconnections } from '../../shared/types.js';
+import type {
+  ProductContext,
+  StoryMetadata,
+  ChangeApplied,
+  SystemDiscoveryContext,
+  StoryInterconnections,
+  StoryStructure,
+} from '../../shared/types.js';
 import type { FailedIteration } from '../types.js';
 import type { VerificationResult } from '../../shared/schemas.js';
 
@@ -42,6 +49,8 @@ export interface StoryState {
   originalStory: string;
   /** The current story content after all applied iterations */
   currentStory: string;
+  /** Structured representation (used in system-workflow; re-rendered after consistency fixes) */
+  storyStructure?: StoryStructure;
   /** Array of iteration IDs that have been applied to this story */
   appliedIterations: string[];
   /** Product context information, if available */

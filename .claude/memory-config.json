@@ -1,0 +1,45 @@
+{
+  "local": {
+    "enabled": true,
+    "provider": "openmemory",
+    "endpoint": "http://localhost:8765"
+  },
+  "cloud": {
+    "enabled": false,
+    "provider": "mem0",
+    "api_key_env": "MEM0_API_KEY"
+  },
+  "sync": {
+    "push_on_save": true,
+    "pull_on_context": true,
+    "pull_interval_minutes": 5,
+    "conflict_resolution": "prompt"
+  },
+  "defaults": {
+    "category": "learning",
+    "confidence": "medium",
+    "privacy_level": 1
+  },
+  "privacy_levels": {
+    "0": {
+      "label": "local-only",
+      "description": "Never syncs to cloud",
+      "indicator": "LOCAL"
+    },
+    "1": {
+      "label": "personal",
+      "description": "Syncs to personal cloud account",
+      "indicator": "SYNC"
+    },
+    "2": {
+      "label": "team",
+      "description": "Syncs with team scope",
+      "indicator": "TEAM"
+    },
+    "3": {
+      "label": "org",
+      "description": "Syncs organization-wide",
+      "indicator": "ORG"
+    }
+  }
+}

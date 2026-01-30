@@ -296,5 +296,20 @@ describe('PatchValidator', () => {
       const result = validator.validate(patch, baseStory);
       expect(result.valid).toBe(true);
     });
+
+    it('rejects remove on story line paths (asA, iWant, soThat)', () => {
+      for (const path of ['story.asA', 'story.iWant', 'story.soThat'] as const) {
+        const patch: SectionPatch = {
+          op: 'remove',
+          path,
+          metadata: { advisorId: 'test' },
+        };
+        const result = validator.validate(patch, baseStory);
+        expect(result.valid).toBe(false);
+        expect(result.errors).toContain(
+          'remove operation not supported on story line paths (use replace instead)'
+        );
+      }
+    });
   });
 });

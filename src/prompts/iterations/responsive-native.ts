@@ -19,7 +19,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * 
  * Focus on FUNCTIONAL behaviors users experience on native mobile devices.
  */
-export const RESPONSIVE_NATIVE_PROMPT = `Analyze the mockup or design to identify responsive native app requirements and how users experience functional behaviors specific to mobile devices (iOS and Android).
+export const RESPONSIVE_NATIVE_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- userVisibleBehavior (UVB-* items)
+- systemAcceptanceCriteria (AC-SYS-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "userVisibleBehavior",
+      "item": { "id": "UVB-001", "text": "..." },
+      "metadata": { "advisorId": "responsive-native", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "responsive-native", reasoning?: string }
+
+---
+
+Analyze the mockup or design to identify responsive native app requirements and how users experience functional behaviors specific to mobile devices (iOS and Android).
 
 ## Device Capabilities and Features
 
@@ -196,14 +225,12 @@ export const RESPONSIVE_NATIVE_PROMPT = `Analyze the mockup or design to identif
 
 ## Output
 
-Provide a comprehensive analysis that:
-- Identifies device capability requirements and permission handling
-- Documents platform-specific conventions and behaviors (iOS vs Android)
-- Explains offline functionality and data synchronization
-- Describes push notification setup and background behavior
-- Covers device orientation handling and transitions
-- Maps device-specific adaptations to user experience
-- Focuses on functional behaviors users experience, not implementation details`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target userVisibleBehavior or systemAcceptanceCriteria. Add or replace items to document:
+- Device capability requirements and permission handling
+- Platform-specific conventions and behaviors (iOS vs Android)
+- Offline functionality and data synchronization
+- Push notification setup and background behavior
+- Acceptance criteria for responsive native (UVB-*, AC-SYS-*)`;
 
 /**
  * Metadata for the responsive native requirements iteration
