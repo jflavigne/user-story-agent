@@ -29,3 +29,12 @@ export { loadConfigFromEnv, mergeConfigWithDefaults, DEFAULT_MODEL } from './con
 
 // Re-export state management for convenience
 export * from './state/index.js';
+
+// ID registry (deterministic stable ID minting)
+export {
+  IDRegistry,
+  mintStableId,
+  normalizeCanonicalName,
+  getPrefix,
+} from './id-registry.js';
+export type { EntityType } from './id-registry.js';

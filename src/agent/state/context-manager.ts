@@ -6,7 +6,7 @@
  */
 
 import type { StoryState, IterationResult } from './story-state.js';
-import type { ProductContext } from '../../shared/types.js';
+import type { ProductContext, SystemDiscoveryContext } from '../../shared/types.js';
 import { getIterationById } from '../../shared/iteration-registry.js';
 import { createInitialState } from './story-state.js';
 
@@ -43,21 +43,23 @@ export interface ContextUpdateResult {
  */
 export class ContextManager {
   /**
-   * Builds a context prompt preamble that includes product context and applied iterations
+   * Builds a context prompt preamble that includes product context, optional system context, and applied iterations
    * 
    * @param state - Current story state
    * @param options - Options for customizing the context prompt
+   * @param systemContext - Optional system discovery context (component graph, contracts, vocabulary)
    * @returns Formatted context prompt string
    * 
    * @example
    * ```typescript
-   * const context = manager.buildContextPrompt(state);
+   * const context = manager.buildContextPrompt(state, {}, systemContext);
    * // Use context as preamble to Claude API calls
    * ```
    */
   buildContextPrompt(
     state: StoryState,
-    options: ContextPromptOptions = {}
+    options: ContextPromptOptions = {},
+    systemContext?: SystemDiscoveryContext
   ): string {
     const {
       includeFullHistory = false,
@@ -75,6 +77,13 @@ export class ContextManager {
       );
       parts.push(`Target audience: ${ctx.targetAudience}.`);
       parts.push(`Business context: ${ctx.businessContext}`);
+      parts.push(''); // Empty line
+    }
+
+    // System context section (human-readable, after product context)
+    if (systemContext) {
+      parts.push('**System Context:**');
+      parts.push(this.formatSystemContextAsText(systemContext));
       parts.push(''); // Empty line
     }
 
@@ -119,6 +128,95 @@ export class ContextManager {
     }
 
     return parts.join('\n');
+  }
+
+  /**
+   * Formats system discovery context as human-readable text (not raw JSON).
+   * Includes component graph summary, shared contracts, component roles, product vocabulary, and timestamp.
+   */
+  private formatSystemContextAsText(ctx: SystemDiscoveryContext): string {
+    const lines: string[] = [];
+
+    if (ctx.timestamp) {
+      lines.push(`Timestamp: ${ctx.timestamp}`);
+    }
+
+    const graph = ctx.componentGraph;
+    if (graph) {
+      const components = Object.values(graph.components);
+      if (components.length > 0) {
+        lines.push('Component graph:');
+        for (const c of components) {
+          const children = c.children?.length ? ` (children: ${c.children.join(', ')})` : '';
+          lines.push(`  - ${c.id}: ${c.productName}${c.technicalName ? ` (${c.technicalName})` : ''}${children}`);
+          if (c.description) {
+            lines.push(`    ${c.description}`);
+          }
+        }
+        const compEdges = graph.compositionEdges ?? [];
+        if (compEdges.length > 0) {
+          lines.push('  Composition: ' + compEdges.map((e) => `${e.parent} → ${e.child}`).join(', '));
+        }
+        const coordEdges = graph.coordinationEdges ?? [];
+        if (coordEdges.length > 0) {
+          lines.push('  Coordination: ' + coordEdges.map((e) => `${e.from} → ${e.to} via ${e.via}`).join(', '));
+        }
+        const dataFlows = graph.dataFlows ?? [];
+        if (dataFlows.length > 0) {
+          lines.push('  Data flows: ' + dataFlows.map((d) => `${d.source} → ${d.target}: ${d.description}`).join('; '));
+        }
+      }
+    }
+
+    const contracts = ctx.sharedContracts;
+    if (contracts) {
+      const stateModels = contracts.stateModels ?? [];
+      const eventRegistry = contracts.eventRegistry ?? [];
+      const standardStates = contracts.standardStates ?? [];
+      const contractDataFlows = contracts.dataFlows ?? [];
+      if (stateModels.length > 0 || eventRegistry.length > 0 || standardStates.length > 0 || contractDataFlows.length > 0) {
+        lines.push('Shared contracts:');
+        if (stateModels.length > 0) {
+          for (const s of stateModels) {
+            lines.push(`  State: ${s.id} (${s.name}) — ${s.description}; owner: ${s.owner}`);
+          }
+        }
+        if (eventRegistry.length > 0) {
+          for (const e of eventRegistry) {
+            lines.push(`  Event: ${e.id} (${e.name}); emitter: ${e.emitter}`);
+          }
+        }
+        if (standardStates.length > 0) {
+          lines.push('  Standard states: ' + standardStates.map((s) => s.type).join(', '));
+        }
+        if (contractDataFlows.length > 0) {
+          for (const d of contractDataFlows) {
+            lines.push(`  Data flow: ${d.id} — ${d.source} → ${d.target}: ${d.description}`);
+          }
+        }
+      }
+    }
+
+    if (ctx.componentRoles?.length) {
+      lines.push('Component roles:');
+      for (const r of ctx.componentRoles) {
+        lines.push(`  ${r.componentId}: ${r.role} — ${r.description}`);
+      }
+    }
+
+    const vocabEntries = ctx.productVocabulary ? Object.entries(ctx.productVocabulary) : [];
+    if (vocabEntries.length > 0) {
+      lines.push('Product vocabulary:');
+      for (const [technical, product] of vocabEntries) {
+        lines.push(`  ${technical} → ${product}`);
+      }
+    }
+
+    if (ctx.referenceDocuments?.length) {
+      lines.push(`Reference documents: ${ctx.referenceDocuments.length} item(s)`);
+    }
+
+    return lines.length > 0 ? lines.join('\n') : '(no system context)';
   }
 
   /**
@@ -298,14 +396,16 @@ export function createContextManager(): ContextManager {
  * 
  * @param state - Current story state
  * @param options - Options for customizing the context prompt
+ * @param systemContext - Optional system discovery context (component graph, contracts, vocabulary)
  * @returns Formatted context prompt string
  */
 export function buildContextPrompt(
   state: StoryState,
-  options?: ContextPromptOptions
+  options?: ContextPromptOptions,
+  systemContext?: SystemDiscoveryContext
 ): string {
   const manager = new ContextManager();
-  return manager.buildContextPrompt(state, options);
+  return manager.buildContextPrompt(state, options ?? {}, systemContext);
 }
 
 /**

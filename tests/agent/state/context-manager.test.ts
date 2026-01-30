@@ -16,7 +16,11 @@ import {
   type StoryState,
   type IterationResult,
 } from '../../../src/agent/state/story-state.js';
-import type { ProductContext, StoryMetadata } from '../../../src/shared/types.js';
+import type {
+  ProductContext,
+  StoryMetadata,
+  SystemDiscoveryContext,
+} from '../../../src/shared/types.js';
 
 describe('ContextManager', () => {
   let manager: ContextManager;
@@ -146,6 +150,98 @@ describe('ContextManager', () => {
       expect(prompt).toContain('unknown-iteration-id');
       expect(prompt).toContain('Applied');
     });
+
+    it('includes system context when provided', () => {
+      const systemContext: SystemDiscoveryContext = {
+        timestamp: '2025-01-30T12:00:00Z',
+        componentGraph: {
+          components: {
+            'COMP-LOGIN': {
+              id: 'COMP-LOGIN',
+              productName: 'Login Form',
+              description: 'Handles user authentication',
+              technicalName: 'LoginForm',
+            },
+          },
+          compositionEdges: [{ parent: 'App', child: 'COMP-LOGIN' }],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [
+          { componentId: 'COMP-LOGIN', role: 'auth', description: 'Owns login flow' },
+        ],
+        productVocabulary: { btn: 'button', fld: 'field' },
+      };
+      const state: StoryState = { ...basicState, productContext };
+      const prompt = manager.buildContextPrompt(state, {}, systemContext);
+
+      expect(prompt).toContain('**System Context:**');
+      expect(prompt).toContain('Timestamp: 2025-01-30T12:00:00Z');
+      expect(prompt).toContain('Component graph:');
+      expect(prompt).toContain('COMP-LOGIN');
+      expect(prompt).toContain('Login Form');
+      expect(prompt).toContain('Handles user authentication');
+      expect(prompt).toContain('Component roles:');
+      expect(prompt).toContain('auth');
+      expect(prompt).toContain('Product vocabulary:');
+      expect(prompt).toContain('btn → button');
+      expect(prompt).toContain('fld → field');
+    });
+
+    it('works without systemContext (optional)', () => {
+      const state: StoryState = { ...basicState, productContext };
+      const prompt = manager.buildContextPrompt(state);
+
+      expect(prompt).not.toContain('**System Context:**');
+      expect(prompt).toContain('TestApp');
+      expect(prompt).toContain('We are working on a user story');
+    });
+
+    it('formats system context as human-readable text (not raw JSON)', () => {
+      const systemContext: SystemDiscoveryContext = {
+        timestamp: '2025-01-30T12:00:00Z',
+        componentGraph: {
+          components: {
+            A: {
+              id: 'A',
+              productName: 'Comp A',
+              description: 'Description A',
+            },
+          },
+          compositionEdges: [{ parent: 'Root', child: 'A' }],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [
+            { id: 'S1', name: 'State1', description: 'State desc', owner: 'A', consumers: [] },
+          ],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [{ componentId: 'A', role: 'owner', description: 'Owns state' }],
+        productVocabulary: { x: 'X term' },
+      };
+      const state: StoryState = { ...basicState };
+      const prompt = manager.buildContextPrompt(state, {}, systemContext);
+
+      expect(prompt).toContain('**System Context:**');
+      expect(prompt).toContain('Component graph:');
+      expect(prompt).toContain('Shared contracts:');
+      expect(prompt).toContain('Component roles:');
+      expect(prompt).toContain('Product vocabulary:');
+      expect(prompt).toContain('Timestamp:');
+      expect(prompt).not.toMatch(/\s*"componentGraph"\s*:/);
+      expect(prompt).not.toMatch(/\s*"sharedContracts"\s*:/);
+      expect(prompt).not.toMatch(/\{\s*"components"\s*:/);
+    });
   });
 
   describe('updateContext', () => {
@@ -154,7 +250,7 @@ describe('ContextManager', () => {
         iterationId: 'user-roles',
         inputStory: basicState.currentStory,
         outputStory: 'Enhanced story with roles',
-        changesApplied: ['Added user roles'],
+        changesApplied: [{ category: 'roles', description: 'Added user roles' }],
         timestamp: new Date().toISOString(),
       };
       
@@ -172,7 +268,7 @@ describe('ContextManager', () => {
         iterationId: 'validation',
         inputStory: basicState.currentStory,
         outputStory: 'Story with validation',
-        changesApplied: ['Added validation'],
+        changesApplied: [{ category: 'validation', description: 'Added validation' }],
         timestamp: new Date().toISOString(),
       };
       
@@ -202,7 +298,10 @@ describe('ContextManager', () => {
         iterationId: 'user-roles',
         inputStory: 'Input story',
         outputStory: 'Output story',
-        changesApplied: ['Change 1', 'Change 2'],
+        changesApplied: [
+          { category: 'validation', description: 'Change 1' },
+          { category: 'accessibility', description: 'Change 2' },
+        ],
         timestamp: '2024-01-01T00:00:00.000Z',
       };
       
@@ -437,6 +536,30 @@ describe('ContextManager', () => {
       const prompt = buildContextPrompt(basicState);
       expect(prompt).toBeDefined();
       expect(typeof prompt).toBe('string');
+    });
+
+    it('buildContextPrompt accepts optional systemContext as third argument', () => {
+      const systemContext: SystemDiscoveryContext = {
+        timestamp: '2025-01-30T12:00:00Z',
+        componentGraph: {
+          components: {},
+          compositionEdges: [],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [],
+        productVocabulary: { term: 'Product Term' },
+      };
+      const prompt = buildContextPrompt(basicState, undefined, systemContext);
+      expect(prompt).toContain('**System Context:**');
+      expect(prompt).toContain('Product vocabulary:');
+      expect(prompt).toContain('term → Product Term');
     });
 
     it('updateContext works as standalone function', () => {

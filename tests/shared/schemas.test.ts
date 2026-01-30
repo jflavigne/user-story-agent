@@ -267,6 +267,12 @@ describe('extractJSON', () => {
     expect(result).toEqual({ nested: { key: 'value' } });
   });
 
+  it('should extract nested JSON object from plain text (greedy match)', () => {
+    const text = 'Text: {"outer":{"inner":{"value":1}},"other":2}';
+    const result = extractJSON(text);
+    expect(result).toEqual({ outer: { inner: { value: 1 } }, other: 2 });
+  });
+
   it('should extract first valid JSON when multiple code blocks exist', () => {
     const text = '```json\n{"first": true}\n```\n```json\n{"second": true}\n```';
     const result = extractJSON(text);

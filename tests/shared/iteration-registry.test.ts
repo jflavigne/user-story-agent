@@ -68,6 +68,15 @@ describe('iteration-registry', () => {
         expect(iteration.tokenEstimate).toBeGreaterThan(0);
       }
     });
+
+    it('All iterations have allowedPaths and outputFormat defined (USA-36)', () => {
+      for (const [id, iteration] of Object.entries(ITERATION_REGISTRY)) {
+        expect(iteration.allowedPaths).toBeDefined();
+        expect(Array.isArray(iteration.allowedPaths)).toBe(true);
+        expect(iteration.allowedPaths!.length).toBeGreaterThan(0);
+        expect(iteration.outputFormat).toBe('patches');
+      }
+    });
   });
 
   describe('getIterationsByCategory', () => {

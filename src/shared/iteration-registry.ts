@@ -9,7 +9,7 @@
  * - Async loading from Anthropic Agent Skills format (SKILL.md files)
  */
 
-import type { IterationDefinition, IterationCategory } from './types.js';
+import type { IterationDefinition, IterationCategory, PatchPath } from './types.js';
 import { ITERATION_CATEGORIES } from './types.js';
 import {
   USER_ROLES_METADATA,
@@ -73,54 +73,98 @@ export interface IterationRegistryEntry extends IterationDefinition {
 /**
  * Registry mapping iteration IDs to their registry entries
  */
+/** Path mappings for patch-based section scope per iteration */
+const ALLOWED_PATHS: Record<IterationId, PatchPath[]> = {
+  'user-roles': ['story.asA', 'story.iWant', 'story.soThat', 'outcomeAcceptanceCriteria'],
+  'interactive-elements': ['userVisibleBehavior', 'outcomeAcceptanceCriteria'],
+  'validation': ['outcomeAcceptanceCriteria', 'systemAcceptanceCriteria'],
+  'accessibility': ['outcomeAcceptanceCriteria', 'systemAcceptanceCriteria'],
+  'performance': [
+    'systemAcceptanceCriteria',
+    'implementationNotes.performanceNotes',
+    'implementationNotes.loadingStates',
+  ],
+  'security': ['systemAcceptanceCriteria', 'implementationNotes.securityNotes'],
+  'responsive-web': ['userVisibleBehavior', 'systemAcceptanceCriteria'],
+  'responsive-native': ['userVisibleBehavior', 'systemAcceptanceCriteria'],
+  'language-support': ['outcomeAcceptanceCriteria'],
+  'locale-formatting': ['outcomeAcceptanceCriteria'],
+  'cultural-appropriateness': ['outcomeAcceptanceCriteria'],
+  'analytics': ['systemAcceptanceCriteria', 'implementationNotes.telemetryNotes'],
+};
+
 export const ITERATION_REGISTRY: Record<IterationId, IterationRegistryEntry> = {
   'user-roles': {
     ...USER_ROLES_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['user-roles'],
+    outputFormat: 'patches',
   },
   'interactive-elements': {
     ...INTERACTIVE_ELEMENTS_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['interactive-elements'],
+    outputFormat: 'patches',
   },
   'validation': {
     ...VALIDATION_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['validation'],
+    outputFormat: 'patches',
   },
   'accessibility': {
     ...ACCESSIBILITY_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['accessibility'],
+    outputFormat: 'patches',
   },
   'performance': {
     ...PERFORMANCE_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['performance'],
+    outputFormat: 'patches',
   },
   'security': {
     ...SECURITY_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['security'],
+    outputFormat: 'patches',
   },
   'responsive-web': {
     ...RESPONSIVE_WEB_METADATA,
     applicableTo: ['web', 'mobile-web', 'desktop'],
+    allowedPaths: ALLOWED_PATHS['responsive-web'],
+    outputFormat: 'patches',
   },
   'responsive-native': {
     ...RESPONSIVE_NATIVE_METADATA,
     applicableTo: ['mobile-native'],
+    allowedPaths: ALLOWED_PATHS['responsive-native'],
+    outputFormat: 'patches',
   },
   'language-support': {
     ...LANGUAGE_SUPPORT_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['language-support'],
+    outputFormat: 'patches',
   },
   'locale-formatting': {
     ...LOCALE_FORMATTING_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['locale-formatting'],
+    outputFormat: 'patches',
   },
   'cultural-appropriateness': {
     ...CULTURAL_APPROPRIATENESS_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['cultural-appropriateness'],
+    outputFormat: 'patches',
   },
   'analytics': {
     ...ANALYTICS_METADATA,
     applicableTo: 'all',
+    allowedPaths: ALLOWED_PATHS['analytics'],
+    outputFormat: 'patches',
   },
 };
 
