@@ -19,9 +19,17 @@ export { LOCALE_FORMATTING_PROMPT, LOCALE_FORMATTING_METADATA } from './iteratio
 export { CULTURAL_APPROPRIATENESS_PROMPT, CULTURAL_APPROPRIATENESS_METADATA } from './iterations/cultural-appropriateness.js';
 export { ANALYTICS_PROMPT, ANALYTICS_METADATA } from './iterations/analytics.js';
 export {
+  buildStoryInterconnectionPrompt,
+  formatAllStories,
+  formatSystemContext,
   STORY_INTERCONNECTION_PROMPT,
   STORY_INTERCONNECTION_METADATA,
 } from './iterations/story-interconnection.js';
+export type { StoryForInterconnection } from './iterations/story-interconnection.js';
 
 // Judge rubrics
-export { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from './judge-rubrics/global-consistency.js';
+export {
+  buildGlobalConsistencyPrompt,
+  GLOBAL_CONSISTENCY_JUDGE_PROMPT,
+} from './judge-rubrics/global-consistency.js';
+export type { StoryWithInterconnections } from './judge-rubrics/global-consistency.js';

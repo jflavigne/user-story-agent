@@ -5,7 +5,203 @@
  * ownership (state/events), and related-story relationships. Enforces "no orphan stories."
  */
 
-import type { IterationDefinition } from '../../shared/types.js';
+import type { IterationDefinition, SystemDiscoveryContext } from '../../shared/types.js';
+
+/** Story summary for Pass 2 (id, title, content excerpt) */
+export interface StoryForInterconnection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+/**
+ * Formats system context for the interconnection prompt (components, state models, events, data flows).
+ * Only includes IDs and names so the model uses existing IDs strictly.
+ */
+export function formatSystemContext(context: SystemDiscoveryContext): string {
+  const components =
+    Object.entries(context.componentGraph.components)
+      .map(([id, comp]) => `- ${id}: ${comp.productName}`)
+      .join('\n') || '(none)';
+
+  const stateModels =
+    context.sharedContracts.stateModels
+      .map((sm) => `- ${sm.id}: ${sm.name}`)
+      .join('\n') || '(none)';
+
+  const events =
+    context.sharedContracts.eventRegistry
+      .map((e) => `- ${e.id}: ${e.name}`)
+      .join('\n') || '(none)';
+
+  const dataFlows =
+    context.sharedContracts.dataFlows
+      .map((df) => `- ${df.id}: ${df.source} → ${df.target}`)
+      .join('\n') || '(none)';
+
+  return `### Components\n${components}\n\n### State Models\n${stateModels}\n\n### Events\n${events}\n\n### Data Flows\n${dataFlows}`;
+}
+
+/**
+ * Formats all stories in the batch for context (id, title, content excerpt).
+ */
+export function formatAllStories(
+  stories: StoryForInterconnection[]
+): string {
+  return stories
+    .map(
+      (s) =>
+        `**${s.id}: ${s.title}**\n${s.content.substring(0, 200)}${s.content.length > 200 ? '...' : ''}`
+    )
+    .join('\n\n');
+}
+
+/**
+ * Builds the full Pass 2 interconnection prompt for one story.
+ * Extracts UI mapping, contract dependencies, ownership, related stories, and enforces no-orphan rule.
+ *
+ * @param story - Full markdown/content of the story to analyze
+ * @param allStories - All stories in the batch (id, title, content) for related-story context
+ * @param systemContext - System discovery context (components, contracts) — only these IDs may be used
+ * @returns Complete prompt string (instructions + story + context + task + output format)
+ */
+export function buildStoryInterconnectionPrompt(
+  story: string,
+  allStories: StoryForInterconnection[],
+  systemContext: SystemDiscoveryContext
+): string {
+  return `You are analyzing a user story to extract interconnection metadata.
+
+## Story to Analyze
+
+${story}
+
+## System Context
+
+${formatSystemContext(systemContext)}
+
+## All Stories in Batch
+
+${formatAllStories(allStories)}
+
+## Task
+
+Extract interconnection metadata for this story:
+
+### 1. UI Mapping
+Map product terms in the story to components in the system context.
+- Only map terms that clearly reference UI elements
+- Use exact component IDs from system context
+- Output is an object: key = product term (as in story), value = component ID from system context
+
+Output format:
+\`\`\`json
+{
+  "uiMapping": {
+    "login button": "COMP-LOGIN-BUTTON",
+    "user profile": "COMP-USER-PROFILE"
+  }
+}
+\`\`\`
+
+### 2. Contract Dependencies
+Identify which contracts (state models, events, data flows) this story uses.
+- Output is an array of strings: stable contract IDs only (C-STATE-*, E-*, DF-*).
+
+Output format:
+\`\`\`json
+{
+  "contractDependencies": [
+    "C-STATE-USER",
+    "C-STATE-AUTH",
+    "E-USER-AUTHENTICATED",
+    "E-AUTH-REQUIRED",
+    "DF-LOGIN-FLOW"
+  ]
+}
+\`\`\`
+
+### 3. Ownership Relationships
+Determine ownership vs consumption for state and events.
+
+Output format:
+\`\`\`json
+{
+  "ownership": {
+    "ownsState": ["C-STATE-AUTH"],
+    "consumesState": ["C-STATE-USER"],
+    "emitsEvents": ["E-USER-AUTHENTICATED"],
+    "listensToEvents": ["E-AUTH-REQUIRED"]
+  }
+}
+\`\`\`
+
+### 4. Related Stories
+Identify dependencies between this story and others in the batch.
+- Output is an array of objects, each with storyId, relationship (prerequisite | parallel | dependent | related), and description.
+
+Output format:
+\`\`\`json
+{
+  "relatedStories": [
+    {
+      "storyId": "USA-001",
+      "relationship": "prerequisite",
+      "description": "Must implement authentication first"
+    },
+    {
+      "storyId": "USA-002",
+      "relationship": "parallel",
+      "description": "Can implement concurrently"
+    }
+  ]
+}
+\`\`\`
+
+### 5. Validation
+Ensure the story references at least one contract or component from system context.
+
+## Output Format
+
+Return a single JSON object with all metadata. Include the story ID being analyzed as \`storyId\`:
+
+\`\`\`json
+{
+  "storyId": "USA-001",
+  "uiMapping": {
+    "login button": "COMP-LOGIN-BUTTON",
+    "user profile": "COMP-USER-PROFILE"
+  },
+  "contractDependencies": [
+    "C-STATE-USER",
+    "C-STATE-AUTH",
+    "E-USER-AUTHENTICATED",
+    "E-AUTH-REQUIRED",
+    "DF-LOGIN-FLOW"
+  ],
+  "ownership": {
+    "ownsState": ["C-STATE-AUTH"],
+    "consumesState": ["C-STATE-USER"],
+    "emitsEvents": ["E-USER-AUTHENTICATED"],
+    "listensToEvents": ["E-AUTH-REQUIRED"]
+  },
+  "relatedStories": [
+    {
+      "storyId": "USA-002",
+      "relationship": "prerequisite",
+      "description": "Must implement authentication first"
+    },
+    {
+      "storyId": "USA-003",
+      "relationship": "parallel",
+      "description": "Can implement concurrently"
+    }
+  ]
+}
+\`\`\`
+
+IMPORTANT: Only use IDs that exist in the system context. Do not invent new IDs.`;
+}
 
 /**
  * Prompt for extracting story interconnections in Pass 2.
