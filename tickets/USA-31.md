@@ -1,112 +1,46 @@
-# USA-31: Enterprise API Dependencies & Project Configuration
+# USA-31: Fix Schema Mismatches
 
-**Epic:** USA - User Story Agent
-**Type:** Infrastructure
-**Priority:** High
-**Status:** Ready
-**Dependencies:** USA-30
+**Status**: BLOCKED (needs USA-30)
+**Depends on**: USA-30
+**Size**: Small (1-2 files, ~200 lines)
+**Track**: Track 1 (Foundation & Schemas)
 
 ## Description
 
-Add all required npm dependencies and update project configuration for the enterprise HTTP API deployment. This is the foundation ticket that enables all subsequent API development.
+Fix Zod schemas in `src/shared/schemas.ts` to match updated TypeScript types based on the parity audit from USA-30.
 
-## Problem Statement
+## Tasks
 
-- Current project only has CLI/SDK dependencies
-- No HTTP server, database, or Azure SDK packages
-- No API-specific npm scripts for development and deployment
-- Version needs bump to 0.2.0 to reflect enterprise features
+1. Update `RelationshipSchema` to match new `Relationship` type (add `id`, `operation`, `name`, `evidence`, etc.)
+2. Update `ItemSchema` to require `id` field (not optional)
+3. Update `ImplementationNotesSchema` to require all arrays (not optional)
+4. Update `UIMappingItemSchema` to use `productTerm`/`componentName` (not `element`/`behavior`)
+5. Update `JudgeRubricSchema` to match structured violations format
+6. Update `GlobalConsistencyReportSchema` to use `issues`/`fixes` (not `consistencyScore`/`conflicts`)
+7. Add `StoryInterconnectionsSchema` with new structure
+8. Add `SystemDiscoveryContextSchema` with stable ID fields
 
 ## Acceptance Criteria
 
-- [ ] Add Express.js and middleware dependencies (helmet, cors, multer)
-- [ ] Add Azure SDK packages (identity, keyvault-secrets, storage-blob, monitor-opentelemetry)
-- [ ] Add OpenTelemetry packages for observability
-- [ ] Add PostgreSQL client (pg) and type definitions
-- [ ] Add authentication packages (jsonwebtoken, jwks-rsa)
-- [ ] Add rate limiting package (rate-limiter-flexible)
-- [ ] Add Redis client (ioredis) for distributed rate limiting (optional)
-- [ ] Add all required @types/* dev dependencies
-- [ ] Add supertest for API testing
-- [ ] Add new npm scripts: `dev:api`, `start:api`, `test:api`, `db:migrate`
-- [ ] Bump version to 0.2.0
-- [ ] Run `npm install` and verify no conflicts
+- `npx tsc --noEmit` passes with no errors
+- All Zod schemas align with TypeScript types
+- Existing tests still pass
+- Parse sites (story-judge.ts:61, story-judge.ts:104) continue to work
 
-## Files
+## Files Modified
 
-### Modified Files
-- `package.json` - Add dependencies, devDependencies, and scripts
+- `src/shared/schemas.ts`
 
-## Technical Notes
+## Files Created
 
-### New Dependencies
+None
 
-```json
-{
-  "dependencies": {
-    "@azure/identity": "^4.0.0",
-    "@azure/keyvault-secrets": "^4.8.0",
-    "@azure/monitor-opentelemetry": "^1.3.0",
-    "@azure/storage-blob": "^12.17.0",
-    "@opentelemetry/api": "^1.7.0",
-    "@opentelemetry/sdk-node": "^0.48.0",
-    "@opentelemetry/semantic-conventions": "^1.21.0",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "helmet": "^7.1.0",
-    "ioredis": "^5.3.2",
-    "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^3.1.0",
-    "multer": "^1.4.5-lts.1",
-    "pg": "^8.11.3",
-    "rate-limiter-flexible": "^5.0.0",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.5",
-    "@types/multer": "^1.4.11",
-    "@types/pg": "^8.10.9",
-    "@types/uuid": "^9.0.7",
-    "@types/supertest": "^6.0.2",
-    "supertest": "^6.3.4"
-  }
-}
-```
+## Dependencies
 
-### New Scripts
-
-```json
-{
-  "scripts": {
-    "dev:api": "tsx watch src/api/server.ts",
-    "start:api": "node dist/api/server.js",
-    "test:api": "vitest run --config vitest.config.api.ts",
-    "db:migrate": "tsx src/db/migrate.ts",
-    "db:migrate:down": "tsx src/db/migrate.ts down"
-  }
-}
-```
-
-## Verification
-
-```bash
-# Install dependencies
-npm install
-
-# Verify no peer dependency issues
-npm ls --depth=0
-
-# Verify TypeScript can resolve types
-npm run typecheck
-
-# Verify scripts are defined
-npm run dev:api --help 2>&1 | head -1
-```
+**Blocked by USA-30** - Requires parity audit results to know exactly which schemas to fix
 
 ## Notes
 
-- ioredis is included for distributed rate limiting but can be made optional
-- Azure packages are required even for local development (fallback to env vars)
-- Supertest enables integration testing of Express routes
+- Priority fixes identified in USA-30 audit: P0 (JudgeRubricSchema, RelationshipSchema), P1 (ItemSchema, ImplementationNotesSchema, UIMappingItemSchema), P2 (SystemDiscoveryContextSchema suite)
+- Most schema changes won't break existing code since schemas aren't widely used yet in parse sites
+- This ticket unblocks most of the foundation work (USA-32 through USA-35) and system prompt integration (USA-42)
