@@ -39,6 +39,7 @@ import type {
   StoryStructure,
   SectionPatch,
   AdvisorOutput,
+  Relationship,
 } from '../shared/types.js';
 import { PatchOrchestrator } from './patch-orchestrator.js';
 import { StoryJudge } from './story-judge.js';
@@ -412,14 +413,18 @@ export class UserStoryAgent extends EventEmitter {
   }
 
   /**
-   * Main entry point for processing a user story
+   * Processes a user story with optional system context.
    *
-   * @param initialStory - The initial user story to process
+   * @param story - Initial user story markdown
+   * @param options - Optional processing options (e.g. systemContext for judge/rewrite)
    * @returns Promise resolving to the agent result
    */
-  async processUserStory(initialStory: string): Promise<AgentResult> {
+  async processUserStory(
+    story: string,
+    options?: { systemContext?: SystemDiscoveryContext }
+  ): Promise<AgentResult> {
     // Validate input early for clear error message
-    if (!initialStory || initialStory.trim().length === 0) {
+    if (!story || story.trim().length === 0) {
       return {
         success: false,
         originalStory: '',
@@ -431,13 +436,15 @@ export class UserStoryAgent extends EventEmitter {
     }
 
     // Create initial state
-    let state = createInitialState(initialStory);
+    let state = createInitialState(story);
     if (this.config.productContext) {
       state.productContext = this.config.productContext;
     }
 
     // Initialize StoryStructure for patch-based workflow
-    state.storyStructure = this.parseOrInitializeStructure(initialStory);
+    state.storyStructure = this.parseOrInitializeStructure(story);
+
+    const systemContext = options?.systemContext;
 
     try {
       // Run in the configured mode
@@ -458,8 +465,8 @@ export class UserStoryAgent extends EventEmitter {
         state.currentStory = renderer.toMarkdown(state.storyStructure);
       }
 
-      // Pass 1c: Judge and potentially rewrite
-      state = await this.judgeAndRewrite(state);
+      // Pass 1c: Judge and potentially rewrite (with optional system context)
+      state = await this.judgeAndRewrite(state, systemContext);
 
       // Build summary (includes failed iterations if any)
       const summary = this.contextManager.buildConclusionSummary(state);
@@ -1033,6 +1040,105 @@ export class UserStoryAgent extends EventEmitter {
       productVocabulary: {},
       timestamp: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Merges new relationships into system context.
+   * Stub implementation - full logic in USA-47.
+   *
+   * @param context - Current system context
+   * @param relationships - New relationships to merge
+   * @returns Updated context and count of merged relationships
+   */
+  private async mergeNewRelationships(
+    context: SystemDiscoveryContext,
+    relationships: Relationship[]
+  ): Promise<{ updatedContext: SystemDiscoveryContext; mergedCount: number }> {
+    // Stub: For now, just return unchanged context with 0 merged
+    // USA-47 will implement full merge logic with conflict resolution
+    logger.warn('mergeNewRelationships stub called - USA-47 not yet implemented');
+    return { updatedContext: context, mergedCount: 0 };
+  }
+
+  /**
+   * Runs Pass 1 with refinement loop.
+   * After each story, checks if judge discovered new relationships.
+   * If high-confidence relationships found (≥ 0.75), merges them and re-runs Pass 1.
+   * Max 3 rounds to prevent infinite loops.
+   *
+   * @param stories - Array of user story markdown strings
+   * @param systemContext - System discovery context from Pass 0
+   * @returns Array of enhanced story results with final context
+   */
+  async runPass1WithRefinement(
+    stories: string[],
+    systemContext: SystemDiscoveryContext
+  ): Promise<{ results: AgentResult[]; finalContext: SystemDiscoveryContext }> {
+    const MAX_ROUNDS = 3;
+    const CONFIDENCE_THRESHOLD = 0.75;
+
+    let currentContext = systemContext;
+    let roundNumber = 1;
+
+    while (roundNumber <= MAX_ROUNDS) {
+      logger.info(`Refinement round ${roundNumber}/${MAX_ROUNDS}`);
+
+      // Run Pass 1 for all stories with current context
+      const results: AgentResult[] = [];
+      const allNewRelationships: Relationship[] = [];
+
+      for (const story of stories) {
+        const result = await this.processUserStory(story, { systemContext: currentContext });
+        results.push(result);
+
+        const relationships = result.judgeResults?.pass1c?.newRelationships ?? [];
+        allNewRelationships.push(...relationships);
+      }
+
+      // Filter by confidence threshold
+      const highConfidenceRelationships = allNewRelationships.filter((rel) => {
+        const confidence = rel.confidence ?? 0;
+        return confidence >= CONFIDENCE_THRESHOLD;
+      });
+
+      logger.info(
+        `Refinement round ${roundNumber}: discovered ${allNewRelationships.length} relationships, ` +
+          `${highConfidenceRelationships.length} high-confidence (≥ ${CONFIDENCE_THRESHOLD})`
+      );
+
+      if (highConfidenceRelationships.length === 0) {
+        logger.info(`Convergence: no new high-confidence relationships, stopping at round ${roundNumber}`);
+        return { results, finalContext: currentContext };
+      }
+
+      const { updatedContext, mergedCount } = await this.mergeNewRelationships(
+        currentContext,
+        highConfidenceRelationships
+      );
+
+      logger.info(`Refinement round ${roundNumber}: merged ${mergedCount} relationships`);
+
+      if (mergedCount === 0) {
+        logger.info(`Convergence: no relationships merged (all duplicates), stopping at round ${roundNumber}`);
+        return { results, finalContext: currentContext };
+      }
+
+      currentContext = updatedContext;
+      roundNumber++;
+
+      logger.info(`Restarting Pass 1 with updated context (${mergedCount} new relationships)`);
+    }
+
+    logger.warn(`Convergence: max rounds (${MAX_ROUNDS}) reached`);
+
+    // Run final Pass 1 with converged context
+    const finalResults: AgentResult[] = [];
+    for (const story of stories) {
+      const result = await this.processUserStory(story, { systemContext: currentContext });
+      finalResults.push(result);
+    }
+
+    return { results: finalResults, finalContext: currentContext };
   }
 
   /**

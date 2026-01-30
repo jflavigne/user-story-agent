@@ -7,10 +7,11 @@ import { UserStoryAgent, createAgent } from '../../src/agent/user-story-agent.js
 import type { UserStoryAgentConfig, IterationOption } from '../../src/agent/types.js';
 import { ClaudeClient } from '../../src/agent/claude-client.js';
 import { getIterationById, WORKFLOW_ORDER } from '../../src/shared/iteration-registry.js';
-import type { ProductContext } from '../../src/shared/types.js';
+import type { ProductContext, SystemDiscoveryContext } from '../../src/shared/types.js';
 import type { IterationId } from '../../src/shared/iteration-registry.js';
 import type { JudgeRubric } from '../../src/shared/types.js';
 import { StreamingHandler } from '../../src/agent/streaming.js';
+import { logger } from '../../src/utils/logger.js';
 
 // Mock ClaudeClient
 vi.mock('../../src/agent/claude-client.js', () => {
@@ -1100,6 +1101,254 @@ describe('UserStoryAgent', () => {
       expect(id1).toMatch(/^COMP-/);
       expect(id2).toMatch(/^COMP-/);
       expect(id1).toBe(id2);
+    });
+  });
+
+  describe('Refinement Loop (USA-46)', () => {
+    function buildMinimalSystemContext(): SystemDiscoveryContext {
+      return {
+        componentGraph: {
+          components: {},
+          compositionEdges: [],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [],
+        productVocabulary: {},
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    beforeEach(() => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [],
+        needsSystemContextUpdate: false,
+      });
+    });
+
+    it('should run single round when no new relationships discovered', async () => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const { results, finalContext } = await agent.runPass1WithRefinement(
+        ['Story 1', 'Story 2'],
+        systemContext
+      );
+
+      expect(results).toHaveLength(2);
+      expect(finalContext).toBe(systemContext);
+      // Only 1 round: processUserStory called once per story, no refinement
+      expect(mockJudgeStory).toHaveBeenCalledTimes(2);
+    });
+
+    it('should trigger refinement when high-confidence relationships found', async () => {
+      mockJudgeStory
+        .mockResolvedValueOnce({
+          ...minimalJudgeRubric(5),
+          newRelationships: [
+            {
+              id: 'REL-001',
+              type: 'component',
+              operation: 'add_edge',
+              name: 'coordinates-with',
+              source: 'COMP-LOGIN',
+              target: 'COMP-AUTH',
+              confidence: 0.9,
+              evidence: 'Story mentions coordination',
+            },
+          ],
+        })
+        .mockResolvedValue({
+          ...minimalJudgeRubric(5),
+          newRelationships: [],
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const { results, finalContext } = await agent.runPass1WithRefinement(
+        ['Story 1'],
+        systemContext
+      );
+
+      expect(results).toHaveLength(1);
+      // Stub returns mergedCount 0 so we converge after merge; finalContext unchanged
+      expect(finalContext).toBe(systemContext);
+      // Round 1: 1 story judged; then merge (stub); convergence on mergedCount 0
+      expect(mockJudgeStory).toHaveBeenCalledTimes(1);
+    });
+
+    it('should filter out low-confidence relationships (< 0.75)', async () => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [
+          {
+            id: 'REL-001',
+            type: 'component',
+            operation: 'add_edge',
+            name: 'coordinates-with',
+            source: 'COMP-A',
+            target: 'COMP-B',
+            confidence: 0.5,
+            evidence: 'Weak evidence',
+          },
+        ],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const { results, finalContext } = await agent.runPass1WithRefinement(
+        ['Story 1'],
+        systemContext
+      );
+
+      expect(results).toHaveLength(1);
+      expect(finalContext).toBe(systemContext);
+      expect(mockJudgeStory).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stop after max rounds (3) even if relationships keep appearing', async () => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [
+          {
+            id: 'REL-NEW',
+            type: 'component',
+            operation: 'add_edge',
+            name: 'coordinates-with',
+            source: 'COMP-A',
+            target: 'COMP-B',
+            confidence: 0.9,
+            evidence: 'Always new',
+          },
+        ],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+      const logSpy = vi.spyOn(logger, 'warn');
+      // Stub returns mergedCount: 0 so we never actually loop; verify the loop logic
+      // would stop by checking we converge (single round) and don't hang.
+      const { results } = await agent.runPass1WithRefinement(['Story 1'], systemContext);
+
+      expect(results).toHaveLength(1);
+      // With stub (mergedCount 0) we converge after round 1; max-rounds warning
+      // would only fire when merge returns mergedCount > 0 for 3 rounds (USA-47).
+      expect(mockJudgeStory).toHaveBeenCalledTimes(1);
+      logSpy.mockRestore();
+    });
+
+    it('should log max rounds warning when merge keeps returning new relationships', async () => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [
+          {
+            id: 'REL-NEW',
+            type: 'component',
+            operation: 'add_edge',
+            name: 'coordinates-with',
+            source: 'COMP-A',
+            target: 'COMP-B',
+            confidence: 0.9,
+            evidence: 'Always new',
+          },
+        ],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+      const updatedContext = { ...systemContext, timestamp: new Date().toISOString() };
+      type AgentWithMerge = UserStoryAgent & {
+        mergeNewRelationships(
+          ctx: SystemDiscoveryContext,
+          rels: unknown[]
+        ): Promise<{ updatedContext: SystemDiscoveryContext; mergedCount: number }>;
+      };
+      (agent as AgentWithMerge).mergeNewRelationships = vi
+        .fn()
+        .mockResolvedValue({ updatedContext, mergedCount: 1 });
+
+      const logSpy = vi.spyOn(logger, 'warn');
+      const { results } = await agent.runPass1WithRefinement(['Story 1'], systemContext);
+
+      expect(results).toHaveLength(1);
+      expect(logSpy).toHaveBeenCalledWith('Convergence: max rounds (3) reached');
+      logSpy.mockRestore();
+    });
+
+    it('should log convergence telemetry for each round', async () => {
+      mockJudgeStory
+        .mockResolvedValueOnce({
+          ...minimalJudgeRubric(5),
+          newRelationships: [
+            {
+              id: 'R1',
+              type: 'component',
+              operation: 'add_edge',
+              name: 'x',
+              source: 'A',
+              target: 'B',
+              confidence: 0.9,
+              evidence: 'e',
+            },
+            {
+              id: 'R2',
+              type: 'component',
+              operation: 'add_edge',
+              name: 'y',
+              source: 'C',
+              target: 'D',
+              confidence: 0.6,
+              evidence: 'e',
+            },
+          ],
+        })
+        .mockResolvedValue({
+          ...minimalJudgeRubric(5),
+          newRelationships: [],
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+      const infoSpy = vi.spyOn(logger, 'info');
+
+      await agent.runPass1WithRefinement(['Story 1'], systemContext);
+
+      expect(infoSpy).toHaveBeenCalledWith('Refinement round 1/3');
+      expect(
+        infoSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('discovered 2 relationships') &&
+            call[0].includes('1 high-confidence')
+        )
+      ).toBe(true);
+      expect(
+        infoSpy.mock.calls.some(
+          (call) => typeof call[0] === 'string' && call[0].includes('merged 0 relationships')
+        )
+      ).toBe(true);
+      expect(
+        infoSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === 'string' &&
+            call[0].includes('Convergence: no relationships merged (all duplicates)')
+        )
+      ).toBe(true);
+      infoSpy.mockRestore();
     });
   });
 });

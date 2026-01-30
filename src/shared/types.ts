@@ -411,6 +411,8 @@ export interface Relationship {
   operation: 'add_node' | 'add_edge' | 'edit_node' | 'edit_edge';
   name: string;
   evidence: string;
+  /** Optional confidence score (0-1) for refinement loop filtering (USA-46) */
+  confidence?: number;
   contractId?: string;
   emitter?: string;
   listeners?: string[];

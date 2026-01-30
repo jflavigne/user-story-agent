@@ -140,6 +140,7 @@ export const RelationshipSchema = z.object({
   operation: z.enum(['add_node', 'add_edge', 'edit_node', 'edit_edge']),
   name: z.string(),
   evidence: z.string(),
+  confidence: z.number().min(0).max(1).optional(),
   contractId: z.string().optional(),
   emitter: z.string().optional(),
   listeners: z.array(z.string()).optional(),
