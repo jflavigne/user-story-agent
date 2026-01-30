@@ -3,7 +3,7 @@
  */
 
 import type { IterationId } from '../shared/iteration-registry.js';
-import type { ProductContext, IterationCategory } from '../shared/types.js';
+import type { ProductContext, IterationCategory, StoryInterconnections } from '../shared/types.js';
 import type { IterationResult } from './state/story-state.js';
 
 /**
@@ -134,3 +134,19 @@ export interface StreamErrorEvent extends StreamEvent {
  * Union type of all streaming events
  */
 export type StreamEventUnion = StreamStartEvent | StreamChunkEvent | StreamCompleteEvent | StreamErrorEvent;
+
+/**
+ * Input story for Pass 2 interconnection (storyId + markdown)
+ */
+export interface Pass2StoryInput {
+  storyId: string;
+  markdown: string;
+}
+
+/**
+ * Result of runPass2Interconnection: interconnections and stories with metadata appended
+ */
+export interface Pass2InterconnectionResult {
+  interconnections: StoryInterconnections[];
+  updatedStories: Pass2StoryInput[];
+}

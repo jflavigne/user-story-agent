@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from 'events';
-import type { UserStoryAgentConfig, AgentResult, IterationOption } from './types.js';
+import type { UserStoryAgentConfig, AgentResult, IterationOption, Pass2StoryInput, Pass2InterconnectionResult } from './types.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
 import { ContextManager } from './state/context-manager.js';
@@ -13,11 +13,84 @@ import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prom
 import { createInitialState } from './state/story-state.js';
 import { ClaudeClient } from './claude-client.js';
 import { logger } from '../utils/logger.js';
-import { IterationOutputSchema, type IterationOutput } from '../shared/schemas.js';
+import { IterationOutputSchema, SystemDiscoveryMentionsSchema, type IterationOutput } from '../shared/schemas.js';
 import { extractJSON } from '../shared/json-utils.js';
 import { AgentError } from '../shared/errors.js';
 import { StreamingHandler } from './streaming.js';
 import { Evaluator } from './evaluator.js';
+import { SYSTEM_DISCOVERY_PROMPT } from '../prompts/iterations/system-discovery.js';
+import { STORY_INTERCONNECTION_PROMPT } from '../prompts/iterations/story-interconnection.js';
+import { IDRegistry, mintStableId, type EntityType } from './id-registry.js';
+import { StoryRenderer } from './story-renderer.js';
+import { StoryInterconnectionsSchema } from '../shared/schemas.js';
+import type {
+  SystemDiscoveryContext,
+  SystemDiscoveryMentions,
+  Component,
+  ComponentGraph,
+  SharedContracts,
+  StateModel,
+  EventDefinition,
+  StandardState,
+  ComponentRole,
+  StoryInterconnections,
+} from '../shared/types.js';
+
+/**
+ * Classifies a canonical name as component, stateModel, or event based on which
+ * mention array its mentions appear in. Prefers component > stateModel > event.
+ */
+function classifyCanonical(
+  mentionsList: string[],
+  compSet: Set<string>,
+  stateSet: Set<string>,
+  eventSet: Set<string>
+): EntityType {
+  for (const m of mentionsList) {
+    if (compSet.has(m)) return 'component';
+  }
+  for (const m of mentionsList) {
+    if (stateSet.has(m)) return 'stateModel';
+  }
+  for (const m of mentionsList) {
+    if (eventSet.has(m)) return 'event';
+  }
+  return 'component';
+}
+
+/**
+ * Serializes SystemDiscoveryContext to a string for the interconnection prompt.
+ */
+function serializeSystemContext(ctx: SystemDiscoveryContext): string {
+  const lines: string[] = [];
+  lines.push('## System Context');
+  lines.push('');
+  lines.push('### Components');
+  for (const [id, comp] of Object.entries(ctx.componentGraph.components)) {
+    lines.push(`- **${id}**: ${comp.productName} — ${comp.description}`);
+  }
+  lines.push('');
+  lines.push('### State Models (sharedContracts.stateModels)');
+  for (const sm of ctx.sharedContracts.stateModels) {
+    lines.push(`- **${sm.id}**: ${sm.name} — ${sm.description}`);
+  }
+  lines.push('');
+  lines.push('### Event Registry (sharedContracts.eventRegistry)');
+  for (const ev of ctx.sharedContracts.eventRegistry) {
+    lines.push(`- **${ev.id}**: ${ev.name}`);
+  }
+  lines.push('');
+  lines.push('### Data Flows (sharedContracts.dataFlows)');
+  for (const df of ctx.sharedContracts.dataFlows) {
+    lines.push(`- **${df.id}**: ${df.source} → ${df.target} — ${df.description}`);
+  }
+  lines.push('');
+  lines.push('### Product Vocabulary');
+  for (const [tech, product] of Object.entries(ctx.productVocabulary)) {
+    lines.push(`- ${tech} → ${product}`);
+  }
+  return lines.join('\n');
+}
 
 /**
  * Main agent class for processing user stories through iterations
@@ -86,6 +159,193 @@ export class UserStoryAgent extends EventEmitter {
     if (this.config.mode === 'interactive' && !this.config.onIterationSelection) {
       throw new Error('Interactive mode requires onIterationSelection callback');
     }
+  }
+
+  /**
+   * Pass 0: Run system discovery from story texts and optional reference documents.
+   * Calls the LLM for mentions and canonical names, then mints stable IDs via the ID Registry.
+   * Caller should assign the returned context to state.systemContext if needed.
+   *
+   * @param stories - Array of initial story texts (user stories to analyze)
+   * @param referenceDocuments - Optional array of reference document texts
+   * @returns SystemDiscoveryContext with stable IDs (COMP-*, C-STATE-*, E-*, DF-*)
+   */
+  async runPass0Discovery(
+    stories: string[],
+    referenceDocuments?: string[]
+  ): Promise<SystemDiscoveryContext> {
+    const contextParts: string[] = [];
+    contextParts.push('## Stories to analyze\n');
+    for (let i = 0; i < stories.length; i++) {
+      contextParts.push(`### Story ${i + 1}\n${stories[i]}\n`);
+    }
+    if (referenceDocuments && referenceDocuments.length > 0) {
+      contextParts.push('## Reference documents\n');
+      for (let i = 0; i < referenceDocuments.length; i++) {
+        contextParts.push(`### Document ${i + 1}\n${referenceDocuments[i]}\n`);
+      }
+    }
+    const userMessage = contextParts.join('\n');
+
+    const response = await this.claudeClient.sendMessage({
+      systemPrompt: SYSTEM_DISCOVERY_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+      model: this.config.model,
+    });
+
+    const json = extractJSON(response.content);
+    if (!json || typeof json !== 'object') {
+      throw new Error('Pass 0: No valid JSON in LLM response');
+    }
+    const parsed = SystemDiscoveryMentionsSchema.parse(json) as SystemDiscoveryMentions;
+
+    const compSet = new Set(parsed.mentions.components);
+    const stateSet = new Set(parsed.mentions.stateModels);
+    const eventSet = new Set(parsed.mentions.events);
+
+    const registry = new IDRegistry();
+    const canonicalToId = new Map<string, string>();
+    const canonicalToEntityType = new Map<string, EntityType>();
+
+    for (const canonical of Object.keys(parsed.canonicalNames)) {
+      const mentionsList = parsed.canonicalNames[canonical] ?? [];
+      const entityType = classifyCanonical(mentionsList, compSet, stateSet, eventSet);
+      canonicalToEntityType.set(canonical, entityType);
+      const stableId = mintStableId(canonical, entityType, registry);
+      canonicalToId.set(canonical, stableId);
+    }
+
+    const components: Record<string, Component> = {};
+    const stateModels: StateModel[] = [];
+    const eventRegistry: EventDefinition[] = [];
+    const standardStates: StandardState[] = [
+      { type: 'loading', description: 'Data or action in progress' },
+      { type: 'error', description: 'Error state' },
+      { type: 'empty', description: 'No data' },
+      { type: 'success', description: 'Data loaded or action completed' },
+    ];
+
+    for (const [canonical, id] of canonicalToId) {
+      const entityType = canonicalToEntityType.get(canonical)!;
+      const evidence = parsed.evidence[canonical] ?? '';
+      if (entityType === 'component') {
+        components[id] = {
+          id,
+          productName: canonical,
+          description: evidence,
+        };
+      } else if (entityType === 'stateModel') {
+        stateModels.push({
+          id,
+          name: canonical,
+          description: evidence,
+          owner: '',
+          consumers: [],
+        });
+      } else if (entityType === 'event') {
+        eventRegistry.push({
+          id,
+          name: canonical,
+          payload: {},
+          emitter: '',
+          listeners: [],
+        });
+      }
+    }
+
+    const componentGraph: ComponentGraph = {
+      components,
+      compositionEdges: [],
+      coordinationEdges: [],
+      dataFlows: [],
+    };
+    const sharedContracts: SharedContracts = {
+      stateModels,
+      eventRegistry,
+      standardStates,
+      dataFlows: [],
+    };
+    const componentRoles: ComponentRole[] = [];
+    const productVocabulary = { ...parsed.vocabulary };
+
+    return {
+      componentGraph,
+      sharedContracts,
+      componentRoles,
+      productVocabulary,
+      timestamp: new Date().toISOString(),
+      referenceDocuments: referenceDocuments?.length ? referenceDocuments : undefined,
+    };
+  }
+
+  /**
+   * Pass 2: Run interconnection for each story. Extracts UI mapping, contract dependencies,
+   * ownership, and related stories; appends metadata sections to markdown.
+   *
+   * @param stories - Array of story objects (storyId + markdown)
+   * @param systemContext - System discovery context (components, contracts, vocabulary)
+   * @returns Interconnections per story and updated markdown with metadata sections
+   */
+  async runPass2Interconnection(
+    stories: Pass2StoryInput[],
+    systemContext: SystemDiscoveryContext
+  ): Promise<Pass2InterconnectionResult> {
+    const systemContextBlock = serializeSystemContext(systemContext);
+    const otherStoryIds = (storyId: string) =>
+      stories.map((s) => s.storyId).filter((id) => id !== storyId);
+
+    const interconnections: StoryInterconnections[] = [];
+
+    for (const story of stories) {
+      const otherIds = otherStoryIds(story.storyId);
+      const userMessage = [
+        systemContextBlock,
+        '',
+        '## Current story',
+        '',
+        `**Story ID**: ${story.storyId}`,
+        '',
+        story.markdown,
+        '',
+        '## Other story IDs',
+        '',
+        otherIds.length > 0 ? otherIds.join(', ') : '(none)',
+      ].join('\n');
+
+      const response = await this.claudeClient.sendMessage({
+        systemPrompt: STORY_INTERCONNECTION_PROMPT,
+        messages: [{ role: 'user', content: userMessage }],
+        model: this.config.model,
+      });
+
+      const json = extractJSON(response.content);
+      if (!json || typeof json !== 'object') {
+        throw new Error(`Pass 2: No valid JSON in LLM response for story ${story.storyId}`);
+      }
+      const parsed = StoryInterconnectionsSchema.parse(json) as StoryInterconnections;
+      // Normalize storyId to current story and ensure ownership object
+      const conn: StoryInterconnections = {
+        storyId: story.storyId,
+        uiMapping: parsed.uiMapping ?? {},
+        contractDependencies: Array.isArray(parsed.contractDependencies) ? parsed.contractDependencies : [],
+        ownership: {
+          ownsState: parsed.ownership?.ownsState ?? [],
+          consumesState: parsed.ownership?.consumesState ?? [],
+          emitsEvents: parsed.ownership?.emitsEvents ?? [],
+          listensToEvents: parsed.ownership?.listensToEvents ?? [],
+        },
+        relatedStories: Array.isArray(parsed.relatedStories) ? parsed.relatedStories : [],
+      };
+      interconnections.push(conn);
+    }
+
+    const renderer = new StoryRenderer();
+    const updatedStories: Pass2StoryInput[] = stories.map((story, i) => ({
+      storyId: story.storyId,
+      markdown: renderer.appendInterconnectionMetadata(story.markdown, interconnections[i]!),
+    }));
+
+    return { interconnections, updatedStories };
   }
 
   /**

@@ -2,7 +2,7 @@
  * Story state management for tracking user story through enhancement iterations
  */
 
-import type { ProductContext, StoryMetadata, ChangeApplied } from '../../shared/types.js';
+import type { ProductContext, StoryMetadata, ChangeApplied, SystemDiscoveryContext, StoryInterconnections } from '../../shared/types.js';
 import type { FailedIteration } from '../types.js';
 import type { VerificationResult } from '../../shared/schemas.js';
 
@@ -52,6 +52,10 @@ export interface StoryState {
   metadata: StoryMetadata | null;
   /** Array of iterations that failed after retries */
   failedIterations: FailedIteration[];
+  /** Pass 0 system discovery context (components, contracts, vocabulary) when run */
+  systemContext?: SystemDiscoveryContext | null;
+  /** Pass 2 interconnection metadata when run (UI mapping, contracts, ownership, related stories) */
+  interconnections?: StoryInterconnections | null;
 }
 
 /**
@@ -80,5 +84,7 @@ export function createInitialState(story: string): StoryState {
     iterationResults: [],
     metadata: null,
     failedIterations: [],
+    systemContext: null,
+    interconnections: null,
   };
 }

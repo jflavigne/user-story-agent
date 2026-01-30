@@ -276,6 +276,21 @@ export interface FixPatch {
 // ---------------------------------------------------------------------------
 
 /**
+ * Pass 0 LLM output: mentions and canonical names only (no IDs).
+ * IDs are minted by ID Registry (USA-45).
+ */
+export interface SystemDiscoveryMentions {
+  mentions: {
+    components: string[];
+    stateModels: string[];
+    events: string[];
+  };
+  canonicalNames: Record<string, string[]>;
+  evidence: Record<string, string>;
+  vocabulary: Record<string, string>;
+}
+
+/**
  * System discovery context passed to judge and rewriter
  */
 export interface SystemDiscoveryContext {

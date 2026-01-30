@@ -9,6 +9,8 @@ export type {
   IterationOption,
   IterationSelectionCallback,
   FailedIteration,
+  Pass2StoryInput,
+  Pass2InterconnectionResult,
   StreamEvent,
   StreamStartEvent,
   StreamChunkEvent,

@@ -270,6 +270,18 @@ export const SharedContractsSchema = z.object({
   dataFlows: z.array(DataFlowSchema),
 });
 
+/** Pass 0 LLM output: mentions and canonical names only (no IDs) */
+export const SystemDiscoveryMentionsSchema = z.object({
+  mentions: z.object({
+    components: z.array(z.string()),
+    stateModels: z.array(z.string()),
+    events: z.array(z.string()),
+  }),
+  canonicalNames: z.record(z.string(), z.array(z.string())),
+  evidence: z.record(z.string(), z.string()),
+  vocabulary: z.record(z.string(), z.string()),
+});
+
 export const SystemDiscoveryContextSchema = z.object({
   componentGraph: ComponentGraphSchema,
   sharedContracts: SharedContractsSchema,

@@ -12,6 +12,7 @@ import type {
 } from '../shared/types.js';
 import { JudgeRubricSchema, GlobalConsistencyReportSchema } from '../shared/schemas.js';
 import { UNIFIED_STORY_JUDGE_RUBRIC } from '../prompts/judge-rubrics/unified-story-judge.js';
+import { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from '../prompts/judge-rubrics/global-consistency.js';
 import { extractJSON } from '../shared/json-utils.js';
 import { logger } from '../utils/logger.js';
 
@@ -58,7 +59,7 @@ export function parseJudgeRubric(raw: unknown): JudgeRubric {
   return parsed.data as JudgeRubric;
 }
 
-/** Normalize global consistency raw: ensure issues/fixes are arrays of correct shape */
+/** Normalize global consistency raw: ensure issues/fixes are arrays */
 function normalizeGlobalConsistencyRaw(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object') return raw;
   const obj = raw as Record<string, unknown>;
@@ -147,12 +148,10 @@ export class StoryJudge {
     const storiesBlob = stories
       .map((s, i) => `### Story ${i + 1}\n${s}`)
       .join('\n\n');
-    const userMessage = `## System context\n${contextBlob}\n\n## Stories\n${storiesBlob}\n\nAssess consistency across these stories. Respond with JSON: { "issues": [ { "description": "...", "suggestedFixType": "...", "confidence": 0-1, "affectedStories": ["1","2"] } ], "fixes": [ { "type": "add-bidirectional-link"|"normalize-contract-id"|"normalize-term-to-vocabulary", "storyId": "...", "path": "...", "operation": "add"|"replace", "confidence": 0-1, "reasoning": "..." } ] }.`;
-
-    const systemPrompt = `You are a consistency judge. Compare the given stories and system context. Output only valid JSON with issues (array of consistency issues) and fixes (array of fix patches).`;
+    const userMessage = `## System context\n${contextBlob}\n\n## Stories\n${storiesBlob}\n\nAssess consistency across these stories. Respond with only the GlobalConsistencyReport JSON (no markdown fence, no extra text).`;
 
     const response = await this.claudeClient.sendMessage({
-      systemPrompt,
+      systemPrompt: GLOBAL_CONSISTENCY_JUDGE_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
     });
 

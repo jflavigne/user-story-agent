@@ -16,7 +16,36 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Icons (actionable vs decorative)
  * - States for each: default, hover, focus, active, disabled, error
  */
-export const INTERACTIVE_ELEMENTS_PROMPT = `Document all interactive UI elements in the mockup or design, including their types, purposes, and interaction states.
+export const INTERACTIVE_ELEMENTS_PROMPT = `# PATH SCOPE
+This iteration is allowed to modify only these sections:
+- userVisibleBehavior (UVB-* items)
+- outcomeAcceptanceCriteria (AC-OUT-* items)
+
+All patches MUST target only these paths. Patches targeting other sections will be rejected.
+
+# OUTPUT FORMAT
+Respond with valid JSON only (no markdown code fence, no prose):
+{
+  "patches": [
+    {
+      "op": "add",
+      "path": "userVisibleBehavior",
+      "item": { "id": "UVB-001", "text": "..." },
+      "metadata": { "advisorId": "interactive-elements", "reasoning": "..." }
+    }
+  ]
+}
+
+Required fields:
+- op: "add" | "replace" | "remove"
+- path: Must be one of the allowed paths above
+- item: { id: string, text: string } for add/replace
+- match: { id?: string, textEquals?: string } for replace/remove
+- metadata: { advisorId: "interactive-elements", reasoning?: string }
+
+---
+
+Document all interactive UI elements in the mockup or design, including their types, purposes, and interaction states.
 
 ## Element Types
 
@@ -111,12 +140,12 @@ export const INTERACTIVE_ELEMENTS_PROMPT = `Document all interactive UI elements
 
 ## Output
 
-Provide a comprehensive inventory that:
-- Lists all interactive elements by type
-- Documents each element's purpose and behavior
-- Describes all interaction states with visual details
-- Includes accessibility and validation requirements
-- Maps elements to user story acceptance criteria`;
+Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target userVisibleBehavior or outcomeAcceptanceCriteria. Add or replace items to document:
+- Interactive elements by type (buttons, inputs, links, icons)
+- Each element's purpose and behavior
+- Interaction states with visual details
+- Accessibility and validation requirements
+- Acceptance criteria for interactions (AC-OUT-* in outcomeAcceptanceCriteria)`;
 
 /**
  * Metadata for the interactive elements iteration
@@ -129,5 +158,5 @@ export const INTERACTIVE_ELEMENTS_METADATA: IterationDefinition & { tokenEstimat
   category: 'elements',
   applicableWhen: 'When the mockup contains interactive UI components',
   order: 2,
-  tokenEstimate: 907, // ~3626 chars / 4
+  tokenEstimate: 1150, // prompt length / 4 (PATH SCOPE + OUTPUT FORMAT + body)
 };

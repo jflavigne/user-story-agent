@@ -9,6 +9,7 @@ import {
   parseJudgeRubric,
   parseGlobalConsistencyReport,
 } from '../../src/agent/story-judge.js';
+import { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from '../../src/prompts/judge-rubrics/global-consistency.js';
 import type { ClaudeClient } from '../../src/agent/claude-client.js';
 import type { SystemDiscoveryContext } from '../../src/shared/types.js';
 
@@ -80,6 +81,20 @@ describe('StoryJudge', () => {
     await expect(judge.judgeStory('story', systemContext)).rejects.toThrow('Invalid judge rubric');
   });
 
+  it('uses GLOBAL_CONSISTENCY_JUDGE_PROMPT as system prompt', async () => {
+    mockSendMessage.mockResolvedValue({
+      content: JSON.stringify({ issues: [], fixes: [] }),
+      stopReason: 'end_turn',
+      usage: { inputTokens: 100, outputTokens: 20 },
+    });
+
+    await judge.judgeGlobalConsistency(['# S1', '# S2'], systemContext);
+
+    expect(mockSendMessage).toHaveBeenCalledTimes(1);
+    const call = mockSendMessage.mock.calls[0][0];
+    expect(call.systemPrompt).toBe(GLOBAL_CONSISTENCY_JUDGE_PROMPT);
+  });
+
   it('returns GlobalConsistencyReport from mock LLM response', async () => {
     const reportWithIssue = {
       issues: [{ description: 'Terminology mismatch', suggestedFixType: 'normalize-term', confidence: 0.8, affectedStories: ['1', '2'] }],
@@ -95,10 +110,57 @@ describe('StoryJudge', () => {
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0].description).toBe('Terminology mismatch');
+    expect(result.issues[0].confidence).toBe(0.8);
     expect(result.fixes).toEqual([]);
   });
 
-  it('returns fallback report when consistency response is invalid', async () => {
+  it('returns full GlobalConsistencyReport with issues and fixes including confidence', async () => {
+    const fullReport = {
+      issues: [
+        { description: 'Missing bidirectional link', suggestedFixType: 'missing-bidirectional-link', confidence: 0.9, affectedStories: ['story-10', 'story-25'] },
+      ],
+      fixes: [
+        {
+          type: 'add-bidirectional-link',
+          storyId: 'story-25',
+          path: 'outcomeAcceptanceCriteria',
+          operation: 'add',
+          item: { id: 'AC-OUT-NEW', text: 'Story 10 is listed as prerequisite.' },
+          confidence: 0.85,
+          reasoning: 'Story 10 lists this as dependent; add reverse link.',
+        },
+        {
+          type: 'normalize-contract-id',
+          storyId: 'story-10',
+          path: 'implementationNotes.stateOwnership',
+          operation: 'replace',
+          item: { id: 'IO-1', text: 'C-STATE-SHOPPING-CART' },
+          match: { id: 'IO-0' },
+          confidence: 1,
+          reasoning: 'Normalize to canonical contract ID from System Context.',
+        },
+      ],
+    };
+    mockSendMessage.mockResolvedValue({
+      content: JSON.stringify(fullReport),
+      stopReason: 'end_turn',
+      usage: { inputTokens: 150, outputTokens: 120 },
+    });
+
+    const result = await judge.judgeGlobalConsistency(['# S1', '# S2', '# S3'], systemContext);
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].confidence).toBe(0.9);
+    expect(result.issues[0].affectedStories).toEqual(['story-10', 'story-25']);
+    expect(result.fixes).toHaveLength(2);
+    expect(result.fixes[0].type).toBe('add-bidirectional-link');
+    expect(result.fixes[0].confidence).toBe(0.85);
+    expect(result.fixes[1].type).toBe('normalize-contract-id');
+    expect(result.fixes[1].confidence).toBe(1);
+    expect(result.fixes[1].match).toEqual({ id: 'IO-0' });
+  });
+
+  it('returns fallback report when consistency response is invalid (no JSON)', async () => {
     mockSendMessage.mockResolvedValue({
       content: 'Not JSON',
       stopReason: 'end_turn',
@@ -109,6 +171,20 @@ describe('StoryJudge', () => {
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0].description).toContain('Failed to parse');
+    expect(result.fixes).toEqual([]);
+  });
+
+  it('returns fallback report when JSON is valid but schema validation fails', async () => {
+    mockSendMessage.mockResolvedValue({
+      content: JSON.stringify({ issues: [{ description: 'x', suggestedFixType: 'y', confidence: 2, affectedStories: [] }], fixes: [] }),
+      stopReason: 'end_turn',
+      usage: { inputTokens: 50, outputTokens: 30 },
+    });
+
+    const result = await judge.judgeGlobalConsistency(['# S1'], systemContext);
+
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].description).toContain('Invalid consistency');
     expect(result.fixes).toEqual([]);
   });
 
@@ -198,6 +274,29 @@ describe('StoryJudge', () => {
     expect(report).not.toBeNull();
     expect(report!.issues).toEqual([]);
     expect(report!.fixes).toEqual([]);
+  });
+
+  it('parseGlobalConsistencyReport rejects confidence values outside 0-1 range', () => {
+    // Out of range confidence in issues - should fail validation
+    const invalidIssue = {
+      issues: [{ description: 'x', suggestedFixType: 'y', confidence: 1.5, affectedStories: [] }],
+      fixes: [],
+    };
+    expect(parseGlobalConsistencyReport(invalidIssue)).toBeNull();
+
+    // Out of range confidence in fixes - should fail validation
+    const invalidFix = {
+      issues: [],
+      fixes: [{ type: 'normalize-contract-id', storyId: 's1', path: 'story.asA', operation: 'replace', confidence: -0.1, reasoning: 'r' }],
+    };
+    expect(parseGlobalConsistencyReport(invalidFix)).toBeNull();
+
+    // Valid confidence values should pass
+    const valid = {
+      issues: [{ description: 'x', suggestedFixType: 'y', confidence: 0.8, affectedStories: [] }],
+      fixes: [{ type: 'normalize-contract-id', storyId: 's1', path: 'story.asA', operation: 'replace', confidence: 0.5, reasoning: 'r' }],
+    };
+    expect(parseGlobalConsistencyReport(valid)).not.toBeNull();
   });
 
   // --- formatSystemContext: include all SystemDiscoveryContext fields ---
