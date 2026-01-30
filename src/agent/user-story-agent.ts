@@ -44,6 +44,7 @@ import type {
 import { PatchOrchestrator } from './patch-orchestrator.js';
 import { StoryJudge } from './story-judge.js';
 import { StoryRewriter } from './story-rewriter.js';
+import { mergeNewRelationships as mergeRelationships } from './relationship-merger.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -1044,7 +1045,6 @@ export class UserStoryAgent extends EventEmitter {
 
   /**
    * Merges new relationships into system context.
-   * Stub implementation - full logic in USA-47.
    *
    * @param context - Current system context
    * @param relationships - New relationships to merge
@@ -1054,10 +1054,20 @@ export class UserStoryAgent extends EventEmitter {
     context: SystemDiscoveryContext,
     relationships: Relationship[]
   ): Promise<{ updatedContext: SystemDiscoveryContext; mergedCount: number }> {
-    // Stub: For now, just return unchanged context with 0 merged
-    // USA-47 will implement full merge logic with conflict resolution
-    logger.warn('mergeNewRelationships stub called - USA-47 not yet implemented');
-    return { updatedContext: context, mergedCount: 0 };
+    const result = mergeRelationships(context, relationships);
+
+    // Log manual review items if any
+    if (result.manualReview.length > 0) {
+      logger.warn(
+        `${result.manualReview.length} relationships require manual review:`,
+        result.manualReview.map((mr) => `${mr.relationship.id}: ${mr.reason}`)
+      );
+    }
+
+    return {
+      updatedContext: result.updatedContext,
+      mergedCount: result.mergedCount,
+    };
   }
 
   /**

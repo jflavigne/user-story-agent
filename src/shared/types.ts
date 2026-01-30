@@ -411,6 +411,8 @@ export interface Relationship {
   operation: 'add_node' | 'add_edge' | 'edit_node' | 'edit_edge';
   name: string;
   evidence: string;
+  /** Display name for add_node (component/stateModel/event) - USA-47 */
+  canonicalName?: string;
   /** Optional confidence score (0-1) for refinement loop filtering (USA-46) */
   confidence?: number;
   contractId?: string;
