@@ -8,6 +8,56 @@ import type { JudgeRubric, SystemDiscoveryContext } from '../shared/types.js';
 import { SECTION_SEPARATION_REWRITER_PROMPT } from '../prompts/rewriter/section-separation.js';
 import { logger } from '../utils/logger.js';
 
+/** Section separation violation from judge (structured) or plain string */
+type ViolationItem =
+  | string
+  | { section: string; quote: string; suggestedRewrite: string };
+
+/**
+ * Normalize violations to string list for the prompt.
+ * Accepts JudgeRubric violations (objects) or raw string array.
+ */
+function violationsToLines(violations: ViolationItem[]): string[] {
+  return violations.map((v) =>
+    typeof v === 'string'
+      ? v
+      : `[${v.section}] "${v.quote}" (suggested: ${v.suggestedRewrite})`
+  );
+}
+
+/**
+ * Extract story markdown from LLM response. Strips markdown code fences if present.
+ *
+ * @param content - Raw response content
+ * @returns Trimmed story content (fence stripped)
+ */
+export function extractRewrittenStory(content: string | null | undefined): string {
+  const raw = (content ?? '').trim();
+  if (!raw) {
+    throw new Error('Empty response from rewriter');
+  }
+  const fenceMatch = raw.match(/^```(?:markdown)?\s*\n?([\s\S]*?)\n?```\s*$/);
+  if (fenceMatch) {
+    return fenceMatch[1].trim();
+  }
+  return raw;
+}
+
+/**
+ * Validate that extracted content looks like a complete story (has ## heading).
+ * Throws with clear message if not.
+ */
+function validateRewrittenStory(content: string): void {
+  if (!content) {
+    throw new Error('Empty response from rewriter');
+  }
+  if (!/^##\s+/m.test(content)) {
+    throw new Error(
+      'Rewriter response does not appear to be a complete story (missing ## section headings)'
+    );
+  }
+}
+
 /**
  * LLM-based rewriter for section separation violations.
  */
@@ -30,20 +80,22 @@ export class StoryRewriter {
    * @param story - Full story markdown
    * @param violationsOrRubric - Judge rubric (uses sectionSeparation.violations) or list of violation descriptions
    * @param systemContext - System discovery context for consistency
-   * @returns Rewritten story markdown
+   * @returns Rewritten story markdown (full story, not patches)
    */
   async rewriteForSectionSeparation(
     story: string,
     violationsOrRubric: string[] | JudgeRubric,
     systemContext: SystemDiscoveryContext
   ): Promise<string> {
-    const violations = Array.isArray(violationsOrRubric)
+    const rawViolations = Array.isArray(violationsOrRubric)
       ? violationsOrRubric
       : (violationsOrRubric.sectionSeparation.violations ?? []);
+    const violations = violationsToLines(rawViolations as ViolationItem[]);
     logger.debug(`StoryRewriter: rewriting for section separation (${violations.length} violations)`);
 
     const contextBlob = this.formatSystemContext(systemContext);
-    const violationsList = violations.length > 0 ? violations.map((v) => `- ${v}`).join('\n') : '(none listed)';
+    const violationsList =
+      violations.length > 0 ? violations.map((v) => `- ${v}`).join('\n') : '(none listed)';
     const userMessage = `## System context\n${contextBlob}\n\n## Violations to fix\n${violationsList}\n\n## Current story\n${story}\n\nRewrite the story to fix the violations. Output only the full story markdown.`;
 
     const response = await this.claudeClient.sendMessage({
@@ -51,20 +103,23 @@ export class StoryRewriter {
       messages: [{ role: 'user', content: userMessage }],
     });
 
-    const content = response.content?.trim() ?? '';
-    if (!content) {
-      throw new Error('Empty response from rewriter');
-    }
-
+    const content = extractRewrittenStory(response.content);
+    validateRewrittenStory(content);
     return content;
   }
 
+  /**
+   * Format system discovery context for the prompt (same structure as StoryJudge).
+   */
   private formatSystemContext(ctx: SystemDiscoveryContext): string {
     const parts: string[] = [];
     if (ctx.timestamp) parts.push(`Timestamp: ${ctx.timestamp}`);
-    const components = ctx.componentGraph ? Object.values(ctx.componentGraph.components) : [];
+    const components = Object.values(ctx.componentGraph?.components ?? {});
     if (components.length) {
-      parts.push('Components: ' + components.map((c) => `${c.id} (${c.productName})`).join(', '));
+      parts.push(
+        'Components: ' +
+          components.map((c) => `${c.id} (${c.productName})`).join(', ')
+      );
     }
     const compEdges = ctx.componentGraph?.compositionEdges ?? [];
     if (compEdges.length) {
@@ -72,7 +127,9 @@ export class StoryRewriter {
     }
     const coordEdges = ctx.componentGraph?.coordinationEdges ?? [];
     if (coordEdges.length) {
-      parts.push('Coordination: ' + coordEdges.map((e) => `${e.from}→${e.to} (${e.via})`).join(', '));
+      parts.push(
+        'Coordination: ' + coordEdges.map((e) => `${e.from}→${e.to} (${e.via})`).join(', ')
+      );
     }
     const dataFlows = ctx.componentGraph?.dataFlows ?? [];
     if (dataFlows.length) {
@@ -92,10 +149,15 @@ export class StoryRewriter {
     }
     const contractDataFlows = ctx.sharedContracts?.dataFlows ?? [];
     if (contractDataFlows.length) {
-      parts.push('Contract data flows: ' + contractDataFlows.map((d) => d.id).join(', '));
+      parts.push(
+        'Contract data flows: ' + contractDataFlows.map((d) => d.id).join(', ')
+      );
     }
     if (ctx.componentRoles?.length) {
-      parts.push('Roles: ' + ctx.componentRoles.map((r) => `${r.componentId}: ${r.role}`).join(', '));
+      parts.push(
+        'Roles: ' +
+          ctx.componentRoles.map((r) => `${r.componentId}: ${r.role}`).join(', ')
+      );
     }
     const vocabEntries = ctx.productVocabulary ? Object.entries(ctx.productVocabulary) : [];
     if (vocabEntries.length) {
