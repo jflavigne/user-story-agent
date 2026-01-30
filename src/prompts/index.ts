@@ -18,3 +18,10 @@ export { LANGUAGE_SUPPORT_PROMPT, LANGUAGE_SUPPORT_METADATA } from './iterations
 export { LOCALE_FORMATTING_PROMPT, LOCALE_FORMATTING_METADATA } from './iterations/locale-formatting.js';
 export { CULTURAL_APPROPRIATENESS_PROMPT, CULTURAL_APPROPRIATENESS_METADATA } from './iterations/cultural-appropriateness.js';
 export { ANALYTICS_PROMPT, ANALYTICS_METADATA } from './iterations/analytics.js';
+export {
+  STORY_INTERCONNECTION_PROMPT,
+  STORY_INTERCONNECTION_METADATA,
+} from './iterations/story-interconnection.js';
+
+// Judge rubrics
+export { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from './judge-rubrics/global-consistency.js';
