@@ -979,4 +979,127 @@ describe('UserStoryAgent', () => {
       expect(result.needsManualReview).toBeUndefined();
     });
   });
+
+  describe('Pass 0: System Discovery (USA-44)', () => {
+    const systemDiscoveryResponse = (payload: object) => ({
+      content: JSON.stringify(payload),
+      stopReason: 'end_turn' as const,
+      usage: { inputTokens: 100, outputTokens: 50 },
+    });
+
+    it('should extract component mentions and mint stable IDs', async () => {
+      mockSendMessage.mockResolvedValue(
+        systemDiscoveryResponse({
+          mentions: {
+            components: ['Login Button', 'login-btn', 'User Profile'],
+            stateModels: ['userProfile'],
+            events: ['user-authenticated'],
+          },
+          canonicalNames: {
+            'Login Button': ['Login Button', 'login-btn'],
+            'User Profile': ['User Profile', 'userProfile'],
+            'user-authenticated': ['user-authenticated', 'USER_AUTH'],
+          },
+          evidence: {
+            'Login Button': 'Story mentions login',
+            'User Profile': 'Story mentions profile',
+            'user-authenticated': 'Spec says on login',
+          },
+          vocabulary: {
+            'login-btn': 'Login Button',
+            userProfile: 'User Profile',
+          },
+        })
+      );
+
+      const agent = new UserStoryAgent(validConfig);
+      const ctx = await agent.runPass0Discovery(['As a user, I want to login']);
+
+      expect(ctx).toBeDefined();
+      expect(ctx.componentGraph).toBeDefined();
+      expect(ctx.componentGraph.components).toBeDefined();
+      expect(ctx.sharedContracts.stateModels).toBeDefined();
+      expect(ctx.sharedContracts.eventRegistry).toBeDefined();
+      expect(ctx.productVocabulary).toBeDefined();
+
+      const compIds = Object.keys(ctx.componentGraph.components);
+      expect(compIds.length).toBeGreaterThanOrEqual(1);
+      compIds.forEach((id) => {
+        expect(id).toMatch(/^COMP-/);
+      });
+
+      const componentValues = Object.values(ctx.componentGraph.components);
+      const canonicalNames = componentValues.map((c) => c.productName);
+      expect(canonicalNames).toContain('Login Button');
+      expect(canonicalNames).toContain('User Profile');
+    });
+
+    it('should handle empty stories array', async () => {
+      mockSendMessage.mockResolvedValue(
+        systemDiscoveryResponse({
+          mentions: { components: [], stateModels: [], events: [] },
+          canonicalNames: {},
+          evidence: {},
+          vocabulary: {},
+        })
+      );
+
+      const agent = new UserStoryAgent(validConfig);
+      const ctx = await agent.runPass0Discovery([]);
+
+      expect(ctx).toBeDefined();
+      expect(ctx.componentGraph.components).toEqual({});
+      expect(ctx.sharedContracts.stateModels).toEqual([]);
+      expect(ctx.sharedContracts.eventRegistry).toEqual([]);
+      expect(ctx.productVocabulary).toEqual({});
+      expect(ctx.timestamp).toBeDefined();
+    });
+
+    it('should parse product vocabulary correctly', async () => {
+      mockSendMessage.mockResolvedValue(
+        systemDiscoveryResponse({
+          mentions: { components: ['Filter Bar'], stateModels: [], events: [] },
+          canonicalNames: { 'Filter Bar': ['Filter Bar', 'filter-bar'] },
+          evidence: { 'Filter Bar': 'Mockup shows filter bar' },
+          vocabulary: {
+            'filter-bar': 'Filter Bar',
+            'top bar': 'Filter Bar',
+          },
+        })
+      );
+
+      const agent = new UserStoryAgent(validConfig);
+      const ctx = await agent.runPass0Discovery(['Story with filter bar']);
+
+      expect(ctx.productVocabulary).toEqual({
+        'filter-bar': 'Filter Bar',
+        'top bar': 'Filter Bar',
+      });
+    });
+
+    it('should mint deterministic IDs via ID Registry', async () => {
+      const payload = {
+        mentions: {
+          components: ['Login Button'],
+          stateModels: [],
+          events: [],
+        },
+        canonicalNames: { 'Login Button': ['Login Button', 'login-btn'] },
+        evidence: { 'Login Button': 'Story' },
+        vocabulary: { 'login-btn': 'Login Button' },
+      };
+      mockSendMessage.mockResolvedValue(systemDiscoveryResponse(payload));
+
+      const agent = new UserStoryAgent(validConfig);
+      const ctx1 = await agent.runPass0Discovery(['Story 1']);
+      mockSendMessage.mockResolvedValue(systemDiscoveryResponse(payload));
+      const ctx2 = await agent.runPass0Discovery(['Story 2']);
+
+      const id1 = Object.keys(ctx1.componentGraph.components)[0];
+      const id2 = Object.keys(ctx2.componentGraph.components)[0];
+      expect(id1).toMatch(/^COMP-/);
+      expect(id2).toMatch(/^COMP-/);
+      expect(id1).toBe(id2);
+    });
+  });
 });

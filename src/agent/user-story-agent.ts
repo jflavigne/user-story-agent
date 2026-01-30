@@ -244,11 +244,7 @@ export class UserStoryAgent extends EventEmitter {
       model: this.config.model,
     });
 
-    const json = extractJSON(response.content);
-    if (!json || typeof json !== 'object') {
-      throw new Error('Pass 0: No valid JSON in LLM response');
-    }
-    const parsed = SystemDiscoveryMentionsSchema.parse(json) as SystemDiscoveryMentions;
+    const parsed = this.parseSystemDiscoveryMentions(response.content);
 
     const compSet = new Set(parsed.mentions.components);
     const stateSet = new Set(parsed.mentions.stateModels);
@@ -327,6 +323,22 @@ export class UserStoryAgent extends EventEmitter {
       timestamp: new Date().toISOString(),
       referenceDocuments: referenceDocuments?.length ? referenceDocuments : undefined,
     };
+  }
+
+  /**
+   * Parses LLM response from system discovery prompt into mentions structure.
+   * Handles wrapped responses (e.g., "Here's the result: {...}").
+   *
+   * @param content - Raw LLM response content
+   * @returns SystemDiscoveryMentions with canonical names
+   * @throws Error if no valid JSON or schema validation fails
+   */
+  private parseSystemDiscoveryMentions(content: string): SystemDiscoveryMentions {
+    const json = extractJSON(content);
+    if (!json || typeof json !== 'object') {
+      throw new Error('Pass 0: No valid JSON in LLM response');
+    }
+    return SystemDiscoveryMentionsSchema.parse(json) as SystemDiscoveryMentions;
   }
 
   /**
