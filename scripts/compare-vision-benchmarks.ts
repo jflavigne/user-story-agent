@@ -16,14 +16,11 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { countOverSpecification, extractOverSpecSamples } from '../src/shared/overspecification-patterns.js';
 
 // ---------------------------------------------------------------------------
 // Over-specification patterns (aligned with tests/prompts/functional-vision-boundary.test.ts)
 // ---------------------------------------------------------------------------
-
-const EXACT_COLOR_REGEX = /#[\da-fA-F]{3,8}\b|rgb\s*\([^)]+\)|rgba\s*\([^)]+\)|hsl\s*\([^)]+\)|hsla\s*\([^)]+\)/g;
-const PIXEL_MEASUREMENT_REGEX = /\b\d+px\b|\b\d+rem\b|\b\d+em\b/g;
-const FONT_SPEC_REGEX = /\bfont-family\s*:\s*["']?(Helvetica|Arial|Inter)["']?|(?:Helvetica|Arial|Inter)\s+\d+px|\d+px\s+(?:Helvetica|Arial|Inter)|font-weight\s*:\s*\d+|font-size\s*:\s*\d+px/gi;
 
 export interface OverSpecCounts {
   exactColor: number;
@@ -33,15 +30,7 @@ export interface OverSpecCounts {
 }
 
 export function countOverSpecificationInText(text: string): OverSpecCounts {
-  const exactColor = (text.match(EXACT_COLOR_REGEX) ?? []).length;
-  const pixelMeasurement = (text.match(PIXEL_MEASUREMENT_REGEX) ?? []).length;
-  const fontSpec = (text.match(FONT_SPEC_REGEX) ?? []).length;
-  return {
-    exactColor,
-    pixelMeasurement,
-    fontSpec,
-    total: exactColor + pixelMeasurement + fontSpec,
-  };
+  return countOverSpecification(text);
 }
 
 export interface StoryOverSpec {
@@ -90,11 +79,7 @@ function analyzeBenchmarkFile(
 
     const report: StoryOverSpec = { storyId: story.id, counts };
     if (includeSamples && counts.total > 0) {
-      report.sampleMatches = {
-        color: (content.match(EXACT_COLOR_REGEX) ?? []).slice(0, 5),
-        px: (content.match(PIXEL_MEASUREMENT_REGEX) ?? []).slice(0, 5),
-        font: (content.match(FONT_SPEC_REGEX) ?? []).slice(0, 5),
-      };
+      report.sampleMatches = extractOverSpecSamples(content, 5);
     }
     storyReports.push(report);
   }

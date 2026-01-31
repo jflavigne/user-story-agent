@@ -42,3 +42,15 @@ export type {
   IterationId,
   IterationRegistryEntry,
 } from './iteration-registry.js';
+
+/**
+ * Over-specification pattern detection
+ */
+export {
+  EXACT_COLOR_PATTERN,
+  PIXEL_MEASUREMENT_PATTERN,
+  FONT_SPEC_PATTERN,
+  hasOverSpecification,
+  countOverSpecification,
+  extractOverSpecSamples,
+} from './overspecification-patterns.js';

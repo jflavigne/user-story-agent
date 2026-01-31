@@ -14,6 +14,7 @@ import { ACCESSIBILITY_PROMPT } from '../../../src/prompts/iterations/accessibil
 import { VALIDATION_PROMPT } from '../../../src/prompts/iterations/validation.js';
 import { PERFORMANCE_PROMPT } from '../../../src/prompts/iterations/performance.js';
 import { ANALYTICS_PROMPT } from '../../../src/prompts/iterations/analytics.js';
+import { hasOverSpecification } from '../../../src/shared/overspecification-patterns.js';
 
 const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = [
   { id: 'interactive-elements', prompt: INTERACTIVE_ELEMENTS_PROMPT },
@@ -23,26 +24,6 @@ const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = [
   { id: 'performance', prompt: PERFORMANCE_PROMPT },
   { id: 'analytics', prompt: ANALYTICS_PROMPT },
 ];
-
-// Over-specification patterns: user stories must NOT contain these
-const EXACT_COLOR_REGEX = /#[\da-fA-F]{3,8}\b|rgb\s*\([^)]+\)|rgba\s*\([^)]+\)|hsl\s*\([^)]+\)|hsla\s*\([^)]+\)/;
-const PIXEL_MEASUREMENT_REGEX = /\b\d+px\b|\b\d+rem\b|\b\d+em\b/;
-const FONT_SPEC_REGEX = /\bfont-family\s*:\s*["']?(Helvetica|Arial|Inter)["']?|(?:Helvetica|Arial|Inter)\s+\d+px|\d+px\s+(?:Helvetica|Arial|Inter)|font-weight\s*:\s*\d+|font-size\s*:\s*\d+px/i;
-
-/**
- * Returns true if text contains over-specification (exact colors, px/rem, font specs).
- */
-function hasOverSpecification(text: string): {
-  hasExactColor: boolean;
-  hasPixelMeasurement: boolean;
-  hasFontSpec: boolean;
-} {
-  return {
-    hasExactColor: EXACT_COLOR_REGEX.test(text),
-    hasPixelMeasurement: PIXEL_MEASUREMENT_REGEX.test(text),
-    hasFontSpec: FONT_SPEC_REGEX.test(text),
-  };
-}
 
 describe('functional vision boundary', () => {
   describe('iteration prompts include functional guidance sections', () => {
