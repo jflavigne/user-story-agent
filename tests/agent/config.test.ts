@@ -58,7 +58,7 @@ describe('Config Module', () => {
     it('should apply default model', () => {
       const config = mergeConfigWithDefaults({});
 
-      expect(config.model).toBe(DEFAULT_MODEL);
+      expect(config.model).toBe('balanced');
     });
 
     it('should override defaults with provided values', () => {

@@ -138,28 +138,56 @@ async function loadImageBuffer(input: ImageInput): Promise<{ buffer: Buffer; med
 }
 
 /**
- * Resizes image if either dimension exceeds Claude's limit (1568px).
+ * Resizes and compresses image if either dimension exceeds Claude's limit (1568px).
  * Returns buffer and metadata; uses sharp when available.
+ * Applies optimal compression settings for JPEG (quality 85) and PNG (level 9).
  */
 async function resizeIfNeeded(
   buffer: Buffer,
   mediaType: SupportedMediaType
 ): Promise<{ buffer: Buffer; mediaType: SupportedMediaType }> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-    const sharp = require('sharp') as typeof import('sharp');
+    // Use dynamic import for ES module compatibility
+    const sharpModule = await import('sharp');
+    const sharp = sharpModule.default;
+
     const image = sharp(buffer);
     const meta = await image.metadata();
     const width = meta.width ?? 0;
     const height = meta.height ?? 0;
 
-    if (width <= CLAUDE_MAX_DIMENSION && height <= CLAUDE_MAX_DIMENSION) {
+    // Check if image needs processing
+    const needsResize = width > CLAUDE_MAX_DIMENSION || height > CLAUDE_MAX_DIMENSION;
+    const sizeMB = buffer.length / (1024 * 1024);
+    const needsCompression = sizeMB > 1.0; // Compress if over 1MB
+
+    // If image is small and within limits, return as-is
+    if (!needsResize && !needsCompression) {
       return { buffer, mediaType };
     }
 
-    const resized = await image
-      .resize(CLAUDE_MAX_DIMENSION, CLAUDE_MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
-      .toBuffer();
+    let resizer = image;
+
+    // Resize if needed
+    if (needsResize) {
+      resizer = resizer.resize(CLAUDE_MAX_DIMENSION, CLAUDE_MAX_DIMENSION, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+    }
+
+    // Apply format-specific compression
+    if (mediaType === 'image/jpeg') {
+      resizer = resizer.jpeg({ quality: 85, mozjpeg: true });
+    } else if (mediaType === 'image/png') {
+      resizer = resizer.png({ compressionLevel: 9 });
+    } else if (mediaType === 'image/webp') {
+      resizer = resizer.webp({ quality: 85 });
+    }
+
+    const resized = await resizer.toBuffer();
+    validateImageSize(resized);
+
     return { buffer: resized, mediaType };
   } catch (error) {
     // Log warning that image may be too large
@@ -168,6 +196,20 @@ async function resizeIfNeeded(
     );
     console.warn(`Error: ${error instanceof Error ? error.message : String(error)}`);
     return { buffer, mediaType };
+  }
+}
+
+/**
+ * Validates image size and warns if approaching limits.
+ * Claude API limit: 32 MB total request size.
+ */
+function validateImageSize(buffer: Buffer): void {
+  const sizeMB = buffer.length / (1024 * 1024);
+  if (sizeMB > 5) {
+    console.warn(`Warning: Image size (${sizeMB.toFixed(2)}MB) is large. Consider higher compression or smaller dimensions.`);
+  }
+  if (sizeMB > 10) {
+    console.warn(`Warning: Image size (${sizeMB.toFixed(2)}MB) may cause issues. Claude API has 32MB request limit.`);
   }
 }
 
@@ -191,4 +233,51 @@ export async function prepareImageForClaude(input: ImageInput): Promise<ImageBlo
       data,
     },
   };
+}
+
+/**
+ * Calculates total size of all images in a request.
+ * Claude API has a 32 MB total request size limit.
+ *
+ * @param images - Array of ImageBlockParam objects
+ * @returns Total size in bytes
+ */
+export function calculateTotalImageSize(images: ImageBlockParam[]): number {
+  return images.reduce((total, img) => {
+    if (img.source.type === 'base64') {
+      // Base64 is ~33% larger than binary, decode to get actual size
+      const sizeBytes = Buffer.from(img.source.data, 'base64').length;
+      return total + sizeBytes;
+    }
+    return total;
+  }, 0);
+}
+
+/**
+ * Validates that total image size is within Claude API limits.
+ * Warns if approaching 32 MB limit.
+ *
+ * @param images - Array of ImageBlockParam objects
+ * @throws Error if total size exceeds 32 MB
+ */
+export function validateTotalImageSize(images: ImageBlockParam[]): void {
+  const totalBytes = calculateTotalImageSize(images);
+  const totalMB = totalBytes / (1024 * 1024);
+
+  if (totalMB > 32) {
+    throw new Error(
+      `Total image size (${totalMB.toFixed(2)}MB) exceeds Claude API limit of 32MB. ` +
+      `Reduce number of images or compress further.`
+    );
+  }
+
+  if (totalMB > 25) {
+    console.warn(
+      `Warning: Total image size (${totalMB.toFixed(2)}MB) is approaching Claude API limit of 32MB.`
+    );
+  }
+
+  if (totalMB > 20) {
+    console.log(`Total image size: ${totalMB.toFixed(2)}MB (${images.length} images)`);
+  }
 }

@@ -13,6 +13,16 @@ import type { JudgeRubric } from '../../src/shared/types.js';
 import { StreamingHandler } from '../../src/agent/streaming.js';
 import { logger } from '../../src/utils/logger.js';
 
+function getMessageText(content: string | Array<{ type: string; text?: string }>): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  return content
+    .filter((block) => block.type === 'text' && block.text)
+    .map((block) => block.text)
+    .join('\n');
+}
+
 // Mock ClaudeClient
 vi.mock('../../src/agent/claude-client.js', () => {
   return {
@@ -272,9 +282,9 @@ describe('UserStoryAgent', () => {
       const secondCall = mockSendMessage.mock.calls[1][0];
       const thirdCall = mockSendMessage.mock.calls[2][0];
 
-      expect(firstCall.messages[0].content).toContain('As a user, I want to login');
-      expect(secondCall.messages[0].content).toContain('Story with user roles');
-      expect(thirdCall.messages[0].content).toContain('Story with user roles and validation');
+      expect(getMessageText(firstCall.messages[0].content)).toContain('As a user, I want to login');
+      expect(getMessageText(secondCall.messages[0].content)).toContain('Story with user roles');
+      expect(getMessageText(thirdCall.messages[0].content)).toContain('Story with user roles and validation');
     });
 
     it('should pass product context to state', async () => {
@@ -291,7 +301,7 @@ describe('UserStoryAgent', () => {
 
       // Verify product context was included in the prompt
       const callArgs = mockSendMessage.mock.calls[0][0];
-      const userMessage = callArgs.messages[0].content;
+      const userMessage = getMessageText(callArgs.messages[0].content);
 
       expect(userMessage).toContain('TestApp');
       expect(userMessage).toContain('web app');
@@ -396,7 +406,7 @@ describe('UserStoryAgent', () => {
 
       // Verify the first iteration call includes proper context
       const firstCall = mockSendMessage.mock.calls[0][0];
-      const userMessage = firstCall.messages[0].content;
+      const userMessage = getMessageText(firstCall.messages[0].content);
 
       // Should include the iteration prompt
       const userRolesIteration = getIterationById('user-roles');
@@ -419,7 +429,7 @@ describe('UserStoryAgent', () => {
       await agent.processUserStory('As a user, I want to login');
 
       const firstCall = mockSendMessage.mock.calls[0][0];
-      const userMessage = firstCall.messages[0].content;
+      const userMessage = getMessageText(firstCall.messages[0].content);
 
       // Should include product context in the prompt
       expect(userMessage).toContain('TestApp');
@@ -455,7 +465,7 @@ describe('UserStoryAgent', () => {
 
       // Second call should include context about the first iteration
       const secondCall = mockSendMessage.mock.calls[1][0];
-      const secondUserMessage = secondCall.messages[0].content;
+      const secondUserMessage = getMessageText(secondCall.messages[0].content);
 
       // Should reference the first iteration's output
       expect(secondUserMessage).toContain('Story with roles');
@@ -586,7 +596,7 @@ describe('UserStoryAgent', () => {
 
       expect(mockSendMessage).toHaveBeenCalled();
       const callArgs = mockSendMessage.mock.calls[0][0];
-      expect(callArgs.messages[0].content).toContain(longStory);
+      expect(getMessageText(callArgs.messages[0].content)).toContain(longStory);
     });
 
     it('should handle special characters in story', async () => {
@@ -597,7 +607,7 @@ describe('UserStoryAgent', () => {
 
       expect(mockSendMessage).toHaveBeenCalled();
       const callArgs = mockSendMessage.mock.calls[0][0];
-      expect(callArgs.messages[0].content).toContain(specialStory);
+      expect(getMessageText(callArgs.messages[0].content)).toContain(specialStory);
     });
   });
 

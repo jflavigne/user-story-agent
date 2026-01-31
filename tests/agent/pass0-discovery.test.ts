@@ -8,6 +8,16 @@ import type { UserStoryAgentConfig } from '../../src/agent/types.js';
 import { ClaudeClient } from '../../src/agent/claude-client.js';
 import { createInitialState } from '../../src/agent/state/story-state.js';
 
+function getMessageText(content: string | Array<{ type: string; text?: string }>): string {
+  if (typeof content === 'string') {
+    return content;
+  }
+  return content
+    .filter((block) => block.type === 'text' && block.text)
+    .map((block) => block.text)
+    .join('\n');
+}
+
 vi.mock('../../src/agent/claude-client.js', () => ({
   ClaudeClient: vi.fn(),
 }));
@@ -150,8 +160,9 @@ describe('runPass0Discovery', () => {
     const call = mockSendMessage.mock.calls[0][0];
     expect(call.systemPrompt).toContain('Pass 0');
     expect(call.systemPrompt).toContain('System Discovery');
-    expect(call.messages[0].content).toContain('Story one.');
-    expect(call.messages[0].content).toContain('Story two.');
+    const messageText = getMessageText(call.messages[0].content);
+    expect(messageText).toContain('Story one.');
+    expect(messageText).toContain('Story two.');
   });
 
   it('stores context in state when caller assigns to state.systemContext', async () => {

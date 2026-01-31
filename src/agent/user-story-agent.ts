@@ -31,7 +31,14 @@ import { AgentError } from '../shared/errors.js';
 import { StreamingHandler } from './streaming.js';
 import { Evaluator } from './evaluator.js';
 import { SYSTEM_DISCOVERY_PROMPT } from '../prompts/iterations/system-discovery.js';
-import { prepareImageForClaude } from '../utils/image-utils.js';
+import { prepareImageForClaude, validateTotalImageSize } from '../utils/image-utils.js';
+import {
+  extractFigmaInfo,
+  autoDetectFigmaComponents,
+  createComponentContext,
+  type FigmaComponent,
+  type FigmaDocument,
+} from '../utils/figma-utils.js';
 import { STORY_INTERCONNECTION_PROMPT } from '../prompts/iterations/story-interconnection.js';
 import type { StoryForInterconnection } from '../prompts/iterations/story-interconnection.js';
 import { IDRegistry, mintStableId, type EntityType } from './id-registry.js';
@@ -259,20 +266,87 @@ export class UserStoryAgent extends EventEmitter {
         contextParts.push(`### Document ${i + 1}\n${referenceDocuments[i]}\n`);
       }
     }
-    const userMessage = contextParts.join('\n');
 
-    const content: Array<TextBlockParam | ImageBlockParam> = [{ type: 'text', text: userMessage }];
+    const imageBlocks: ImageBlockParam[] = [];
+    const figmaComponents: FigmaComponent[] = [];
+
+    // Auto-detect Figma components if mockup images contain Figma URLs
     if (this.config.mockupImages && this.config.mockupImages.length > 0) {
       for (const imageInput of this.config.mockupImages) {
-        try {
-          const imageBlock = await prepareImageForClaude(imageInput);
-          content.push(imageBlock);
-        } catch (error) {
-          const imagePath = imageInput.path || imageInput.url || 'base64 image';
-          throw new Error(
-            `Failed to load mockup image: ${imagePath}. ${error instanceof Error ? error.message : String(error)}`
-          );
+        // Check if this is a Figma URL
+        const figmaUrl = imageInput.url || imageInput.path || '';
+        const figmaInfo = extractFigmaInfo(figmaUrl);
+
+        if (figmaInfo.isValid && process.env.FIGMA_ACCESS_TOKEN) {
+          logger.info(`[Pass 0] Auto-detecting Figma components from ${figmaInfo.fileKey}`);
+          try {
+            const result = await autoDetectFigmaComponents(
+              figmaUrl,
+              process.env.FIGMA_ACCESS_TOKEN,
+              async (fileKey: string): Promise<FigmaDocument> => {
+                const response = await fetch(
+                  `https://api.figma.com/v1/files/${fileKey}`,
+                  { headers: { 'X-Figma-Token': process.env.FIGMA_ACCESS_TOKEN! } }
+                );
+                if (!response.ok) {
+                  throw new Error(`Figma API error: ${response.status}`);
+                }
+                const data = await response.json();
+                if (!data || typeof data !== 'object' || !('document' in data) || !data.document) {
+                  throw new Error(
+                    `Invalid Figma API response for file ${fileKey}: missing document field`
+                  );
+                }
+                return data as FigmaDocument;
+              }
+            );
+            imageBlocks.push(...result.images);
+            figmaComponents.push(...result.components);
+            logger.info(`[Pass 0] Added ${result.images.length} images (1 full + ${result.components.length} components)`);
+          } catch (error) {
+            logger.warn(`[Pass 0] Figma auto-detection failed: ${error}. Falling back to simple image load.`);
+            // Fall back to loading as regular image
+            try {
+              const imageBlock = await prepareImageForClaude(imageInput);
+              imageBlocks.push(imageBlock);
+            } catch (fallbackError) {
+              const imagePath = imageInput.path || imageInput.url || 'base64 image';
+              throw new Error(
+                `Failed to load mockup image: ${imagePath}. ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
+              );
+            }
+          }
+        } else {
+          // Not a Figma URL, load as regular image
+          try {
+            const imageBlock = await prepareImageForClaude(imageInput);
+            imageBlocks.push(imageBlock);
+          } catch (error) {
+            const imagePath = imageInput.path || imageInput.url || 'base64 image';
+            throw new Error(
+              `Failed to load mockup image: ${imagePath}. ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
         }
+      }
+    }
+
+    // Add component context if Figma components were detected
+    let userMessage = contextParts.join('\n');
+    if (figmaComponents.length > 0) {
+      const componentContext = createComponentContext(figmaComponents);
+      userMessage = `${componentContext}\n\n---\n\n${userMessage}`;
+    }
+
+    const content: Array<TextBlockParam | ImageBlockParam> = [{ type: 'text', text: userMessage }];
+    content.push(...imageBlocks);
+
+    // Validate total image size
+    if (imageBlocks.length > 0) {
+      try {
+        validateTotalImageSize(imageBlocks);
+      } catch (error) {
+        logger.warn(`[Pass 0] Image size validation: ${error}`);
       }
     }
 

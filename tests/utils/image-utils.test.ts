@@ -71,7 +71,7 @@ describe('Image preprocessing (prepareImageForClaude)', () => {
   it('rejects path traversal for relative path escaping cwd', async () => {
     await expect(
       prepareImageForClaude({ path: '../../../etc/passwd' })
-    ).rejects.toThrow(/Path traversal detected/);
+    ).rejects.toThrow(/Path must be within current directory/);
   });
 
   it('accepts image/jpeg media type', async () => {
