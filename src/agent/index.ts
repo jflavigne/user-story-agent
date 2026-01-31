@@ -12,6 +12,7 @@ export type {
   Pass2StoryInput,
   Pass2StoryResultItem,
   Pass2InterconnectionResult,
+  SystemWorkflowResult,
   StreamEvent,
   StreamStartEvent,
   StreamChunkEvent,

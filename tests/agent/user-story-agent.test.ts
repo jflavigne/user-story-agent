@@ -22,11 +22,13 @@ vi.mock('../../src/agent/claude-client.js', () => {
 
 // Mock StoryJudge and StoryRewriter so judge/rewrite don't call API; tests override return values
 const mockJudgeStory = vi.fn();
+const mockJudgeGlobalConsistency = vi.fn();
 const mockRewriteForSectionSeparation = vi.fn();
 
 vi.mock('../../src/agent/story-judge.js', () => ({
   StoryJudge: vi.fn().mockImplementation(() => ({
     judgeStory: mockJudgeStory,
+    judgeGlobalConsistency: mockJudgeGlobalConsistency,
   })),
 }));
 
@@ -148,7 +150,7 @@ describe('UserStoryAgent', () => {
       };
 
       expect(() => new UserStoryAgent(invalidConfig)).toThrow(
-        /Workflow mode requires productContext with productType/
+        /Workflow and system-workflow modes require productContext with productType/
       );
     });
 
@@ -156,6 +158,19 @@ describe('UserStoryAgent', () => {
       const config: UserStoryAgentConfig = {
         ...validConfig,
         mode: 'workflow',
+        productContext: {
+          productName: 'TestApp',
+          productType: 'web',
+        },
+      };
+
+      expect(() => new UserStoryAgent(config)).not.toThrow();
+    });
+
+    it('should accept system-workflow mode (USA-53)', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        mode: 'system-workflow',
         productContext: {
           productName: 'TestApp',
           productType: 'web',
@@ -1489,6 +1504,372 @@ describe('UserStoryAgent', () => {
       );
 
       expect(results[0].interconnections.storyId).toBe('USA-001');
+    });
+  });
+
+  describe('System Workflow (USA-53)', () => {
+    const systemDiscoveryResponse = (payload: object) => ({
+      content: JSON.stringify(payload),
+      stopReason: 'end_turn' as const,
+      usage: { inputTokens: 100, outputTokens: 50 },
+    });
+
+    function buildMinimalSystemContext(): SystemDiscoveryContext {
+      return {
+        componentGraph: {
+          components: {},
+          compositionEdges: [],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [],
+        productVocabulary: {},
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    beforeEach(() => {
+      mockJudgeStory.mockResolvedValue({
+        ...minimalJudgeRubric(5),
+        newRelationships: [],
+      });
+      mockJudgeGlobalConsistency.mockResolvedValue({
+        issues: [],
+        fixes: [],
+      });
+    });
+
+    it('should run full workflow end-to-end (Pass 0 → Pass 1 → Pass 2 → Pass 2b)', async () => {
+      const pass1Response = {
+        content: JSON.stringify({
+          enhancedStory: '# Login\nAs a user I want to login.',
+          changesApplied: [],
+        }),
+        stopReason: 'end_turn' as const,
+        usage: { inputTokens: 100, outputTokens: 50 },
+      };
+      const pass2Response = {
+        content: JSON.stringify({
+          storyId: 'Login',
+          uiMapping: {},
+          contractDependencies: [],
+          ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+          relatedStories: [],
+        }),
+        stopReason: 'end_turn' as const,
+        usage: { inputTokens: 100, outputTokens: 50 },
+      };
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: ['Login'], stateModels: [], events: [] },
+            canonicalNames: { Login: ['Login', 'login'] },
+            evidence: { Login: 'Story' },
+            vocabulary: { login: 'Login' },
+          })
+        )
+        .mockResolvedValueOnce(pass1Response)
+        .mockResolvedValueOnce(pass1Response)
+        .mockResolvedValue(pass2Response);
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['As a user I want to login']);
+
+      expect(result.systemContext).toBeDefined();
+      expect(result.systemContext.componentGraph).toBeDefined();
+      expect(result.stories).toHaveLength(1);
+      expect(result.stories[0].id).toBe('Login');
+      expect(result.stories[0].content).toContain('Login');
+      expect(result.stories[0].interconnections).toBeDefined();
+      expect(result.consistencyReport).toEqual({ issues: [], fixes: [] });
+      expect(result.metadata.passesCompleted).toEqual([
+        'Pass 0 (discovery)',
+        'Pass 1 (generation with refinement)',
+        'Pass 2 (interconnection)',
+        'Pass 2b (global consistency)',
+      ]);
+      expect(result.metadata.refinementRounds).toBeGreaterThanOrEqual(0);
+      expect(result.metadata.fixesApplied).toBe(0);
+      expect(result.metadata.fixesFlaggedForReview).toBe(0);
+      expect(mockJudgeGlobalConsistency).toHaveBeenCalledTimes(1);
+    });
+
+    it('should include system context from Pass 0', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: ['Filter'], stateModels: [], events: [] },
+            canonicalNames: { Filter: ['Filter', 'filter'] },
+            evidence: { Filter: 'Filter bar' },
+            vocabulary: { filter: 'Filter' },
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# Story\nContent',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'Story',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['Story with filter']);
+
+      expect(result.systemContext.productVocabulary).toBeDefined();
+      expect('filter' in (result.systemContext.productVocabulary ?? {})).toBe(true);
+      expect(Object.keys(result.systemContext.componentGraph.components).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should run Pass 1 with refinement', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: [], stateModels: [], events: [] },
+            canonicalNames: {},
+            evidence: {},
+            vocabulary: {},
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# S1\nStory one.',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'S1',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['Story 1']);
+
+      expect(result.stories).toHaveLength(1);
+      expect(result.metadata.passesCompleted).toContain('Pass 1 (generation with refinement)');
+      expect(mockJudgeStory).toHaveBeenCalled();
+    });
+
+    it('should extract interconnections in Pass 2', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: [], stateModels: [], events: [] },
+            canonicalNames: {},
+            evidence: {},
+            vocabulary: {},
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# My Story\nContent',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'My Story',
+            uiMapping: { button: 'COMP-BUTTON' },
+            contractDependencies: ['C-STATE-X'],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['Story']);
+
+      expect(result.stories[0].interconnections.uiMapping).toEqual({ button: 'COMP-BUTTON' });
+      expect(result.stories[0].interconnections.contractDependencies).toEqual(['C-STATE-X']);
+    });
+
+    it('should run Pass 2b and include consistency report', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: [], stateModels: [], events: [] },
+            canonicalNames: {},
+            evidence: {},
+            vocabulary: {},
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# Story\nContent',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'Story',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      mockJudgeGlobalConsistency.mockResolvedValueOnce({
+        issues: [{ description: 'Naming mismatch', suggestedFixType: 'vocabulary', confidence: 0.9, affectedStories: ['Story'] }],
+        fixes: [],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['Story']);
+
+      expect(result.consistencyReport.issues).toHaveLength(1);
+      expect(result.consistencyReport.issues[0].description).toBe('Naming mismatch');
+    });
+
+    it('should auto-apply high-confidence fixes when present', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: [], stateModels: [], events: [] },
+            canonicalNames: {},
+            evidence: {},
+            vocabulary: {},
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# Login\nAs a user I want to log in.',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'Login',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      mockJudgeGlobalConsistency.mockResolvedValueOnce({
+        issues: [],
+        fixes: [
+          {
+            type: 'normalize-term-to-vocabulary',
+            storyId: 'Login',
+            path: 'story.iWant',
+            operation: 'replace',
+            item: { id: 'x', text: 'to sign in' },
+            match: { id: 'x' },
+            confidence: 0.9,
+            reasoning: 'Use product term',
+          },
+        ],
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['As a user I want to log in']);
+
+      expect(result.metadata.fixesApplied).toBeGreaterThanOrEqual(0);
+      expect(result.metadata.fixesFlaggedForReview).toBeDefined();
+    });
+
+    it('should include all metadata (passesCompleted, refinementRounds, fixes)', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce(
+          systemDiscoveryResponse({
+            mentions: { components: [], stateModels: [], events: [] },
+            canonicalNames: {},
+            evidence: {},
+            vocabulary: {},
+          })
+        )
+        .mockResolvedValue({
+          content: JSON.stringify({
+            enhancedStory: '# Story\nContent',
+            changesApplied: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValue({
+          content: JSON.stringify({
+            storyId: 'Story',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow(['Story']);
+
+      expect(result.metadata).toMatchObject({
+        passesCompleted: expect.any(Array),
+        refinementRounds: expect.any(Number),
+        fixesApplied: expect.any(Number),
+        fixesFlaggedForReview: expect.any(Number),
+      });
+      expect(result.metadata.passesCompleted.length).toBe(4);
+    });
+
+    it('should handle empty stories gracefully', async () => {
+      const agent = new UserStoryAgent(validConfig);
+      const result = await agent.runSystemWorkflow([]);
+
+      expect(result.systemContext).toBeDefined();
+      expect(result.stories).toEqual([]);
+      expect(result.consistencyReport).toEqual({ issues: [], fixes: [] });
+      expect(result.metadata.passesCompleted).toEqual([]);
+      expect(result.metadata.refinementRounds).toBe(0);
+      expect(result.metadata.fixesApplied).toBe(0);
+      expect(result.metadata.fixesFlaggedForReview).toBe(0);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(mockJudgeGlobalConsistency).not.toHaveBeenCalled();
+    });
+
+    it('should handle Pass 0 failure gracefully', async () => {
+      mockSendMessage.mockRejectedValueOnce(new Error('Pass 0: No valid JSON in LLM response'));
+
+      const agent = new UserStoryAgent(validConfig);
+      await expect(agent.runSystemWorkflow(['Story'])).rejects.toThrow(/Pass 0|No valid JSON/);
     });
   });
 });

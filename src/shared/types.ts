@@ -70,7 +70,7 @@ export interface ProductContext {
 /**
  * Mode in which the agent operates
  */
-export type AgentMode = 'individual' | 'workflow' | 'interactive';
+export type AgentMode = 'individual' | 'workflow' | 'interactive' | 'system-workflow';
 
 /**
  * Metadata for a user story

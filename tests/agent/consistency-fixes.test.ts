@@ -91,10 +91,10 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
     // Only the 0.9 fix should affect the story (replace story.iWant)
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     expect(entry.structure.story.iWant).toBe('to sign in');
     // soThat unchanged (0.5 fix not applied)
     expect(entry.structure.story.soThat).toBe('I can access');
@@ -117,9 +117,9 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     const uvbs = entry.structure.userVisibleBehavior;
     expect(uvbs.some((u) => u.id === 'UVB-003' && u.text === 'Link to S2')).toBe(true);
   });
@@ -155,10 +155,10 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
     // Only the high-confidence fix is applied
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     expect(entry.structure.story.iWant).toBe('to sign in');
     // Low-confidence fix not applied; UVB-001 unchanged
     expect(entry.structure.userVisibleBehavior[0].text).toBe('See login form');
@@ -212,9 +212,9 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     expect(entry.structure.userVisibleBehavior[0].text).toBe('See canonical login form');
   });
 
@@ -236,9 +236,9 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     const expectedMarkdown = new StoryRenderer().toMarkdown(entry.structure);
     expect(entry.markdown).toBe(expectedMarkdown);
     expect(entry.markdown).toContain('signed-in user');
@@ -304,9 +304,9 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
-    expect(result.get('S1')).toEqual(stories.get('S1'));
+    expect(updated.get('S1')).toEqual(stories.get('S1'));
     expect(warnSpy).toHaveBeenCalledWith('Story MISSING not found, skipping fix');
   });
 
@@ -330,10 +330,10 @@ describe('applyGlobalConsistencyFixes', () => {
       ],
     };
 
-    const result = await agent.applyGlobalConsistencyFixes(stories, report);
+    const { updated } = await agent.applyGlobalConsistencyFixes(stories, report);
 
     expect(warnSpy).toHaveBeenCalledWith('Failed to apply fix: normalize-contract-id to S1');
-    const entry = result.get('S1')!;
+    const entry = updated.get('S1')!;
     expect(entry.structure.userVisibleBehavior).toHaveLength(2);
     expect(entry.structure.userVisibleBehavior.map((u) => u.id)).toEqual(['UVB-001', 'UVB-002']);
   });

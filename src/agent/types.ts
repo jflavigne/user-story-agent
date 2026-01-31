@@ -3,7 +3,15 @@
  */
 
 import type { IterationId } from '../shared/iteration-registry.js';
-import type { ProductContext, IterationCategory, StoryInterconnections, JudgeRubric } from '../shared/types.js';
+import type {
+  ProductContext,
+  IterationCategory,
+  StoryInterconnections,
+  JudgeRubric,
+  StoryStructure,
+  GlobalConsistencyReport,
+  SystemDiscoveryContext,
+} from '../shared/types.js';
 import type { IterationResult } from './state/story-state.js';
 
 /**
@@ -33,7 +41,7 @@ export type IterationSelectionCallback = (options: IterationOption[]) => Promise
  */
 export interface UserStoryAgentConfig {
   /** Mode in which the agent operates */
-  mode: 'individual' | 'workflow' | 'interactive';
+  mode: 'individual' | 'workflow' | 'interactive' | 'system-workflow';
   /** List of iteration IDs to apply in order (required for individual mode) */
   iterations?: IterationId[];
   /** Optional product context for enhanced story generation */
@@ -90,6 +98,9 @@ export interface AgentResult {
     reason: string;
     score: number;
   };
+
+  /** Structured story data when patch-based workflow was used (for system workflow fix application) */
+  structure?: StoryStructure;
 }
 
 /**
@@ -168,3 +179,27 @@ export interface Pass2StoryResultItem {
  * Result of runPass2Interconnection: array of story results with interconnections
  */
 export type Pass2InterconnectionResult = Pass2StoryResultItem[];
+
+/**
+ * Result of runSystemWorkflow: full multi-pass workflow (Pass 0 → Pass 1 with refinement → Pass 2 → Pass 2b).
+ */
+export interface SystemWorkflowResult {
+  systemContext: SystemDiscoveryContext;
+  stories: Array<{
+    id: string;
+    content: string;
+    structure?: StoryStructure;
+    interconnections: StoryInterconnections;
+    judgeResults?: {
+      pass1c?: JudgeRubric;
+      pass1cAfterRewrite?: JudgeRubric;
+    };
+  }>;
+  consistencyReport: GlobalConsistencyReport;
+  metadata: {
+    passesCompleted: string[];
+    refinementRounds: number;
+    fixesApplied: number;
+    fixesFlaggedForReview: number;
+  };
+}

@@ -3,7 +3,14 @@
  */
 
 import { EventEmitter } from 'events';
-import type { UserStoryAgentConfig, AgentResult, IterationOption, Pass2StoryInput, Pass2InterconnectionResult } from './types.js';
+import type {
+  UserStoryAgentConfig,
+  AgentResult,
+  IterationOption,
+  Pass2StoryInput,
+  Pass2InterconnectionResult,
+  SystemWorkflowResult,
+} from './types.js';
 import { buildStoryInterconnectionPrompt } from '../prompts/iterations/story-interconnection.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
@@ -108,7 +115,7 @@ export class UserStoryAgent extends EventEmitter {
    */
   private validateConfig(): void {
     // Validate mode
-    const supportedModes = ['individual', 'workflow', 'interactive'];
+    const supportedModes = ['individual', 'workflow', 'interactive', 'system-workflow'];
     if (!supportedModes.includes(this.config.mode)) {
       throw new Error(`Unsupported mode: ${this.config.mode}. Supported modes: ${supportedModes.join(', ')}.`);
     }
@@ -128,9 +135,12 @@ export class UserStoryAgent extends EventEmitter {
       }
     }
 
-    // Workflow mode requires productContext with productType
-    if (this.config.mode === 'workflow' && !this.config.productContext?.productType) {
-      throw new Error('Workflow mode requires productContext with productType');
+    // Workflow and system-workflow modes require productContext with productType
+    if (
+      (this.config.mode === 'workflow' || this.config.mode === 'system-workflow') &&
+      !this.config.productContext?.productType
+    ) {
+      throw new Error('Workflow and system-workflow modes require productContext with productType');
     }
 
     // Interactive mode requires onIterationSelection callback
@@ -430,7 +440,7 @@ export class UserStoryAgent extends EventEmitter {
       // Run in the configured mode
       if (this.config.mode === 'individual') {
         state = await this.runIndividualMode(state);
-      } else if (this.config.mode === 'workflow') {
+      } else if (this.config.mode === 'workflow' || this.config.mode === 'system-workflow') {
         state = await this.runWorkflowMode(state);
       } else if (this.config.mode === 'interactive') {
         state = await this.runInteractiveMode(state);
@@ -460,6 +470,7 @@ export class UserStoryAgent extends EventEmitter {
         summary: summary || 'No iterations were applied.',
         judgeResults: state.judgeResults,
         needsManualReview: state.needsManualReview,
+        structure: state.storyStructure ?? undefined,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -1062,7 +1073,7 @@ export class UserStoryAgent extends EventEmitter {
   async runPass1WithRefinement(
     stories: string[],
     systemContext: SystemDiscoveryContext
-  ): Promise<{ results: AgentResult[]; finalContext: SystemDiscoveryContext }> {
+  ): Promise<{ results: AgentResult[]; finalContext: SystemDiscoveryContext; refinementRounds: number }> {
     const MAX_ROUNDS = 3;
     const CONFIDENCE_THRESHOLD = 0.75;
 
@@ -1097,7 +1108,7 @@ export class UserStoryAgent extends EventEmitter {
 
       if (highConfidenceRelationships.length === 0) {
         logger.info(`Convergence: no new high-confidence relationships, stopping at round ${roundNumber}`);
-        return { results, finalContext: currentContext };
+        return { results, finalContext: currentContext, refinementRounds: roundNumber };
       }
 
       const { updatedContext, mergedCount } = await this.mergeNewRelationships(
@@ -1109,7 +1120,7 @@ export class UserStoryAgent extends EventEmitter {
 
       if (mergedCount === 0) {
         logger.info(`Convergence: no relationships merged (all duplicates), stopping at round ${roundNumber}`);
-        return { results, finalContext: currentContext };
+        return { results, finalContext: currentContext, refinementRounds: roundNumber };
       }
 
       currentContext = updatedContext;
@@ -1127,7 +1138,138 @@ export class UserStoryAgent extends EventEmitter {
       finalResults.push(result);
     }
 
-    return { results: finalResults, finalContext: currentContext };
+    return { results: finalResults, finalContext: currentContext, refinementRounds: MAX_ROUNDS };
+  }
+
+  /**
+   * Runs the full system workflow: Pass 0 (discovery) → Pass 1 (generation with refinement) → Pass 2 (interconnection) → Pass 2b (global consistency).
+   *
+   * @param stories - Initial story descriptions
+   * @param referenceDocuments - Optional reference documents for Pass 0 discovery
+   * @returns Results with system context, stories, interconnections, and consistency report
+   */
+  async runSystemWorkflow(
+    stories: string[],
+    referenceDocuments?: string[]
+  ): Promise<SystemWorkflowResult> {
+    const passesCompleted: string[] = [];
+
+    if (!stories.length) {
+      logger.warn('runSystemWorkflow: empty stories array, returning minimal result');
+      const emptyContext = this.buildEmptySystemContext();
+      return {
+        systemContext: emptyContext,
+        stories: [],
+        consistencyReport: { issues: [], fixes: [] },
+        metadata: {
+          passesCompleted: [],
+          refinementRounds: 0,
+          fixesApplied: 0,
+          fixesFlaggedForReview: 0,
+        },
+      };
+    }
+
+    // Pass 0: System Discovery
+    logger.info('runSystemWorkflow: Pass 0 (system discovery)');
+    let systemContext: SystemDiscoveryContext;
+    try {
+      systemContext = await this.runPass0Discovery(stories, referenceDocuments);
+      passesCompleted.push('Pass 0 (discovery)');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`runSystemWorkflow: Pass 0 failed - ${message}`);
+      throw error;
+    }
+
+    // Pass 1: Story Generation with Refinement
+    logger.info('runSystemWorkflow: Pass 1 (generation with refinement)');
+    const { results: pass1Results, finalContext, refinementRounds } = await this.runPass1WithRefinement(
+      stories,
+      systemContext
+    );
+    passesCompleted.push('Pass 1 (generation with refinement)');
+
+    // Convert AgentResult[] to Pass2StoryInput[] (id from title or index)
+    const pass2Input: Pass2StoryInput[] = pass1Results.map((r, i) => ({
+      id: this.extractTitle(r.enhancedStory) || `story-${i + 1}`,
+      content: r.enhancedStory,
+    }));
+
+    // Pass 2: Interconnection
+    logger.info('runSystemWorkflow: Pass 2 (interconnection)');
+    const pass2Results = await this.runPass2Interconnection(pass2Input, finalContext);
+    passesCompleted.push('Pass 2 (interconnection)');
+
+    // Build stories with interconnections for Pass 2b
+    const storiesWithInterconnections = pass2Results.map((s) => ({
+      id: s.id,
+      title: this.extractTitle(s.content) || s.id,
+      content: s.content,
+      interconnections: s.interconnections,
+    }));
+
+    // Pass 2b: Global Consistency
+    logger.info('runSystemWorkflow: Pass 2b (global consistency)');
+    const judge = new StoryJudge(this.claudeClient);
+    const consistencyReport = await judge.judgeGlobalConsistency(
+      storiesWithInterconnections,
+      finalContext
+    );
+    passesCompleted.push('Pass 2b (global consistency)');
+
+    // Build final stories array (id, content, structure?, interconnections, judgeResults)
+    let finalStories = pass2Results.map((s, i) => ({
+      id: s.id,
+      content: s.content,
+      structure: pass1Results[i]?.structure,
+      interconnections: s.interconnections,
+      judgeResults: pass1Results[i]?.judgeResults,
+    }));
+
+    let fixesApplied = 0;
+    let fixesFlaggedForReview = consistencyReport.fixes.length;
+
+    // Auto-apply high-confidence fixes when present
+    if (consistencyReport.fixes.length > 0) {
+      const storiesForFix = new Map<string, { structure: StoryStructure; markdown: string }>();
+      for (let j = 0; j < pass2Results.length; j++) {
+        const id = pass2Results[j].id;
+        const structure =
+          pass1Results[j]?.structure ?? this.parseOrInitializeStructure(pass2Results[j].content);
+        storiesForFix.set(id, { structure, markdown: pass2Results[j].content });
+      }
+      const { updated, appliedCount } = await this.applyGlobalConsistencyFixes(
+        storiesForFix,
+        consistencyReport
+      );
+      fixesApplied = appliedCount;
+      fixesFlaggedForReview = consistencyReport.fixes.length - appliedCount;
+
+      // Update final stories with applied fix content/structure
+      finalStories = pass2Results.map((s, i) => {
+        const entry = updated.get(s.id);
+        return {
+          id: s.id,
+          content: entry?.markdown ?? s.content,
+          structure: entry?.structure ?? pass1Results[i]?.structure,
+          interconnections: s.interconnections,
+          judgeResults: pass1Results[i]?.judgeResults,
+        };
+      });
+    }
+
+    return {
+      systemContext: finalContext,
+      stories: finalStories,
+      consistencyReport,
+      metadata: {
+        passesCompleted,
+        refinementRounds,
+        fixesApplied,
+        fixesFlaggedForReview,
+      },
+    };
   }
 
   /**
@@ -1165,12 +1307,12 @@ export class UserStoryAgent extends EventEmitter {
    *
    * @param stories - Map of storyId to { structure, markdown }
    * @param report - Global consistency report (issues + fixes)
-   * @returns Map of storyId to updated { structure, markdown }
+   * @returns Map of storyId to updated { structure, markdown } and count of fixes applied
    */
   async applyGlobalConsistencyFixes(
     stories: Map<string, { structure: StoryStructure; markdown: string }>,
     report: GlobalConsistencyReport
-  ): Promise<Map<string, { structure: StoryStructure; markdown: string }>> {
+  ): Promise<{ updated: Map<string, { structure: StoryStructure; markdown: string }>; appliedCount: number }> {
     const HIGH_CONFIDENCE_THRESHOLD = 0.8;
     const ALLOWED_TYPES = [
       'add-bidirectional-link',
@@ -1197,6 +1339,7 @@ export class UserStoryAgent extends EventEmitter {
     );
 
     const updated = new Map(stories);
+    let appliedCount = 0;
 
     for (const fix of applicableFixes) {
       const entry = updated.get(fix.storyId);
@@ -1208,6 +1351,7 @@ export class UserStoryAgent extends EventEmitter {
       const { structure: updatedStructure, applied } = this.applyConsistencyFix(entry.structure, fix);
 
       if (applied) {
+        appliedCount++;
         const renderer = new StoryRenderer();
         const updatedMarkdown = renderer.toMarkdown(updatedStructure);
         updated.set(fix.storyId, { structure: updatedStructure, markdown: updatedMarkdown });
@@ -1218,7 +1362,7 @@ export class UserStoryAgent extends EventEmitter {
       }
     }
 
-    return updated;
+    return { updated, appliedCount };
   }
 }
 
