@@ -34,26 +34,43 @@ Download the actual Figma screenshot using the Figma MCP tool:
 4. FilterItem (Individual Filter)
 5. SpinnerLoading (Loading State)
 
-## Implementation Steps
+## Implementation Steps (Enhanced Script – USA-63)
 
-1. Use Figma MCP tool to download screenshot:
-```typescript
-mcp__figma__get_screenshot({
-  fileKey: "MHujefjiDpZQVpSQzE3pq1",
-  nodeId: "0:1",
-  clientLanguages: "typescript",
-  clientFrameworks: "unknown"
-})
-```
+The script `scripts/download-figma-fixture.mjs` provides automated download when `FIGMA_ACCESS_TOKEN` is set, and formatted user guidance when it is missing. Run via:
 
-2. Save screenshot to `tests/fixtures/figma-filter-components.png`
-
-3. Verify file size is realistic (should be >10KB for actual screenshot)
-
-4. Optionally run live vision test to validate:
 ```bash
-RUN_LIVE_VISION_TESTS=1 npm test tests/live/vision-discovery.live.test.ts
+npm run download-fixture
 ```
+
+**When token is present:** Script downloads from Figma API and exits 0. Verify: file size >10KB.
+
+**When token is missing:** Script prints 3 options (box-drawing formatted) and exits 1. A 70-byte placeholder is still written for path compatibility.
+
+### Option A: Figma Personal Access Token (Recommended – ~5 min)
+
+1. Create token at [Figma Settings → Personal access tokens](https://www.figma.com/settings) with "File content" read access.
+2. `export FIGMA_ACCESS_TOKEN="your-token"` then `npm run download-fixture`.
+3. Verify: `ls -l tests/fixtures/figma-filter-components.png` shows >10KB.
+
+### Option B: Manual Save via Figma MCP (Fastest – ~1 min)
+
+1. Use Figma MCP in Cursor/Claude to get screenshot of file `MHujefjiDpZQVpSQzE3pq1`, node `0:1`.
+2. Save the image from the conversation to `tests/fixtures/figma-filter-components.png`.
+3. Verify: file size >10KB (not 70 bytes).
+
+### Option C: Export from Figma Desktop App (~2 min)
+
+1. Open [Test_Component-Inventory (node 0:1)](https://www.figma.com/design/MHujefjiDpZQVpSQzE3pq1/Test_Component-Inventory?node-id=0-1).
+2. Select frame (node 0:1), right-click → Export → PNG.
+3. Save to `tests/fixtures/figma-filter-components.png`. Verify >10KB.
+
+### Verification Steps
+
+- `ls -l tests/fixtures/figma-filter-components.png` → >10KB.
+- `file tests/fixtures/figma-filter-components.png` → PNG with dimensions >100×100.
+- Optional live test: `RUN_LIVE_VISION_TESTS=1 npm test tests/live/vision-discovery.live.test.ts`.
+
+See **docs/figma-fixture-setup.md** for full setup guide, troubleshooting, and CI recommendations.
 
 ## Acceptance Criteria
 

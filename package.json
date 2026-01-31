@@ -8,6 +8,7 @@
     "url": "https://github.com/jflavigne-sidlee/user-story-agent.git"
   },
   "scripts": {
+    "download-fixture": "node scripts/download-figma-fixture.mjs",
     "build": "tsc",
     "benchmark": "tsx scripts/benchmark.ts",
     "generate-skills": "tsx src/skills/generate.ts",
