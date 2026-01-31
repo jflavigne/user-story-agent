@@ -71,40 +71,6 @@ function classifyCanonical(
 }
 
 /**
- * Serializes SystemDiscoveryContext to a string for the interconnection prompt.
- */
-function serializeSystemContext(ctx: SystemDiscoveryContext): string {
-  const lines: string[] = [];
-  lines.push('## System Context');
-  lines.push('');
-  lines.push('### Components');
-  for (const [id, comp] of Object.entries(ctx.componentGraph.components)) {
-    lines.push(`- **${id}**: ${comp.productName} — ${comp.description}`);
-  }
-  lines.push('');
-  lines.push('### State Models (sharedContracts.stateModels)');
-  for (const sm of ctx.sharedContracts.stateModels) {
-    lines.push(`- **${sm.id}**: ${sm.name} — ${sm.description}`);
-  }
-  lines.push('');
-  lines.push('### Event Registry (sharedContracts.eventRegistry)');
-  for (const ev of ctx.sharedContracts.eventRegistry) {
-    lines.push(`- **${ev.id}**: ${ev.name}`);
-  }
-  lines.push('');
-  lines.push('### Data Flows (sharedContracts.dataFlows)');
-  for (const df of ctx.sharedContracts.dataFlows) {
-    lines.push(`- **${df.id}**: ${df.source} → ${df.target} — ${df.description}`);
-  }
-  lines.push('');
-  lines.push('### Product Vocabulary');
-  for (const [tech, product] of Object.entries(ctx.productVocabulary)) {
-    lines.push(`- ${tech} → ${product}`);
-  }
-  return lines.join('\n');
-}
-
-/**
  * Main agent class for processing user stories through iterations
  */
 export class UserStoryAgent extends EventEmitter {
@@ -990,7 +956,7 @@ export class UserStoryAgent extends EventEmitter {
       `Story quality score: ${judgeResult.overallScore}/5 (threshold: ${QUALITY_THRESHOLD})`
     );
 
-    let updatedState: StoryState = {
+    const updatedState: StoryState = {
       ...state,
       judgeResults: {
         pass1c: judgeResult,
@@ -1072,8 +1038,8 @@ export class UserStoryAgent extends EventEmitter {
     // Log manual review items if any
     if (result.manualReview.length > 0) {
       logger.warn(
-        `${result.manualReview.length} relationships require manual review:`,
-        result.manualReview.map((mr) => `${mr.relationship.id}: ${mr.reason}`)
+        `${result.manualReview.length} relationships require manual review:\n` +
+        result.manualReview.map((mr) => `  - ${mr.relationship.id}: ${mr.reason}`).join('\n')
       );
     }
 
@@ -1215,6 +1181,16 @@ export class UserStoryAgent extends EventEmitter {
     const applicableFixes = report.fixes.filter(
       (f) => f.confidence > HIGH_CONFIDENCE_THRESHOLD && ALLOWED_TYPES.includes(f.type)
     );
+    const applicableSet = new Set(applicableFixes);
+
+    for (const fix of report.fixes) {
+      if (applicableSet.has(fix)) continue;
+      const reason =
+        fix.confidence <= HIGH_CONFIDENCE_THRESHOLD ? 'low confidence' : 'disallowed type';
+      logger.warn(
+        `Fix flagged for manual review: ${fix.type} story ${fix.storyId} (${reason})`
+      );
+    }
 
     logger.info(
       `Auto-applying ${applicableFixes.length} high-confidence fixes (${report.fixes.length - applicableFixes.length} flagged for manual review)`

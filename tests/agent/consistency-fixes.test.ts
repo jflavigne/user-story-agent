@@ -164,6 +164,36 @@ describe('applyGlobalConsistencyFixes', () => {
     expect(entry.structure.userVisibleBehavior[0].text).toBe('See login form');
   });
 
+  it('logs fixes flagged for manual review (low confidence)', async () => {
+    const warnSpy = vi.spyOn(logger, 'warn');
+    const stories = makeStoriesMap([{ id: 'S1', structure: baseStructure }]);
+    const report: GlobalConsistencyReport = {
+      issues: [],
+      fixes: [
+        {
+          type: 'normalize-contract-id',
+          storyId: 'S1',
+          path: 'story.iWant',
+          operation: 'replace',
+          item: { id: 'x', text: 'changed' },
+          match: { id: 'x' },
+          confidence: 0.5,
+          reasoning: 'Low confidence',
+        },
+      ],
+    };
+
+    await agent.applyGlobalConsistencyFixes(stories, report);
+
+    const flaggedLogs = warnSpy.mock.calls.filter((c) =>
+      c[0]?.toString().startsWith('Fix flagged for manual review:')
+    );
+    expect(flaggedLogs.length).toBe(1);
+    expect(flaggedLogs[0][0]).toContain('normalize-contract-id');
+    expect(flaggedLogs[0][0]).toContain('S1');
+    expect(flaggedLogs[0][0]).toContain('low confidence');
+  });
+
   it('applies fix to StoryStructure via PatchOrchestrator', async () => {
     const stories = makeStoriesMap([{ id: 'S1', structure: baseStructure }]);
     const report: GlobalConsistencyReport = {

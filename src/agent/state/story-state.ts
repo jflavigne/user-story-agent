@@ -43,14 +43,22 @@ export interface IterationResult {
 }
 
 /**
- * Complete state of a user story throughout its enhancement lifecycle
+ * Complete state of a user story throughout its enhancement lifecycle.
+ *
+ * Dual representation (system-workflow): when patch-based iterations or global
+ * consistency fixes run, both `storyStructure` and `currentStory` are kept.
+ * `storyStructure` is the source of truth for structured patches; `currentStory`
+ * is the rendered markdown and is re-generated from `storyStructure` after fixes.
  */
 export interface StoryState {
   /** The original story content, never modified */
   originalStory: string;
-  /** The current story content after all applied iterations */
+  /** The current story content after all applied iterations (rendered markdown) */
   currentStory: string;
-  /** Structured representation (used in system-workflow; re-rendered after consistency fixes) */
+  /**
+   * Structured representation used in system-workflow. Patches and global
+   * consistency fixes operate on this; markdown is then re-rendered to currentStory.
+   */
   storyStructure?: StoryStructure;
   /** Whether the last iteration used the patch-based workflow (for deciding whether to render from StoryStructure) */
   lastIterationUsedPatchWorkflow?: boolean;
