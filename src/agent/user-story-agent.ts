@@ -4,6 +4,7 @@
 
 import { EventEmitter } from 'events';
 import type { UserStoryAgentConfig, AgentResult, IterationOption, Pass2StoryInput, Pass2InterconnectionResult } from './types.js';
+import { buildStoryInterconnectionPrompt } from '../prompts/iterations/story-interconnection.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
 import { ContextManager } from './state/context-manager.js';
@@ -20,6 +21,7 @@ import { StreamingHandler } from './streaming.js';
 import { Evaluator } from './evaluator.js';
 import { SYSTEM_DISCOVERY_PROMPT } from '../prompts/iterations/system-discovery.js';
 import { STORY_INTERCONNECTION_PROMPT } from '../prompts/iterations/story-interconnection.js';
+import type { StoryForInterconnection } from '../prompts/iterations/story-interconnection.js';
 import { IDRegistry, mintStableId, type EntityType } from './id-registry.js';
 import { StoryRenderer } from './story-renderer.js';
 import { StoryInterconnectionsSchema } from '../shared/schemas.js';
@@ -344,73 +346,84 @@ export class UserStoryAgent extends EventEmitter {
   }
 
   /**
-   * Pass 2: Run interconnection for each story. Extracts UI mapping, contract dependencies,
-   * ownership, and related stories; appends metadata sections to markdown.
+   * Pass 2: Run interconnection for each story.
+   * Extracts UI mapping, contract dependencies, ownership, and related stories.
+   * Appends metadata sections to markdown.
    *
-   * @param stories - Array of story objects (storyId + markdown)
-   * @param systemContext - System discovery context (components, contracts, vocabulary)
-   * @returns Interconnections per story and updated markdown with metadata sections
+   * @param stories - Array of story markdown strings with IDs
+   * @param systemContext - System discovery context from Pass 0
+   * @returns Array of story results with interconnections
    */
   async runPass2Interconnection(
     stories: Pass2StoryInput[],
     systemContext: SystemDiscoveryContext
   ): Promise<Pass2InterconnectionResult> {
-    const systemContextBlock = serializeSystemContext(systemContext);
-    const otherStoryIds = (storyId: string) =>
-      stories.map((s) => s.storyId).filter((id) => id !== storyId);
+    const allStories: StoryForInterconnection[] = stories.map((s) => ({
+      id: s.id,
+      title: this.extractTitle(s.content) || s.id,
+      content: s.content,
+    }));
 
-    const interconnections: StoryInterconnections[] = [];
+    const results: Pass2InterconnectionResult = [];
 
     for (const story of stories) {
-      const otherIds = otherStoryIds(story.storyId);
-      const userMessage = [
-        systemContextBlock,
-        '',
-        '## Current story',
-        '',
-        `**Story ID**: ${story.storyId}`,
-        '',
-        story.markdown,
-        '',
-        '## Other story IDs',
-        '',
-        otherIds.length > 0 ? otherIds.join(', ') : '(none)',
-      ].join('\n');
+      logger.info(`Running Pass 2 interconnection for ${story.id}`);
+
+      const prompt = buildStoryInterconnectionPrompt(story.content, allStories, systemContext);
 
       const response = await this.claudeClient.sendMessage({
         systemPrompt: STORY_INTERCONNECTION_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
+        messages: [{ role: 'user', content: prompt }],
         model: this.config.model,
       });
 
-      const json = extractJSON(response.content);
-      if (!json || typeof json !== 'object') {
-        throw new Error(`Pass 2: No valid JSON in LLM response for story ${story.storyId}`);
+      const interconnections = this.parseInterconnections(response.content);
+
+      if (interconnections.storyId !== story.id) {
+        logger.warn(`Story ID mismatch: expected ${story.id}, got ${interconnections.storyId}`);
+        interconnections.storyId = story.id;
       }
-      const parsed = StoryInterconnectionsSchema.parse(json) as StoryInterconnections;
-      // Normalize storyId to current story and ensure ownership object
-      const conn: StoryInterconnections = {
-        storyId: story.storyId,
-        uiMapping: parsed.uiMapping ?? {},
-        contractDependencies: Array.isArray(parsed.contractDependencies) ? parsed.contractDependencies : [],
+
+      const normalized: StoryInterconnections = {
+        storyId: story.id,
+        uiMapping: interconnections.uiMapping ?? {},
+        contractDependencies: Array.isArray(interconnections.contractDependencies) ? interconnections.contractDependencies : [],
         ownership: {
-          ownsState: parsed.ownership?.ownsState ?? [],
-          consumesState: parsed.ownership?.consumesState ?? [],
-          emitsEvents: parsed.ownership?.emitsEvents ?? [],
-          listensToEvents: parsed.ownership?.listensToEvents ?? [],
+          ownsState: interconnections.ownership?.ownsState ?? [],
+          consumesState: interconnections.ownership?.consumesState ?? [],
+          emitsEvents: interconnections.ownership?.emitsEvents ?? [],
+          listensToEvents: interconnections.ownership?.listensToEvents ?? [],
         },
-        relatedStories: Array.isArray(parsed.relatedStories) ? parsed.relatedStories : [],
+        relatedStories: Array.isArray(interconnections.relatedStories) ? interconnections.relatedStories : [],
       };
-      interconnections.push(conn);
+
+      const renderer = new StoryRenderer();
+      const updatedContent = renderer.appendInterconnectionMetadata(story.content, normalized);
+
+      results.push({
+        id: story.id,
+        content: updatedContent,
+        interconnections: normalized,
+      });
     }
 
-    const renderer = new StoryRenderer();
-    const updatedStories: Pass2StoryInput[] = stories.map((story, i) => ({
-      storyId: story.storyId,
-      markdown: renderer.appendInterconnectionMetadata(story.markdown, interconnections[i]!),
-    }));
+    return results;
+  }
 
-    return { interconnections, updatedStories };
+  /**
+   * Parses LLM response from Pass 2 interconnection prompt.
+   * Handles wrapped responses and validates against schema.
+   *
+   * @param content - Raw LLM response content
+   * @returns Parsed StoryInterconnections
+   * @throws Error if no valid JSON or schema validation fails
+   */
+  private parseInterconnections(content: string): StoryInterconnections {
+    const json = extractJSON(content);
+    if (!json || typeof json !== 'object') {
+      throw new Error('Pass 2: No valid JSON in interconnection response');
+    }
+    return StoryInterconnectionsSchema.parse(json) as StoryInterconnections;
   }
 
   /**

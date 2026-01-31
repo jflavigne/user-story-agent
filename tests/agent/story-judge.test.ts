@@ -11,7 +11,28 @@ import {
 } from '../../src/agent/story-judge.js';
 import { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from '../../src/prompts/judge-rubrics/global-consistency.js';
 import type { ClaudeClient } from '../../src/agent/claude-client.js';
-import type { SystemDiscoveryContext } from '../../src/shared/types.js';
+import type { SystemDiscoveryContext, StoryInterconnections } from '../../src/shared/types.js';
+
+/** Minimal story with interconnections for judgeGlobalConsistency tests */
+function storyWithInterconnections(
+  id: string,
+  content: string,
+  interconnections: Partial<StoryInterconnections>
+): { id: string; title: string; content: string; interconnections: StoryInterconnections } {
+  const base: StoryInterconnections = {
+    storyId: id,
+    uiMapping: {},
+    contractDependencies: [],
+    ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+    relatedStories: [],
+  };
+  return {
+    id,
+    title: id,
+    content,
+    interconnections: { ...base, ...interconnections },
+  };
+}
 
 const mockJudgeRubric = {
   sectionSeparation: { score: 4, reasoning: 'Good', violations: [] as Array<{ section: string; quote: string; suggestedRewrite: string }> },
@@ -30,6 +51,7 @@ const mockJudgeRubric = {
 
 describe('StoryJudge', () => {
   let mockSendMessage: ReturnType<typeof vi.fn>;
+  let mockClient: ClaudeClient;
   let judge: StoryJudge;
   const systemContext: SystemDiscoveryContext = {
     timestamp: new Date().toISOString(),
@@ -42,7 +64,7 @@ describe('StoryJudge', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSendMessage = vi.fn();
-    const mockClient = { sendMessage: mockSendMessage } as unknown as ClaudeClient;
+    mockClient = { sendMessage: mockSendMessage } as unknown as ClaudeClient;
     judge = new StoryJudge(mockClient);
   });
 
@@ -88,7 +110,11 @@ describe('StoryJudge', () => {
       usage: { inputTokens: 100, outputTokens: 20 },
     });
 
-    await judge.judgeGlobalConsistency(['# S1', '# S2'], systemContext);
+    const stories = [
+      storyWithInterconnections('S1', '# S1', {}),
+      storyWithInterconnections('S2', '# S2', {}),
+    ];
+    await judge.judgeGlobalConsistency(stories, systemContext);
 
     expect(mockSendMessage).toHaveBeenCalledTimes(1);
     const call = mockSendMessage.mock.calls[0][0];
@@ -106,7 +132,11 @@ describe('StoryJudge', () => {
       usage: { inputTokens: 100, outputTokens: 50 },
     });
 
-    const result = await judge.judgeGlobalConsistency(['# S1', '# S2'], systemContext);
+    const stories = [
+      storyWithInterconnections('1', '# S1', {}),
+      storyWithInterconnections('2', '# S2', {}),
+    ];
+    const result = await judge.judgeGlobalConsistency(stories, systemContext);
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0].description).toBe('Terminology mismatch');
@@ -147,7 +177,12 @@ describe('StoryJudge', () => {
       usage: { inputTokens: 150, outputTokens: 120 },
     });
 
-    const result = await judge.judgeGlobalConsistency(['# S1', '# S2', '# S3'], systemContext);
+    const stories = [
+      storyWithInterconnections('story-10', '# S1', {}),
+      storyWithInterconnections('story-25', '# S2', {}),
+      storyWithInterconnections('story-30', '# S3', {}),
+    ];
+    const result = await judge.judgeGlobalConsistency(stories, systemContext);
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0].confidence).toBe(0.9);
@@ -167,11 +202,10 @@ describe('StoryJudge', () => {
       usage: { inputTokens: 50, outputTokens: 10 },
     });
 
-    const result = await judge.judgeGlobalConsistency(['# S1'], systemContext);
-
-    expect(result.issues).toHaveLength(1);
-    expect(result.issues[0].description).toContain('Failed to parse');
-    expect(result.fixes).toEqual([]);
+    const stories = [storyWithInterconnections('S1', '# S1', {})];
+    await expect(judge.judgeGlobalConsistency(stories, systemContext)).rejects.toThrow(
+      'Failed to parse global consistency report from LLM response',
+    );
   });
 
   it('returns fallback report when JSON is valid but schema validation fails', async () => {
@@ -181,11 +215,10 @@ describe('StoryJudge', () => {
       usage: { inputTokens: 50, outputTokens: 30 },
     });
 
-    const result = await judge.judgeGlobalConsistency(['# S1'], systemContext);
-
-    expect(result.issues).toHaveLength(1);
-    expect(result.issues[0].description).toContain('Invalid consistency');
-    expect(result.fixes).toEqual([]);
+    const stories = [storyWithInterconnections('S1', '# S1', {})];
+    await expect(judge.judgeGlobalConsistency(stories, systemContext)).rejects.toThrow(
+      'Failed to parse global consistency report from LLM response',
+    );
   });
 
   // --- Edge case: JSON wrapped in extra text ---
@@ -298,6 +331,255 @@ describe('StoryJudge', () => {
     };
     expect(parseGlobalConsistencyReport(valid)).not.toBeNull();
   });
+
+  describe('Global Consistency Judge (USA-51)', () => {
+    it('should detect contradictions and suggest fixes', async () => {
+      const mockReport = {
+        issues: [
+          {
+            type: 'contradiction',
+            description: 'USA-001 and USA-002 both claim to own C-STATE-USER',
+            affectedStories: ['USA-001', 'USA-002'],
+            confidence: 0.9,
+          },
+        ],
+        fixes: [
+          {
+            type: 'add-bidirectional-link',
+            storyId: 'USA-002',
+            path: 'outcomeAcceptanceCriteria',
+            operation: 'add',
+            item: {
+              id: 'REL-001',
+              text: JSON.stringify({
+                storyId: 'USA-001',
+                relationship: 'prerequisite',
+                description: 'Auth must be implemented first',
+              }),
+            },
+            confidence: 0.95,
+            reasoning: 'USA-001 lists USA-002 as prerequisite but reverse link missing',
+          },
+        ],
+      };
+      // Schema uses suggestedFixType for issues
+      const reportForSchema = {
+        issues: [
+          {
+            suggestedFixType: 'contradiction',
+            description: mockReport.issues[0].description,
+            affectedStories: mockReport.issues[0].affectedStories,
+            confidence: mockReport.issues[0].confidence,
+          },
+        ],
+        fixes: mockReport.fixes,
+      };
+
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify(reportForSchema),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 200, outputTokens: 100 },
+      });
+
+      const judge = new StoryJudge(mockClient);
+      const systemContext = buildMinimalSystemContext();
+
+      const stories = [
+        {
+          id: 'USA-001',
+          title: 'Login',
+          content: 'As a user...',
+          interconnections: {
+            storyId: 'USA-001',
+            uiMapping: {},
+            contractDependencies: ['C-STATE-USER'],
+            ownership: { ownsState: ['C-STATE-USER'], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [
+              { storyId: 'USA-002', relationship: 'prerequisite', description: 'Needs auth' },
+            ],
+          },
+        },
+        {
+          id: 'USA-002',
+          title: 'Auth',
+          content: 'As a user...',
+          interconnections: {
+            storyId: 'USA-002',
+            uiMapping: {},
+            contractDependencies: ['C-STATE-USER'],
+            ownership: { ownsState: ['C-STATE-USER'], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          },
+        },
+      ];
+
+      const report = await judge.judgeGlobalConsistency(stories, systemContext);
+
+      expect(report.issues).toHaveLength(1);
+      expect(report.issues[0].suggestedFixType).toBe('contradiction');
+      expect(report.issues[0].affectedStories).toContain('USA-001');
+      expect(report.issues[0].affectedStories).toContain('USA-002');
+
+      expect(report.fixes).toHaveLength(1);
+      expect(report.fixes[0].type).toBe('add-bidirectional-link');
+      expect(report.fixes[0].confidence).toBeGreaterThan(0.8);
+    });
+
+    it('should validate contract IDs against system context', async () => {
+      const mockReport = {
+        issues: [
+          {
+            suggestedFixType: 'invalid-reference',
+            description: 'USA-001 references C-STATE-PROFILE which does not exist',
+            affectedStories: ['USA-001'],
+            confidence: 1.0,
+          },
+        ],
+        fixes: [
+          {
+            type: 'normalize-contract-id',
+            storyId: 'USA-001',
+            path: 'implementationNotes.stateOwnership',
+            operation: 'replace',
+            item: { id: 'IO-1', text: 'C-STATE-USER' },
+            match: { id: 'C-STATE-PROFILE' },
+            confidence: 0.85,
+            reasoning: 'Replace invalid ID with existing one',
+          },
+        ],
+      };
+
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify(mockReport),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 200, outputTokens: 100 },
+      });
+
+      const judge = new StoryJudge(mockClient);
+      const systemContext = buildMinimalSystemContext();
+
+      const stories = [
+        {
+          id: 'USA-001',
+          title: 'Profile',
+          content: 'As a user...',
+          interconnections: {
+            storyId: 'USA-001',
+            uiMapping: {},
+            contractDependencies: ['C-STATE-PROFILE'],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          },
+        },
+      ];
+
+      const report = await judge.judgeGlobalConsistency(stories, systemContext);
+
+      expect(report.issues).toHaveLength(1);
+      expect(report.issues[0].suggestedFixType).toBe('invalid-reference');
+      expect(report.fixes[0].type).toBe('normalize-contract-id');
+    });
+
+    it('should detect missing bidirectional links', async () => {
+      const mockReport = {
+        issues: [
+          {
+            suggestedFixType: 'missing-link',
+            description: 'USA-001 lists USA-002 as prerequisite, but USA-002 does not list USA-001 as dependent',
+            affectedStories: ['USA-001', 'USA-002'],
+            confidence: 1.0,
+          },
+        ],
+        fixes: [
+          {
+            type: 'add-bidirectional-link',
+            storyId: 'USA-002',
+            path: 'outcomeAcceptanceCriteria',
+            operation: 'add',
+            item: {
+              id: 'REL-001',
+              text: JSON.stringify({
+                storyId: 'USA-001',
+                relationship: 'dependent',
+                description: 'Login depends on auth',
+              }),
+            },
+            confidence: 1.0,
+            reasoning: 'Add reverse dependency link',
+          },
+        ],
+      };
+
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify(mockReport),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 200, outputTokens: 100 },
+      });
+
+      const judge = new StoryJudge(mockClient);
+      const systemContext = buildMinimalSystemContext();
+
+      const stories = [
+        {
+          id: 'USA-001',
+          title: 'Login',
+          content: 'As a user...',
+          interconnections: {
+            storyId: 'USA-001',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [
+              { storyId: 'USA-002', relationship: 'prerequisite', description: 'Needs auth first' },
+            ],
+          },
+        },
+        {
+          id: 'USA-002',
+          title: 'Auth',
+          content: 'As a user...',
+          interconnections: {
+            storyId: 'USA-002',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [],
+          },
+        },
+      ];
+
+      const report = await judge.judgeGlobalConsistency(stories, systemContext);
+
+      expect(report.issues[0].suggestedFixType).toBe('missing-link');
+      expect(report.fixes[0].type).toBe('add-bidirectional-link');
+    });
+
+    it('should throw when parsing fails', async () => {
+      mockSendMessage.mockResolvedValue({
+        content: 'Invalid JSON response',
+        stopReason: 'end_turn',
+        usage: { inputTokens: 200, outputTokens: 100 },
+      });
+
+      const judge = new StoryJudge(mockClient);
+      const systemContext = buildMinimalSystemContext();
+
+      await expect(judge.judgeGlobalConsistency([], systemContext)).rejects.toThrow(
+        'Failed to parse global consistency report from LLM response',
+      );
+    });
+  });
+
+  /** Helper for USA-51 global consistency tests */
+  function buildMinimalSystemContext(): SystemDiscoveryContext {
+    return {
+      componentGraph: { components: {}, compositionEdges: [], coordinationEdges: [], dataFlows: [] },
+      sharedContracts: { stateModels: [], eventRegistry: [], standardStates: [], dataFlows: [] },
+      componentRoles: [],
+      productVocabulary: {},
+      timestamp: new Date().toISOString(),
+    };
+  }
 
   // --- formatSystemContext: include all SystemDiscoveryContext fields ---
   it('formatSystemContext includes componentGraph, sharedContracts, roles, vocabulary, timestamp, referenceDocuments', () => {

@@ -44,7 +44,7 @@ function minimalSystemContext(): SystemDiscoveryContext {
 
 const mockInterconnectionResponse = (storyId: string) => ({
   storyId,
-  uiMapping: { 'heart icon': 'Favorite Button' },
+  uiMapping: { 'heart icon': 'COMP-FAVORITE-BUTTON' },
   contractDependencies: ['C-STATE-FAVORITES', 'E-ITEM-FAVORITED'],
   ownership: {
     ownsState: ['C-STATE-FAVORITES'],
@@ -87,19 +87,19 @@ describe('runPass2Interconnection', () => {
 
     const agent = new UserStoryAgent(validConfig);
     const stories = [
-      { storyId: 'story-1', markdown: '# Favorite item\n\nAs a user I want to favorite items.' },
+      { id: 'story-1', content: '# Favorite item\n\nAs a user I want to favorite items.' },
     ];
     const systemContext = minimalSystemContext();
     const result = await agent.runPass2Interconnection(stories, systemContext);
 
-    expect(result.interconnections).toHaveLength(1);
-    expect(result.updatedStories).toHaveLength(1);
-    expect(result.interconnections[0].storyId).toBe('story-1');
-    expect(result.interconnections[0].uiMapping).toEqual({ 'heart icon': 'Favorite Button' });
-    expect(result.interconnections[0].contractDependencies).toContain('C-STATE-FAVORITES');
-    expect(result.interconnections[0].ownership.ownsState).toContain('C-STATE-FAVORITES');
-    expect(result.interconnections[0].relatedStories).toHaveLength(1);
-    expect(result.interconnections[0].relatedStories[0].relationship).toBe('prerequisite');
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('story-1');
+    expect(result[0].interconnections.storyId).toBe('story-1');
+    expect(result[0].interconnections.uiMapping).toEqual({ 'heart icon': 'COMP-FAVORITE-BUTTON' });
+    expect(result[0].interconnections.contractDependencies).toContain('C-STATE-FAVORITES');
+    expect(result[0].interconnections.ownership.ownsState).toContain('C-STATE-FAVORITES');
+    expect(result[0].interconnections.relatedStories).toHaveLength(1);
+    expect(result[0].interconnections.relatedStories[0].relationship).toBe('prerequisite');
   });
 
   it('appends interconnection metadata sections to markdown', async () => {
@@ -111,20 +111,19 @@ describe('runPass2Interconnection', () => {
 
     const agent = new UserStoryAgent(validConfig);
     const stories = [
-      { storyId: 'story-1', markdown: '# Favorite item\n\nAs a user I want to favorite items.' },
+      { id: 'story-1', content: '# Favorite item\n\nAs a user I want to favorite items.' },
     ];
     const result = await agent.runPass2Interconnection(stories, minimalSystemContext());
 
-    const updated = result.updatedStories[0];
+    const updated = result[0];
     expect(updated).toBeDefined();
-    expect(updated!.markdown).toContain('## Story ID');
-    expect(updated!.markdown).toContain('## UI Mapping');
-    expect(updated!.markdown).toContain('## Contract Dependencies');
-    expect(updated!.markdown).toContain('## Ownership');
-    expect(updated!.markdown).toContain('## Related Stories');
-    expect(updated!.markdown).toContain('story-1');
-    expect(updated!.markdown).toContain('heart icon');
-    expect(updated!.markdown).toContain('C-STATE-FAVORITES');
+    expect(updated!.content).toContain('## UI Mapping');
+    expect(updated!.content).toContain('## Contract Dependencies');
+    expect(updated!.content).toContain('## Ownership');
+    expect(updated!.content).toContain('## Related Stories');
+    expect(updated!.content).toContain('heart icon');
+    expect(updated!.content).toContain('COMP-FAVORITE-BUTTON');
+    expect(updated!.content).toContain('C-STATE-FAVORITES');
   });
 
   it('calls LLM once per story with system context and other story IDs', async () => {
@@ -142,8 +141,8 @@ describe('runPass2Interconnection', () => {
 
     const agent = new UserStoryAgent(validConfig);
     const stories = [
-      { storyId: 'story-a', markdown: '# Story A' },
-      { storyId: 'story-b', markdown: '# Story B' },
+      { id: 'story-a', content: '# Story A' },
+      { id: 'story-b', content: '# Story B' },
     ];
     const systemContext = minimalSystemContext();
     await agent.runPass2Interconnection(stories, systemContext);
@@ -152,11 +151,11 @@ describe('runPass2Interconnection', () => {
     const firstCall = mockSendMessage.mock.calls[0][0];
     expect(firstCall.systemPrompt).toContain('Pass 2');
     expect(firstCall.systemPrompt).toContain('Story Interconnection');
-    expect(firstCall.messages[0].content).toContain('**Story ID**: story-a');
+    expect(firstCall.messages[0].content).toContain('Story A');
     expect(firstCall.messages[0].content).toContain('story-b');
     expect(firstCall.messages[0].content).toContain('COMP-FAVORITE-BUTTON');
     const secondCall = mockSendMessage.mock.calls[1][0];
-    expect(secondCall.messages[0].content).toContain('**Story ID**: story-b');
+    expect(secondCall.messages[0].content).toContain('Story B');
     expect(secondCall.messages[0].content).toContain('story-a');
   });
 
@@ -174,11 +173,11 @@ describe('runPass2Interconnection', () => {
     });
 
     const agent = new UserStoryAgent(validConfig);
-    const stories = [{ storyId: 'correct-id', markdown: '# Story' }];
+    const stories = [{ id: 'correct-id', content: '# Story' }];
     const result = await agent.runPass2Interconnection(stories, minimalSystemContext());
 
-    expect(result.interconnections[0].storyId).toBe('correct-id');
-    expect(result.interconnections[0].ownership).toEqual({
+    expect(result[0].interconnections.storyId).toBe('correct-id');
+    expect(result[0].interconnections.ownership).toEqual({
       ownsState: [],
       consumesState: [],
       emitsEvents: [],
@@ -194,7 +193,7 @@ describe('runPass2Interconnection', () => {
     });
 
     const agent = new UserStoryAgent(validConfig);
-    const stories = [{ storyId: 'story-1', markdown: '# Story' }];
+    const stories = [{ id: 'story-1', content: '# Story' }];
 
     await expect(agent.runPass2Interconnection(stories, minimalSystemContext())).rejects.toThrow(
       /Pass 2.*JSON/
@@ -202,17 +201,6 @@ describe('runPass2Interconnection', () => {
   });
 
   it('returns one interconnection and one updated story per input story', async () => {
-    mockSendMessage.mockResolvedValue({
-      content: JSON.stringify(mockInterconnectionResponse('story-x')),
-      stopReason: 'end_turn',
-      usage: { inputTokens: 200, outputTokens: 150 },
-    });
-
-    const agent = new UserStoryAgent(validConfig);
-    const stories = [
-      { storyId: 'story-x', markdown: '# X' },
-      { storyId: 'story-y', markdown: '# Y' },
-    ];
     mockSendMessage.mockResolvedValueOnce({
       content: JSON.stringify(mockInterconnectionResponse('story-x')),
       stopReason: 'end_turn',
@@ -224,11 +212,16 @@ describe('runPass2Interconnection', () => {
       usage: { inputTokens: 200, outputTokens: 150 },
     });
 
+    const agent = new UserStoryAgent(validConfig);
+    const stories = [
+      { id: 'story-x', content: '# X' },
+      { id: 'story-y', content: '# Y' },
+    ];
+
     const result = await agent.runPass2Interconnection(stories, minimalSystemContext());
 
-    expect(result.interconnections).toHaveLength(2);
-    expect(result.updatedStories).toHaveLength(2);
-    expect(result.updatedStories[0].storyId).toBe('story-x');
-    expect(result.updatedStories[1].storyId).toBe('story-y');
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe('story-x');
+    expect(result[1].id).toBe('story-y');
   });
 });

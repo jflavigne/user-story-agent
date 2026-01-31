@@ -12,7 +12,8 @@ import type {
 } from '../shared/types.js';
 import { JudgeRubricSchema, GlobalConsistencyReportSchema } from '../shared/schemas.js';
 import { UNIFIED_STORY_JUDGE_RUBRIC } from '../prompts/judge-rubrics/unified-story-judge.js';
-import { GLOBAL_CONSISTENCY_JUDGE_PROMPT } from '../prompts/judge-rubrics/global-consistency.js';
+import { buildGlobalConsistencyPrompt, GLOBAL_CONSISTENCY_JUDGE_PROMPT } from '../prompts/judge-rubrics/global-consistency.js';
+import type { StoryInterconnections } from '../shared/types.js';
 import { extractJSON } from '../shared/json-utils.js';
 import { logger } from '../utils/logger.js';
 
@@ -132,43 +133,64 @@ export class StoryJudge {
   }
 
   /**
-   * Judges global consistency across multiple stories (e.g. issues, fixes).
+   * Judges global consistency across multiple stories.
+   * Detects contradictions, validates contract IDs, finds naming inconsistencies,
+   * and checks bidirectional links.
    *
-   * @param stories - Array of story markdown strings
+   * @param stories - Array of stories with their interconnections
    * @param systemContext - System discovery context
-   * @returns Global consistency report (issues, fixes)
+   * @returns Global consistency report with issues and fixes
    */
   async judgeGlobalConsistency(
-    stories: string[],
+    stories: Array<{
+      id: string;
+      title: string;
+      content: string;
+      interconnections: StoryInterconnections;
+    }>,
     systemContext: SystemDiscoveryContext
   ): Promise<GlobalConsistencyReport> {
     logger.debug(`StoryJudge: judging global consistency (${stories.length} stories)`);
 
-    const contextBlob = this.formatSystemContext(systemContext);
-    const storiesBlob = stories
-      .map((s, i) => `### Story ${i + 1}\n${s}`)
-      .join('\n\n');
-    const userMessage = `## System context\n${contextBlob}\n\n## Stories\n${storiesBlob}\n\nAssess consistency across these stories. Respond with only the GlobalConsistencyReport JSON (no markdown fence, no extra text).`;
+    const prompt = buildGlobalConsistencyPrompt(stories, systemContext);
 
     const response = await this.claudeClient.sendMessage({
       systemPrompt: GLOBAL_CONSISTENCY_JUDGE_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content: prompt }],
     });
 
-    const json = extractJSON(response.content);
-    if (!json || typeof json !== 'object') {
-      return {
-        issues: [{ description: 'Failed to parse consistency response', suggestedFixType: 'unknown', confidence: 0, affectedStories: [] }],
-        fixes: [],
-      };
+    const report = this.parseGlobalConsistencyReportFromContent(response.content);
+
+    if (!report) {
+      throw new Error('Failed to parse global consistency report from LLM response');
     }
 
-    const report = parseGlobalConsistencyReport(json);
-    if (report) return report;
-    return {
-      issues: [{ description: 'Invalid consistency response', suggestedFixType: 'unknown', confidence: 0, affectedStories: [] }],
-      fixes: [],
-    };
+    return report;
+  }
+
+  /**
+   * Parses LLM response from global consistency judge prompt.
+   * Validates against GlobalConsistencyReportSchema.
+   *
+   * @param content - Raw LLM response content
+   * @returns Parsed report or null if invalid
+   */
+  private parseGlobalConsistencyReportFromContent(content: string): GlobalConsistencyReport | null {
+    try {
+      const json = extractJSON(content);
+      if (!json || typeof json !== 'object') {
+        logger.warn('Global consistency: No valid JSON in response');
+        return null;
+      }
+
+      const normalized = normalizeGlobalConsistencyRaw(json);
+      const parsed = GlobalConsistencyReportSchema.parse(normalized);
+      return parsed as GlobalConsistencyReport;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(`Global consistency parse error: ${errorMessage}`);
+      return null;
+    }
   }
 
   private formatSystemContext(ctx: SystemDiscoveryContext): string {

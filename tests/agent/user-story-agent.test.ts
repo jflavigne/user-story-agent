@@ -1351,4 +1351,144 @@ describe('UserStoryAgent', () => {
       infoSpy.mockRestore();
     });
   });
+
+  describe('Pass 2: Interconnection (USA-49)', () => {
+    function buildMinimalSystemContext(): SystemDiscoveryContext {
+      return {
+        componentGraph: {
+          components: {},
+          compositionEdges: [],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [],
+        productVocabulary: {},
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    beforeEach(() => {
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify({
+          storyId: 'USA-001',
+          uiMapping: { 'login button': 'COMP-LOGIN-BUTTON' },
+          contractDependencies: ['C-STATE-USER'],
+          ownership: { ownsState: [], consumesState: ['C-STATE-USER'], emitsEvents: [], listensToEvents: [] },
+          relatedStories: [],
+        }),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 100, outputTokens: 50 },
+      });
+    });
+
+    it('should extract interconnections for each story', async () => {
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+      systemContext.componentGraph.components['COMP-LOGIN-BUTTON'] = {
+        id: 'COMP-LOGIN-BUTTON',
+        productName: 'Login Button',
+        description: '',
+      };
+
+      const stories = [{ id: 'USA-001', content: 'As a user, I want to login' }];
+
+      const results = await agent.runPass2Interconnection(stories, systemContext);
+
+      expect(results).toHaveLength(1);
+      expect(results[0].id).toBe('USA-001');
+      expect(results[0].interconnections.storyId).toBe('USA-001');
+      expect(results[0].interconnections.uiMapping).toEqual({ 'login button': 'COMP-LOGIN-BUTTON' });
+      expect(results[0].interconnections.contractDependencies).toEqual(['C-STATE-USER']);
+    });
+
+    it('should append metadata sections to markdown', async () => {
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const stories = [{ id: 'USA-001', content: 'As a user, I want to login' }];
+
+      const results = await agent.runPass2Interconnection(stories, systemContext);
+
+      expect(results[0].content).toContain('## UI Mapping');
+      expect(results[0].content).toContain('login button');
+      expect(results[0].content).toContain('COMP-LOGIN-BUTTON');
+      expect(results[0].content).toContain('## Contract Dependencies');
+      expect(results[0].content).toContain('C-STATE-USER');
+    });
+
+    it('should handle multiple stories with related stories', async () => {
+      mockSendMessage
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            storyId: 'USA-001',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [
+              { storyId: 'USA-002', relationship: 'prerequisite', description: 'Needs auth' },
+            ],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        })
+        .mockResolvedValueOnce({
+          content: JSON.stringify({
+            storyId: 'USA-002',
+            uiMapping: {},
+            contractDependencies: [],
+            ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+            relatedStories: [
+              { storyId: 'USA-001', relationship: 'dependent', description: 'Login depends on auth' },
+            ],
+          }),
+          stopReason: 'end_turn',
+          usage: { inputTokens: 100, outputTokens: 50 },
+        });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const stories = [
+        { id: 'USA-001', content: 'Story 1' },
+        { id: 'USA-002', content: 'Story 2' },
+      ];
+
+      const results = await agent.runPass2Interconnection(stories, systemContext);
+
+      expect(results).toHaveLength(2);
+      expect(results[0].interconnections.relatedStories).toHaveLength(1);
+      expect(results[0].interconnections.relatedStories[0].relationship).toBe('prerequisite');
+      expect(results[1].interconnections.relatedStories[0].relationship).toBe('dependent');
+    });
+
+    it('should correct storyId mismatch', async () => {
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify({
+          storyId: 'WRONG-ID',
+          uiMapping: {},
+          contractDependencies: [],
+          ownership: { ownsState: [], consumesState: [], emitsEvents: [], listensToEvents: [] },
+          relatedStories: [],
+        }),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 100, outputTokens: 50 },
+      });
+
+      const agent = new UserStoryAgent(validConfig);
+      const systemContext = buildMinimalSystemContext();
+
+      const results = await agent.runPass2Interconnection(
+        [{ id: 'USA-001', content: 'Story' }],
+        systemContext
+      );
+
+      expect(results[0].interconnections.storyId).toBe('USA-001');
+    });
+  });
 });

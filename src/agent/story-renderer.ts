@@ -85,58 +85,64 @@ export class StoryRenderer {
 
   /**
    * Appends Pass 2 interconnection metadata sections to existing markdown.
+   * UI Mapping: "term" → componentId; Related Stories grouped by prerequisite/parallel/dependent.
    *
    * @param markdown - Existing story markdown
    * @param interconnections - Story ID, UI mapping, contract deps, ownership, related stories
    * @returns Markdown with interconnection sections appended
    */
   appendInterconnectionMetadata(markdown: string, interconnections: StoryInterconnections): string {
-    const sections: string[] = [markdown.trimEnd(), ''];
-
-    sections.push('## Story ID');
-    sections.push('');
-    sections.push(interconnections.storyId);
-    sections.push('');
+    let result = markdown.trimEnd();
 
     if (Object.keys(interconnections.uiMapping).length > 0) {
-      sections.push('## UI Mapping');
-      sections.push('');
-      for (const [productTerm, componentName] of Object.entries(interconnections.uiMapping)) {
-        sections.push(`- **${this.escapeInline(productTerm)}**: ${this.escapeInline(componentName)}`);
-      }
-      sections.push('');
+      result += '\n\n## UI Mapping\n\n';
+      result += Object.entries(interconnections.uiMapping)
+        .map(([term, compId]) => `- "${term}" → ${compId}`)
+        .join('\n');
     }
 
     if (interconnections.contractDependencies.length > 0) {
-      sections.push('## Contract Dependencies');
-      sections.push('');
-      for (const id of interconnections.contractDependencies) {
-        sections.push(`- ${id}`);
-      }
-      sections.push('');
+      result += '\n\n## Contract Dependencies\n\n';
+      result += interconnections.contractDependencies.map((id) => `- ${id}`).join('\n');
     }
 
     const ownership = interconnections.ownership;
     if (ownership.ownsState?.length || ownership.consumesState?.length || ownership.emitsEvents?.length || ownership.listensToEvents?.length) {
-      sections.push('## Ownership');
-      sections.push('');
-      if (ownership.ownsState?.length) sections.push(`- **Owns state**: ${ownership.ownsState.join(', ')}`);
-      if (ownership.consumesState?.length) sections.push(`- **Consumes state**: ${ownership.consumesState.join(', ')}`);
-      if (ownership.emitsEvents?.length) sections.push(`- **Emits events**: ${ownership.emitsEvents.join(', ')}`);
-      if (ownership.listensToEvents?.length) sections.push(`- **Listens to events**: ${ownership.listensToEvents.join(', ')}`);
-      sections.push('');
+      result += '\n\n## Ownership\n\n';
+      if (ownership.ownsState?.length) result += `**Owns State**: ${ownership.ownsState.join(', ')}\n`;
+      if (ownership.consumesState?.length) result += `**Consumes State**: ${ownership.consumesState.join(', ')}\n`;
+      if (ownership.emitsEvents?.length) result += `**Emits Events**: ${ownership.emitsEvents.join(', ')}\n`;
+      if (ownership.listensToEvents?.length) result += `**Listens To**: ${ownership.listensToEvents.join(', ')}\n`;
     }
 
     if (interconnections.relatedStories.length > 0) {
-      sections.push('## Related Stories');
-      sections.push('');
-      for (const r of interconnections.relatedStories) {
-        sections.push(`- **${r.storyId}** (${r.relationship}): ${this.escapeInline(r.description)}`);
+      result += '\n\n## Related Stories\n\n';
+      const byRelationship: Record<string, Array<{ storyId: string; description?: string }>> = {};
+      for (const rel of interconnections.relatedStories) {
+        if (!byRelationship[rel.relationship]) {
+          byRelationship[rel.relationship] = [];
+        }
+        byRelationship[rel.relationship].push({ storyId: rel.storyId, description: rel.description });
       }
-      sections.push('');
+      if (byRelationship.prerequisite?.length) {
+        result += '**Prerequisites**:\n';
+        result += byRelationship.prerequisite.map((r) => `- ${r.storyId}${r.description ? `: ${r.description}` : ''}`).join('\n') + '\n\n';
+      }
+      if (byRelationship.parallel?.length) {
+        result += '**Parallel**:\n';
+        result += byRelationship.parallel.map((r) => `- ${r.storyId}${r.description ? `: ${r.description}` : ''}`).join('\n') + '\n\n';
+      }
+      if (byRelationship.dependent?.length) {
+        result += '**Dependent**:\n';
+        result += byRelationship.dependent.map((r) => `- ${r.storyId}${r.description ? `: ${r.description}` : ''}`).join('\n') + '\n\n';
+      }
+      if (byRelationship.related?.length) {
+        result += '**Related**:\n';
+        result += byRelationship.related.map((r) => `- ${r.storyId}${r.description ? `: ${r.description}` : ''}`).join('\n') + '\n\n';
+      }
     }
 
-    return sections.join('\n');
+    return result.trim();
   }
 
   private renderItems(items: Item[]): string[] {

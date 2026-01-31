@@ -148,17 +148,23 @@ export interface StreamErrorEvent extends StreamEvent {
 export type StreamEventUnion = StreamStartEvent | StreamChunkEvent | StreamCompleteEvent | StreamErrorEvent;
 
 /**
- * Input story for Pass 2 interconnection (storyId + markdown)
+ * Input story for Pass 2 interconnection (id + content)
  */
 export interface Pass2StoryInput {
-  storyId: string;
-  markdown: string;
+  id: string;
+  content: string;
 }
 
 /**
- * Result of runPass2Interconnection: interconnections and stories with metadata appended
+ * Single story result from runPass2Interconnection (content has metadata appended)
  */
-export interface Pass2InterconnectionResult {
-  interconnections: StoryInterconnections[];
-  updatedStories: Pass2StoryInput[];
+export interface Pass2StoryResultItem {
+  id: string;
+  content: string;
+  interconnections: StoryInterconnections;
 }
+
+/**
+ * Result of runPass2Interconnection: array of story results with interconnections
+ */
+export type Pass2InterconnectionResult = Pass2StoryResultItem[];

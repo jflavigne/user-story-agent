@@ -10,6 +10,7 @@ export type {
   IterationSelectionCallback,
   FailedIteration,
   Pass2StoryInput,
+  Pass2StoryResultItem,
   Pass2InterconnectionResult,
   StreamEvent,
   StreamStartEvent,

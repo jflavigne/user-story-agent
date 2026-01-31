@@ -142,7 +142,7 @@ describe('StoryRenderer', () => {
   it('appends interconnection metadata', () => {
     const interconnections: StoryInterconnections = {
       storyId: 'S1',
-      uiMapping: { 'heart icon': 'Favorite Button' },
+      uiMapping: { 'heart icon': 'COMP-FAVORITE-BUTTON' },
       contractDependencies: ['C-STATE-USER'],
       ownership: {
         ownsState: ['C-STATE-FAVORITES'],
@@ -154,18 +154,16 @@ describe('StoryRenderer', () => {
     };
     const baseMd = '# Story\n\nBody.';
     const result = renderer.appendInterconnectionMetadata(baseMd, interconnections);
-    expect(result).toContain('## Story ID');
-    expect(result).toContain('S1');
     expect(result).toContain('## UI Mapping');
-    expect(result).toContain('heart icon');
-    expect(result).toContain('Favorite Button');
+    expect(result).toContain('"heart icon"');
+    expect(result).toContain('COMP-FAVORITE-BUTTON');
     expect(result).toContain('## Contract Dependencies');
     expect(result).toContain('C-STATE-USER');
     expect(result).toContain('## Ownership');
     expect(result).toContain('C-STATE-FAVORITES');
     expect(result).toContain('## Related Stories');
+    expect(result).toContain('Prerequisites');
     expect(result).toContain('S2');
-    expect(result).toContain('prerequisite');
     expect(result).toContain('Auth');
   });
 });
