@@ -99,7 +99,8 @@ export class UserStoryAgent extends EventEmitter {
     this.config = config;
     this.streaming = config.streaming ?? false;
     this.validateConfig();
-    this.claudeClient = new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
+    this.claudeClient =
+      config.claudeClient ?? new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
     this.contextManager = new ContextManager();
     
     // Create evaluator if verification is enabled
@@ -1218,16 +1219,18 @@ export class UserStoryAgent extends EventEmitter {
     );
     passesCompleted.push('Pass 2b (global consistency)');
 
-    // Build final stories array (id, content, structure?, interconnections, judgeResults)
+    // Build final stories array (id, content, structure?, interconnections, judgeResults, needsManualReview)
     let finalStories = pass2Results.map((s, i) => ({
       id: s.id,
       content: s.content,
       structure: pass1Results[i]?.structure,
       interconnections: s.interconnections,
       judgeResults: pass1Results[i]?.judgeResults,
+      needsManualReview: pass1Results[i]?.needsManualReview,
     }));
 
     let fixesApplied = 0;
+    let fixesRejected = 0;
     let fixesFlaggedForReview = consistencyReport.fixes.length;
 
     // Auto-apply high-confidence fixes when present
@@ -1239,11 +1242,12 @@ export class UserStoryAgent extends EventEmitter {
           pass1Results[j]?.structure ?? this.parseOrInitializeStructure(pass2Results[j].content);
         storiesForFix.set(id, { structure, markdown: pass2Results[j].content });
       }
-      const { updated, appliedCount } = await this.applyGlobalConsistencyFixes(
+      const { updated, appliedCount, rejectedCount } = await this.applyGlobalConsistencyFixes(
         storiesForFix,
         consistencyReport
       );
       fixesApplied = appliedCount;
+      fixesRejected = rejectedCount;
       fixesFlaggedForReview = consistencyReport.fixes.length - appliedCount;
 
       // Update final stories with applied fix content/structure
@@ -1255,6 +1259,7 @@ export class UserStoryAgent extends EventEmitter {
           structure: entry?.structure ?? pass1Results[i]?.structure,
           interconnections: s.interconnections,
           judgeResults: pass1Results[i]?.judgeResults,
+          needsManualReview: pass1Results[i]?.needsManualReview,
         };
       });
     }
@@ -1268,6 +1273,7 @@ export class UserStoryAgent extends EventEmitter {
         refinementRounds,
         fixesApplied,
         fixesFlaggedForReview,
+        fixesRejected,
       },
     };
   }
@@ -1312,7 +1318,11 @@ export class UserStoryAgent extends EventEmitter {
   async applyGlobalConsistencyFixes(
     stories: Map<string, { structure: StoryStructure; markdown: string }>,
     report: GlobalConsistencyReport
-  ): Promise<{ updated: Map<string, { structure: StoryStructure; markdown: string }>; appliedCount: number }> {
+  ): Promise<{
+    updated: Map<string, { structure: StoryStructure; markdown: string }>;
+    appliedCount: number;
+    rejectedCount: number;
+  }> {
     const HIGH_CONFIDENCE_THRESHOLD = 0.8;
     const ALLOWED_TYPES = [
       'add-bidirectional-link',
@@ -1340,6 +1350,7 @@ export class UserStoryAgent extends EventEmitter {
 
     const updated = new Map(stories);
     let appliedCount = 0;
+    let rejectedCount = 0;
 
     for (const fix of applicableFixes) {
       const entry = updated.get(fix.storyId);
@@ -1357,12 +1368,12 @@ export class UserStoryAgent extends EventEmitter {
         updated.set(fix.storyId, { structure: updatedStructure, markdown: updatedMarkdown });
         logger.info(`Auto-applied fix: ${fix.type} to story ${fix.storyId} at ${fix.path}`);
       } else {
-        // Patch didn't apply - keep existing entry unchanged
+        rejectedCount++;
         logger.warn(`Failed to apply fix: ${fix.type} to ${fix.storyId}`);
       }
     }
 
-    return { updated, appliedCount };
+    return { updated, appliedCount, rejectedCount };
   }
 }
 

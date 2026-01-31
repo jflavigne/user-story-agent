@@ -13,6 +13,7 @@ import type {
   SystemDiscoveryContext,
 } from '../shared/types.js';
 import type { IterationResult } from './state/story-state.js';
+import type { ClaudeClient } from './claude-client.js';
 
 /**
  * Information about an available iteration for interactive selection
@@ -58,6 +59,8 @@ export interface UserStoryAgentConfig {
   streaming?: boolean;
   /** Whether to verify each iteration's output (defaults to false) */
   verify?: boolean;
+  /** Optional Claude client (for testing/benchmarking); when set, apiKey is not required */
+  claudeClient?: ClaudeClient;
 }
 
 /**
@@ -194,6 +197,7 @@ export interface SystemWorkflowResult {
       pass1c?: JudgeRubric;
       pass1cAfterRewrite?: JudgeRubric;
     };
+    needsManualReview?: { reason: string; score: number };
   }>;
   consistencyReport: GlobalConsistencyReport;
   metadata: {
@@ -201,5 +205,7 @@ export interface SystemWorkflowResult {
     refinementRounds: number;
     fixesApplied: number;
     fixesFlaggedForReview: number;
+    /** Number of high-confidence fixes that were attempted but rejected by patch application */
+    fixesRejected?: number;
   };
 }

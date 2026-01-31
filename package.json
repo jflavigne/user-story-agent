@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "benchmark": "tsx scripts/benchmark.ts",
     "generate-skills": "tsx src/skills/generate.ts",
     "agent": "tsx src/cli.ts",
     "dev": "tsx watch src/agent/index.ts",
