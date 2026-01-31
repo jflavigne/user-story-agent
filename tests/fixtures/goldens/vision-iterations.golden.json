@@ -1,0 +1,7 @@
+{
+  "enhancedStory": "# Filter UI\n\nAs a user I want to use the filter bottom sheet and toolbar.\n\nThe drawer shows accordion sections; each filter item is a checkbox. Close button (X) and apply button are present. Spinner shows loading indicator while data loads. Clear all resets filters.",
+  "changesApplied": [
+    { "category": "interactive-elements", "description": "Documented bottom sheet, drawer, accordion, checkbox, spinner, close button, apply button, clear all" }
+  ],
+  "confidence": 0.9
+}

@@ -1,0 +1,28 @@
+{
+  "mentions": {
+    "components": ["FilterSheet", "FilterBar", "FilterGroup", "FilterItem", "SpinnerLoading"],
+    "stateModels": ["filterState"],
+    "events": ["applyFilters", "clearAll"]
+  },
+  "canonicalNames": {
+    "FilterSheet": ["filter sheet", "bottom sheet", "drawer"],
+    "FilterBar": ["filter bar", "toolbar"],
+    "FilterGroup": ["filter group", "accordion", "expandable"],
+    "FilterItem": ["filter item", "checkbox", "option"],
+    "SpinnerLoading": ["spinner", "loading indicator"]
+  },
+  "evidence": {
+    "FilterSheet": "Bottom sheet slides up with filter options; close button (X) at top.",
+    "FilterBar": "Horizontal filter toolbar with clear all and apply button.",
+    "FilterGroup": "Accordion sections with chevron; expandable filter groups.",
+    "FilterItem": "Checkbox options for each filter; checked and unchecked states.",
+    "SpinnerLoading": "Spinner / loading indicator while filters load."
+  },
+  "vocabulary": {
+    "filter sheet": "FilterSheet",
+    "filter bar": "FilterBar",
+    "accordion": "FilterGroup",
+    "checkbox": "FilterItem",
+    "spinner": "SpinnerLoading"
+  }
+}

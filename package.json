@@ -16,7 +16,9 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:e2e": "vitest run --config vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:vision": "vitest run tests/unit tests/contract tests/integration",
+    "test:vision:live": "RUN_LIVE_VISION_TESTS=1 vitest run tests/live"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

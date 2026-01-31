@@ -1,0 +1,26 @@
+{
+  "systemContext": {
+    "componentGraph": {
+      "components": {
+        "COMP-1": { "id": "COMP-1", "productName": "FilterSheet", "description": "Bottom sheet with close button (X)." },
+        "COMP-2": { "id": "COMP-2", "productName": "FilterBar", "description": "Filter toolbar with apply button." },
+        "COMP-3": { "id": "COMP-3", "productName": "FilterGroup", "description": "Accordion expandable sections with chevron." },
+        "COMP-4": { "id": "COMP-4", "productName": "FilterItem", "description": "Checkbox option; checked/unchecked." },
+        "COMP-5": { "id": "COMP-5", "productName": "SpinnerLoading", "description": "Loading indicator / spinner." }
+      },
+      "compositionEdges": [],
+      "coordinationEdges": [],
+      "dataFlows": []
+    },
+    "sharedContracts": { "stateModels": [], "eventRegistry": [], "standardStates": [], "dataFlows": [] },
+    "componentRoles": [],
+    "productVocabulary": {},
+    "timestamp": "2025-01-01T00:00:00.000Z"
+  },
+  "stories": [
+    {
+      "id": "Filter UI",
+      "content": "# Filter UI\n\nUser sees a filter sheet (drawer) with accordion groups, checkbox items, close button, apply button, and spinner loading indicator. Clear all resets."
+    }
+  ]
+}
