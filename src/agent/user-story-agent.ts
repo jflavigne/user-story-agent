@@ -763,6 +763,8 @@ export class UserStoryAgent extends EventEmitter {
         'responsive-web',
         'accessibility',
         'validation',
+        'performance',
+        'analytics',
       ];
       const useVision = Boolean(
         this.config.mockupImages?.length && visionIterationIds.includes(iteration.id)
@@ -851,6 +853,13 @@ export class UserStoryAgent extends EventEmitter {
           state.lastIterationUsedPatchWorkflow = true;
         } else {
           state.lastIterationUsedPatchWorkflow = false;
+        }
+        if (metrics.totalPatches > 0 && metrics.applied === 0) {
+          logger.warn(
+            `Iteration ${iteration.id}: All ${metrics.totalPatches} patches were rejected ` +
+              `(${metrics.rejectedPath} path issues, ${metrics.rejectedValidation} validation failures). ` +
+              `Story structure unchanged.`
+          );
         }
         const renderer = new StoryRenderer();
         state.currentStory = renderer.toMarkdown(state.storyStructure);
@@ -984,11 +993,13 @@ export class UserStoryAgent extends EventEmitter {
         throw new Error(`Iteration ${iterationId} returned an empty story. This may indicate an API error or invalid response.`);
       }
 
-      // Check if the response is an error message before using it as fallback
-      const errorIndicators = ['error:', 'failed:', 'i apologize', 'i cannot', 'sorry,'];
-      const lowerResponse = fallbackStory.toLowerCase();
-      if (errorIndicators.some(indicator => lowerResponse.includes(indicator))) {
-        throw new Error(`Iteration ${iterationId} returned an error response: ${fallbackStory.substring(0, 100)}...`);
+      // Check if response is likely an error (short + contains error indicators)
+      if (fallbackStory.length < 200) {
+        const errorIndicators = ['error:', 'failed:', 'i apologize', 'i cannot', 'sorry,'];
+        const lowerResponse = fallbackStory.toLowerCase();
+        if (errorIndicators.some(indicator => lowerResponse.includes(indicator))) {
+          throw new Error(`Iteration ${iterationId} returned an error response: ${fallbackStory.substring(0, 100)}...`);
+        }
       }
 
       return {

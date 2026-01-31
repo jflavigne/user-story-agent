@@ -59,6 +59,55 @@ If mockup images are provided, use visual evidence to identify:
 
 Prioritize what you see in the image over text descriptions when both are present.
 
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Layout Cues → Breakpoint Behavior**
+   - Grid/columns: "Multi-column layout suggests desktop; infer single-column stacking on small screens"
+   - DO NOT specify pixel breakpoints or exact column widths - describe reflow intent
+
+2. **Navigation Placement → Access Pattern**
+   - Hamburger vs full nav: "Navigation collapses to menu on small viewports"
+   - DO NOT specify icon size or padding - describe how users access navigation
+
+3. **Touch Targets → Interaction Readiness**
+   - Button/link size: "Primary actions have adequate touch target size"
+   - DO NOT specify min-width/height in px - describe touch-friendliness
+
+4. **Content Order → Priority**
+   - Visual stacking: "Hero and primary CTA appear above fold; secondary content follows"
+   - DO NOT specify viewport heights - describe content priority and reflow
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Responsive Web)
+
+❌ **Exact breakpoints**: "768px", "1024px", "mobile breakpoint at 640px"
+✓ **Functional breakpoints**: "Layout adapts for narrow viewports", "Full nav visible on wider screens"
+
+❌ **Exact dimensions**: "48px touch target", "320px min-width", "max-width 1200px"
+✓ **Functional sizing**: "Touch targets adequate for finger tap", "Content width constrained on large screens"
+
+❌ **Pixel spacing**: "16px gap between nav items", "24px sidebar width"
+✓ **Functional spacing**: "Clear separation between nav items", "Sidebar collapses on narrow viewports"
+
+❌ **Font sizes per viewport**: "14px mobile, 16px desktop"
+✓ **Functional typography**: "Text remains readable at all viewport sizes", "Heading hierarchy preserved across breakpoints"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Responsive Web)
+
+**WRONG (Over-specified):**
+"Navigation bar is 64px height, 24px padding, breaks to hamburger at 768px; touch targets 44px minimum"
+
+**RIGHT (Functional):**
+"Navigation is full horizontal bar on wider screens and collapses to a menu trigger on narrow viewports; interactive elements have adequate touch target size for mobile"
+
+**WRONG:** "Two-column grid with 32px gutter becomes single column below 600px"
+**RIGHT:** "Content is multi-column on larger screens and stacks vertically on narrow viewports; grouping and reading order preserved"
+
 ---
 
 Analyze the mockup or design to identify responsive web requirements and how users experience functional behaviors across different screen sizes (mobile, tablet, desktop).

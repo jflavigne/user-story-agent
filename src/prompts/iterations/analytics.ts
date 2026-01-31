@@ -49,6 +49,68 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Trackable interactions**: Buttons, links, form submits, navigation elements that represent user actions
+- **Key screens or sections**: Distinct views or steps that could be milestones (e.g. checkout step, form step)
+- **Content engagement cues**: Expandable sections, tabs, carousels, or lists that indicate consumption
+- **Conversion points**: Primary actions (submit, purchase, sign up) and secondary actions (cancel, back)
+- **Navigation structure**: Menus, breadcrumbs, back buttons that define user paths
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Primary Actions → Key Events**
+   - Prominent CTAs: "Submit, sign up, and purchase are primary actions to track"
+   - DO NOT specify button color or size - describe which actions are conversion or key events
+
+2. **Navigation Structure → Journey Mapping**
+   - Menus and links: "Main nav, breadcrumbs, and back afford journey and drop-off analysis"
+   - DO NOT specify spacing or typography - describe which navigation elements define paths
+
+3. **Form and Step Layout → Funnel and Timing**
+   - Multi-step or sections: "Form has distinct steps/sections for completion and time-on-step"
+   - DO NOT specify layout dimensions - describe logical steps or sections for funnel metrics
+
+4. **Content and List Structure → Engagement Metrics**
+   - Lists, tabs, expandables: "List items, tabs, or expandable sections indicate content engagement"
+   - DO NOT describe visual styling - describe which interactions indicate engagement
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Analytics)
+
+❌ **Exact styling**: "Blue submit button", "16px nav links", "Card 200px height"
+✓ **Functional tracking**: "Submit action is trackable", "Navigation clicks are trackable", "Card impression/click is trackable"
+
+❌ **Pixel or layout specs**: "Hero 600px", "Sidebar 280px"
+✓ **Functional scope**: "Hero and primary CTA are above fold", "Sidebar represents secondary navigation"
+
+❌ **Color/typography**: "Primary CTA #0066CC", "Heading 24px"
+✓ **Functional priority**: "Primary CTA is the main conversion action", "Heading denotes section for scroll/depth"
+
+❌ **Animation or transition**: "300ms modal open"
+✓ **Functional event**: "Modal open/close is a trackable state change"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Analytics)
+
+**WRONG (Over-specified):**
+"Track click on submit button (blue, 48px height, top-right); track nav items (14px, 24px gap)"
+
+**RIGHT (Functional):**
+"Track primary submit action and all main navigation choices; track which step or section user is on in multi-step flow"
+
+**WRONG:** "Track CTA with #0066CC, 16px padding; track breadcrumb 12px links"
+**RIGHT:** "Track primary CTA and breadcrumb clicks for journey and conversion; track form step completion and drop-off by step"
+
+---
+
 Analyze the mockup or design to identify analytics requirements and how user behavior patterns can be understood to improve the experience.
 
 ## User Interaction Tracking

@@ -56,6 +56,60 @@ If mockup images are provided, use visual evidence to identify:
 
 Prioritize what you see in the image over text descriptions when both are present.
 
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Visual Hierarchy → User Priority**
+   - Primary actions (prominent): "Submit button is primary action"
+   - Secondary actions (subtle): "Cancel link is secondary"
+   - DO NOT specify exact colors/sizes - describe relative importance
+
+2. **Visual State → User Feedback**
+   - Error indication: "Error state shows visual feedback (red border, icon)"
+   - Loading feedback: "Loading state displays progress indicator"
+   - DO NOT specify border widths, icon sizes - describe feedback mechanism
+
+3. **Visual Grouping → Functional Relationships**
+   - Related controls: "Filter controls are visually grouped"
+   - DO NOT specify spacing values - describe grouping intent
+
+4. **Visual Affordance → Interaction Model**
+   - Clickable elements: "Button appearance indicates it's interactive"
+   - DO NOT describe exact styling - describe interaction capability
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Interactive Elements)
+
+❌ **Exact color values**: "#0066CC", "rgb(0, 102, 204)", "brand-blue-500"
+✓ **Functional color**: "Primary action uses high-contrast color", "Error state uses red"
+
+❌ **Exact spacing**: "16px padding", "8px gap between items"
+✓ **Functional spacing**: "Adequate touch target size", "Clear visual separation between button group"
+
+❌ **Typography details**: "Helvetica 14px", "line-height 1.5", "font-weight 600"
+✓ **Functional typography**: "Button label clearly readable", "Heading hierarchy visible"
+
+❌ **Border/shadow specs**: "8px border-radius", "2px solid border"
+✓ **Functional borders**: "Focus indicator clearly visible", "Primary button visually distinct from secondary"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Interactive Elements)
+
+**WRONG (Over-specified):**
+"Submit button has #0066CC background, 16px padding, 8px border-radius,
+white text, 48px height, box-shadow 0 2px 4px rgba(0,0,0,0.1)"
+
+**RIGHT (Functional):**
+"Submit button is primary action (prominent styling with high contrast),
+adequate touch target size, hover state provides visual feedback,
+disabled state prevents submission when form incomplete"
+
+**WRONG:** "Error state: red border 2px, 14px error icon left of message"
+**RIGHT:** "Error state shows clear visual feedback (border and icon) with inline error message; feedback is accessible to screen readers"
+
 ---
 
 Document all interactive UI elements in the mockup or design, including their types, purposes, and interaction states.

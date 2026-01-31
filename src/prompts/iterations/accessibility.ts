@@ -58,6 +58,55 @@ If mockup images are provided, use visual evidence to identify:
 
 Prioritize what you see in the image over text descriptions when both are present.
 
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Contrast → Readability**
+   - Text vs background: "Body text has sufficient contrast for readability"
+   - DO NOT specify ratio numbers or hex - describe that contrast meets accessibility needs
+
+2. **Focus/State Indicators → Keyboard and Screen Reader**
+   - Visible focus: "Interactive elements show clear focus indicator"
+   - DO NOT specify outline width or color - describe that focus is visible
+
+3. **Semantic Structure → Navigation and Landmarks**
+   - Headings/lists: "Heading hierarchy and list structure support navigation"
+   - DO NOT specify font sizes - describe structural roles
+
+4. **Error and Required → Non-Color Communication**
+   - Required/error: "Required fields and errors indicated by more than color alone (e.g. icon, text)"
+   - DO NOT specify red/green hex - describe that state is communicated accessibly
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Accessibility)
+
+❌ **Exact color values**: "#B22222 for errors", "4.5:1 contrast ratio", "WCAG AA hex codes"
+✓ **Functional contrast**: "Error state uses sufficient contrast and is not conveyed by color alone"
+
+❌ **Exact dimensions**: "2px focus ring", "24px focus outline offset"
+✓ **Functional focus**: "Focus indicator is clearly visible and distinct from default state"
+
+❌ **Typography specs**: "18px for headings", "14px body for readability"
+✓ **Functional typography**: "Heading hierarchy is clear", "Body text is readable"
+
+❌ **Pixel measurements**: "48px min touch target", "8px spacing"
+✓ **Functional targets**: "Touch targets are adequate for activation", "Spacing prevents accidental activation"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Accessibility)
+
+**WRONG (Over-specified):**
+"Focus ring is 2px solid #005FCC, 2px offset; error text is #CC0000 14px; touch targets minimum 44px"
+
+**RIGHT (Functional):**
+"All interactive elements have a visible focus indicator; errors are indicated by text and icon, not color alone; controls have adequate size for touch and pointer"
+
+**WRONG:** "Text contrast 4.5:1 on white background; required field asterisk 12px red"
+**RIGHT:** "Text has sufficient contrast for readability; required fields are indicated visibly and programmatically (e.g. asterisk or label)"
+
 ---
 
 Analyze the mockup or design to identify accessibility requirements and how users with disabilities will experience the interface.

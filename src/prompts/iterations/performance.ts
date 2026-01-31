@@ -47,6 +47,68 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Loading indicators**: Spinners, progress bars, skeleton placeholders, or "loading" text
+- **Action feedback**: Buttons or controls that show in-progress state (disabled, spinner, label change)
+- **Progressive disclosure**: Content that appears in stages (above-the-fold first, then rest)
+- **Empty or placeholder states**: Placeholders for content not yet loaded
+- **Timeout/error recovery**: Any retry or error messaging shown in the design
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Loading Presence → Feedback Requirement**
+   - Where loading appears: "Initial load shows loading indicator or skeleton"
+   - DO NOT specify spinner size, animation duration, or skeleton dimensions - describe that feedback is present
+
+2. **Progress vs Indeterminate → User Expectation**
+   - Progress bar vs spinner: "Long operation shows progress; short operation shows indeterminate loading"
+   - DO NOT specify bar height or color - describe type of feedback (progress vs indeterminate)
+
+3. **Action State → Response Confirmation**
+   - Button during submit: "Submit shows in-progress state (e.g. disabled + indicator) until complete"
+   - DO NOT specify exact disabled style or icon size - describe that user sees action was registered
+
+4. **Placeholder/Skeleton → Perceived Performance**
+   - Skeleton vs blank: "Content area shows skeleton or placeholder while loading"
+   - DO NOT specify skeleton line width or spacing - describe that layout is stable and loading is communicated
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Performance)
+
+❌ **Exact dimensions**: "48px spinner", "4px progress bar height", "skeleton 200px wide"
+✓ **Functional feedback**: "Loading indicator is visible", "Progress is communicated", "Skeleton preserves layout"
+
+❌ **Animation specs**: "300ms fade-in", "1s pulse animation", "ease-in-out"
+✓ **Functional timing**: "Loading state is visible until complete", "Transition is smooth"
+
+❌ **Color values**: "Spinner #0066CC", "Progress bar green"
+✓ **Functional color**: "Loading indicator is visible against background", "Progress state is distinguishable"
+
+❌ **Pixel/time values**: "Spinner 24px", "Show after 200ms delay"
+✓ **Functional behavior**: "Immediate feedback on action", "Loading visible for long operations"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Performance)
+
+**WRONG (Over-specified):**
+"Submit button shows 24px blue spinner, disabled with opacity 0.6; progress bar is 4px height, green fill, 300ms animation"
+
+**RIGHT (Functional):**
+"Submit shows in-progress state (e.g. disabled with loading indicator) until response; user receives clear feedback that action was registered"
+
+**WRONG:** "Skeleton has 3 lines 16px height, 8px gap, gray #E0E0E0"
+**RIGHT:** "Initial load shows skeleton or placeholder for content area so layout is stable and loading is communicated; content replaces skeleton when ready"
+
+---
+
 Analyze the mockup or design to identify performance requirements and how users experience speed, responsiveness, and feedback during waits.
 
 ## Initial Page Load

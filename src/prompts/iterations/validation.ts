@@ -58,6 +58,55 @@ If mockup images are provided, use visual evidence to identify:
 
 Prioritize what you see in the image over text descriptions when both are present.
 
+## FUNCTIONAL VISION ANALYSIS
+
+Extract functional implications from visual design:
+
+1. **Error Presentation → Feedback Mechanism**
+   - Where errors appear: "Validation errors shown inline near field (and/or in summary)"
+   - DO NOT specify border color, icon size, or padding - describe feedback mechanism
+
+2. **Required vs Optional → User Guidance**
+   - How required is shown: "Required fields are indicated (e.g. marker or label)"
+   - DO NOT specify asterisk color or font - describe that required state is communicated
+
+3. **Success/Invalid State → User Confidence**
+   - Valid state: "Valid fields show positive feedback (e.g. checkmark or message)"
+   - DO NOT specify green/red or exact styles - describe that success and error are distinguishable
+
+4. **Validation Timing Cues → When Feedback Occurs**
+   - Inline vs submit: "Real-time vs on-submit validation inferred from UI (e.g. inline messages vs summary)"
+   - DO NOT specify animation or delay values - describe when user sees feedback
+
+---
+
+## ANTI-PATTERNS: What NOT to Extract (Validation)
+
+❌ **Exact color values**: "Red border #D32F2F", "Green checkmark #388E3C"
+✓ **Functional color**: "Error state has clear visual feedback", "Success state is distinguishable"
+
+❌ **Exact spacing**: "8px below field for error message", "16px left margin for icon"
+✓ **Functional placement**: "Error message appears in association with the field", "Error is visible and readable"
+
+❌ **Typography**: "Error text 12px sans-serif", "Required asterisk 14px"
+✓ **Functional typography**: "Error message is readable and actionable", "Required indicator is visible"
+
+❌ **Border/shadow specs**: "2px solid red border", "1px outline"
+✓ **Functional borders**: "Invalid field is visually distinct", "Focus and error states are distinguishable"
+
+---
+
+## EXAMPLES: Functional vs Visual Extraction (Validation)
+
+**WRONG (Over-specified):**
+"Email field shows #D32F2F 2px border on error, 14px error icon, error message 12px gray 8px below field"
+
+**RIGHT (Functional):**
+"Invalid email shows clear error state (e.g. border and icon) with inline message explaining the issue; error is associated with the field and announced to screen readers"
+
+**WRONG:** "Required fields have red asterisk 12px; success checkmark 24px green"
+**RIGHT:** "Required fields are marked (e.g. asterisk or label); valid state shows positive feedback so users know the field is accepted"
+
 ---
 
 Analyze the mockup or design to identify form field validation rules and how users experience validation feedback.
