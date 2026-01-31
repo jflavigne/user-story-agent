@@ -1,0 +1,291 @@
+{
+  "timestamp": "2026-01-31T05:16:00.177Z",
+  "stories": [
+    {
+      "id": "Project Portfolio Browser",
+      "pass1cScore": 3,
+      "pass1cAfterRewriteScore": 3,
+      "recommendation": "rewrite",
+      "needsManualReview": true,
+      "content": "# Untitled\n\nAs a \nI want \nSo that \n\n## User-Visible Behavior\n\n- [UVB-001] Portfolio browser displays a grid or list view of project portfolios with thumbnail images, creator names, and key project details\n- [UVB-002] Filter panel contains interactive dropdown menus for project type, style, industry, and medium selection with clear labels\n- [UVB-003] Each portfolio item includes a clickable thumbnail image and title that opens the full portfolio view\n- [UVB-004] Filter controls show selected state with highlighted background or checkmarks, and display active filter tags below the controls\n- [UVB-005] Clear filters button appears when filters are active, with prominent styling to indicate it will reset all selections\n- [UVB-006] On mobile devices, portfolio grid displays in single column with large touch-friendly thumbnails; on tablet, grid shows 2-3 columns; on desktop, grid displays 4-6 columns with smaller thumbnails\n- [UVB-007] Filter panel appears as expandable section at top of mobile view (collapsed by default), sidebar on desktop, and hybrid approach on tablet with some filters visible and others in expandable sections\n- [UVB-008] On touch devices, portfolio items respond to tap gestures with immediate visual feedback; on desktop, portfolio items respond to click and hover states with preview overlays\n- [UVB-009] Filter controls adapt to input method: dropdown menus become full-screen overlay selectors on mobile, remain inline dropdowns on desktop, with touch targets minimum 44px on touch devices\n- [UVB-010] Search and filter functionality remains fully available on mobile but may be reorganized into condensed or progressive disclosure patterns to fit smaller screens\n\n## Acceptance Criteria (Outcome)\n\n- [AC-OUT-001] When I access the portfolio browser on mobile, I can see filter options that are easily accessible and touch-friendly\n- [AC-OUT-002] When I apply filters (such as project type, style, industry, or medium), the results update to show only portfolios matching my criteria\n- [AC-OUT-003] I can apply multiple filters simultaneously to narrow down results and find highly relevant portfolios\n- [AC-OUT-004] I can easily clear or modify applied filters to explore different types of creative work\n- [AC-OUT-005] When I hover over portfolio thumbnails, I see a preview overlay with additional project information and a clear call-to-action\n- [AC-OUT-006] When I click on filter dropdowns, they expand to show all available options with clear visual separation and hover states\n- [AC-OUT-007] When I have no internet connection or filters return no results, I see appropriate feedback messages with suggested actions\n- [AC-OUT-008] All interactive elements support keyboard navigation with visible focus indicators and logical tab order\n- [AC-OUT-009] When I enter search terms with invalid characters or empty values, I see clear validation feedback that explains what input is expected\n- [AC-OUT-010] When I apply filters that have no matching results, I see a helpful message explaining why no portfolios are displayed and suggestions to modify my search\n- [AC-OUT-011] When filter controls fail to load or encounter errors, I see a clear error message with retry options rather than broken interface elements\n- [AC-OUT-012] When I select conflicting filter combinations that would return no results, I receive immediate feedback suggesting alternative filter selections\n- [AC-OUT-013] When I navigate the portfolio browser using only keyboard, I can access all filter controls, portfolio items, and navigation elements in a logical tab order\n- [AC-OUT-014] When I use a screen reader, I hear meaningful descriptions for portfolio thumbnails, filter controls, and their current states\n- [AC-OUT-015] When I apply or clear filters, screen reader users hear immediate announcements about the updated results count and filter status\n- [AC-OUT-016] When I navigate to any interactive element, I see a clear focus indicator that meets contrast requirements and is visible against all background colors\n- [AC-OUT-017] When I interact with filter dropdowns using keyboard, I can open them with Enter or Space, navigate options with arrow keys, and select with Enter\n- [AC-OUT-018] When I view the interface on mobile devices, all interactive elements have touch targets of at least 44x44 pixels with adequate spacing between them\n- [AC-OUT-019] When I access the portfolio browser, I can identify the current interface language and see all available language options clearly presented\n- [AC-OUT-020] When I select a different language from the language selector, the interface immediately switches to the new language and I see confirmation of the change\n- [AC-OUT-021] When I view portfolios in Arabic or Hebrew, the layout mirrors appropriately with navigation, filters, and portfolio grid flowing from right to left\n- [AC-OUT-022] When I interact with RTL interface elements, buttons, navigation arrows, and portfolio thumbnails respond to right-to-left interaction patterns intuitively\n- [AC-OUT-023] When I search for portfolios using accented characters, special symbols, or non-Latin scripts, I can find relevant results regardless of how I input the characters\n- [AC-OUT-024] When I enter text in form fields using my preferred language's special characters or input method, all characters display correctly without formatting issues\n- [AC-OUT-025] When portfolio content includes creator names, project titles, or descriptions in my language, all text renders clearly with appropriate fonts and formatting\n- [AC-OUT-026] When I view portfolio images that contain text elements (like project titles or descriptions), I see appropriately localized versions for my selected language\n- [AC-OUT-027] When some portfolio content is not available in my selected language, I see a clear indication of which language is being displayed and can easily understand the fallback content\n- [AC-OUT-028] When I encounter untranslated interface elements, they appear in a consistent fallback language with clear visual indicators that distinguish them from translated content\n- [AC-OUT-029] When I set a language preference, my selection persists across browsing sessions and applies consistently throughout the portfolio browser interface\n- [AC-OUT-030] When filter controls and portfolio metadata contain lengthy translations, the interface layout adapts gracefully without breaking visual design or hiding important information\n- [AC-OUT-031] When I view portfolio creation dates on the browser, they display in my region's expected format (DD/MM/YYYY for European users, MM/DD/YYYY for US users, YYYY-MM-DD for Asian users)\n- [AC-OUT-032] When I view portfolio timestamps (like 'last updated' or 'published'), they display in my region's time format (12-hour with AM/PM for US users, 24-hour for European users) with clear time zone indicators\n- [AC-OUT-033] When I view portfolio metrics (like view counts, download numbers, or project budgets), numbers display with my region's decimal separator (comma for European users, period for US users) and thousands separators\n- [AC-OUT-034] When I view project budgets or pricing information in portfolios, currency amounts display with correct symbol placement ($ before amount for USD, € after amount for EUR) and appropriate decimal formatting\n- [AC-OUT-035] When I filter portfolios by date ranges, I can enter dates in my familiar regional format and see confirmation that my date entries are understood correctly\n- [AC-OUT-036] When portfolio creators list their location or contact information, addresses display in the format appropriate for their country (street-first for US, postal code placement for European addresses)\n- [AC-OUT-037] When I view project specifications with measurements (dimensions, file sizes, print sizes), they display in the unit system I expect for my region (metric for most countries, imperial for US)\n- [AC-OUT-038] When I encounter portfolio data in unfamiliar formats (different date formats, currency symbols, or measurement units), I see clear indicators or tooltips explaining the format being used\n- [AC-OUT-039] When I view portfolio thumbnails and project images, I see culturally appropriate imagery that represents diverse creators and avoids stereotypical or potentially offensive visual content\n- [AC-OUT-040] When I see color-coded elements (status indicators, category tags, importance levels), the colors chosen respect cultural meanings and avoid colors that have negative associations in my cultural context\n- [AC-OUT-041] When I view icons and symbols throughout the portfolio browser (navigation arrows, status icons, category symbols), they use universally understood symbols or provide clear visual context to avoid cultural misinterpretation\n- [AC-OUT-042] When I see portfolio creator names and titles displayed, they respect international naming conventions and don't assume Western name formatting (first name, last name) for all users\n- [AC-OUT-043] When I encounter status indicators, success/error messages, and important information that relies on color coding, alternative visual indicators (icons, text labels, patterns) are provided for users who cannot distinguish colors or have different cultural color associations\n- [AC-OUT-044] When I view portfolio categories, tags, or project types, the terminology and categorization systems accommodate different creative industry practices and avoid assumptions based on Western creative industry standards\n- [AC-OUT-045] When I see portfolio content that includes people in images or project descriptions, the representation shows appropriate diversity in ethnicity, age, gender, and cultural contexts rather than defaulting to one demographic group\n- [AC-OUT-046] When I interact with gesture-based controls or see hand/body gesture icons, they use culturally neutral gestures or provide alternative interaction methods for gestures that may be inappropriate in my cultural context\n- [AC-OUT-047] When I view portfolio filtering workflows, they don't assume specific business practices, work schedules, or professional hierarchies that may not apply in my cultural or regional context\n- [AC-OUT-048] When I see any religious, cultural, or traditional symbols used in the interface or portfolio content, they are used respectfully and appropriately, with sensitivity to their sacred or cultural significance\n- [AC-OUT-DEP-1] Clear All Active Filters depends on this story as prerequisite.\n\n## Acceptance Criteria (System)\n\n- [AC-SYS-001] Search input field validates against XSS attack patterns and sanitizes input before processing filter queries\n- [AC-SYS-002] Filter dropdown selections are validated against allowed values list before applying to portfolio query to prevent invalid API requests\n- [AC-SYS-003] Portfolio grid loading states display appropriate loading indicators during filter application and handle API timeout errors with user feedback\n- [AC-SYS-004] Filter state persistence validates stored filter values against current available options before applying on page load to handle stale data scenarios\n- [AC-SYS-005] Portfolio thumbnail images implement alt attributes with descriptive text including project type and creator name for screen reader accessibility\n- [AC-SYS-006] Filter controls implement ARIA labels, roles, and states to communicate their purpose and current selection status to assistive technologies\n- [AC-SYS-007] Dynamic content updates (filter results, loading states) implement ARIA live regions to announce changes to screen reader users\n- [AC-SYS-008] Focus management ensures logical tab order through filter controls, portfolio grid, and pagination controls with proper focus trapping in dropdown menus\n- [AC-SYS-009] Color contrast for all text and interactive elements meets WCAG 2.1 AA standards with minimum 4.5:1 ratio for normal text and 3:1 for large text\n- [AC-SYS-010] Error states and validation messages implement appropriate ARIA attributes (aria-invalid, aria-describedby) to associate error text with relevant form controls\n- [AC-SYS-011] Portfolio grid component loads within 2 seconds on 3G connections and displays loading indicators within 100ms of user action initiation\n- [AC-SYS-012] Filter application updates results within 1 second and provides optimistic UI feedback by immediately showing loading state on filter controls\n- [AC-SYS-013] Portfolio image loading implements progressive enhancement with placeholder skeleton screens and lazy loading for off-screen content\n- [AC-SYS-014] API timeout handling implements 30-second timeout with automatic retry mechanism and user-facing error messages with manual retry option\n- [AC-SYS-015] Filter dropdown interactions provide immediate visual feedback within 50ms and maintain responsive state throughout API processing\n- [AC-SYS-016] Portfolio browser implements HTTPS-only connections with certificate validation and displays secure connection indicators (lock icon) in browser address bar\n- [AC-SYS-017] User session authentication validates user permissions before displaying personalized portfolio content or private portfolio access\n- [AC-SYS-018] Filter query parameters are sanitized and validated server-side to prevent SQL injection and malicious query manipulation\n- [AC-SYS-019] Portfolio image URLs implement Content Security Policy (CSP) headers to prevent unauthorized image loading and XSS through image sources\n- [AC-SYS-020] User browsing activity and filter selections are logged securely with anonymized identifiers and implement data retention policies for privacy compliance\n- [AC-SYS-021] API rate limiting prevents excessive portfolio requests from single users and implements captcha verification for suspicious browsing patterns\n- [AC-SYS-022] Portfolio grid component implements CSS Grid with responsive breakpoints at 768px (tablet) and 1024px (desktop) and automatically adjusts column count based on viewport width\n- [AC-SYS-023] Filter panel components implement media queries for mobile-first responsive design with touch-friendly tap targets (minimum 44x44px) and appropriate spacing (minimum 8px between interactive elements)\n- [AC-SYS-024] Hover states on portfolio thumbnails are disabled on touch devices and replaced with tap-to-preview functionality that shows preview overlay for 3 seconds before auto-dismiss\n- [AC-SYS-025] Portfolio images implement responsive image srcset with different image sizes for mobile (400px), tablet (600px), and desktop (800px) breakpoints to optimize loading performance\n- [AC-SYS-026] Virtual keyboard appearance on mobile devices triggers viewport adjustment to ensure filter controls and portfolio content remain visible and accessible during text input\n- [AC-SYS-027] Portfolio browser maintains filter state and scroll position when users rotate device orientation or resize browser window, with smooth layout transitions between breakpoints\n- [AC-SYS-028] User interaction tracking captures click events on portfolio thumbnails, filter controls, and navigation elements with event metadata including element ID, user session ID, and timestamp\n- [AC-SYS-029] Form submission tracking records filter application events with filter combination data, search query text, and result count to analyze user search behavior patterns\n- [AC-SYS-030] Navigation behavior tracking captures page transition events, filter-to-portfolio click paths, and back/forward browser navigation with source and destination page metadata\n- [AC-SYS-031] Time-on-task metrics track duration from page load to first portfolio click, time spent applying filters, and session duration with breakdowns by user type and device\n- [AC-SYS-032] Drop-off point analysis tracks filter abandonment events, empty result state responses, and exit page data to identify where users disengage from the portfolio browsing experience\n- [AC-SYS-033] Feature adoption metrics track filter usage frequency, search vs browse behavior patterns, and portfolio interaction depth to understand user engagement preferences\n- [AC-SYS-034] Content engagement tracking captures portfolio thumbnail hover events, preview overlay interactions, and full portfolio view conversions with content metadata for engagement analysis\n- [AC-SYS-035] Return user behavior analysis tracks filter preference patterns, portfolio re-visits, and session-to-session behavior changes to understand user portfolio browsing evolution\n\n## Implementation Notes"
+    },
+    {
+      "id": "Clear All Active Filters",
+      "pass1cScore": 5,
+      "recommendation": "approve",
+      "needsManualReview": false,
+      "content": "# Clear All Active Filters\n\nAs a creative professional browsing project portfolios,\nI want to clear all active filters with a single action,\nSo that I can quickly reset my search and view the complete portfolio collection without removing filters one by one.\n\n## User-Visible Behavior\n\nUser sees a prominently placed 'Clear All Filters' button when filters are active. The button provides visual feedback on interaction and adapts to different screen sizes. Individual filter chips display with remove icons for selective clearing. A filter count indicator shows the number of active filters.\n\n## Outcome Acceptance Criteria\n\n### Core Functionality\n- Given I have applied one or more filters, when I view the portfolio browser, then I see an enabled 'Clear All Filters' button\n- When I click 'Clear All Filters', then all active filters are removed and I see all portfolio results\n- When no filters are active, then the 'Clear All Filters' button is hidden or disabled\n- When I click individual filter remove icons (×), then only that specific filter is removed\n- When filters change, then the filter count indicator updates immediately to reflect active filters\n\n### Interaction & Feedback\n- When I hover over interactive filter elements, then I see visual feedback (color change, elevation)\n- When clearing filters fails, then I see a clear error message with retry options\n- When the system is processing filter changes, then I receive status feedback and conflicting actions are prevented\n\n### Accessibility\n- When I navigate using keyboard, then I can Tab to focus filter controls and use Enter/Space to activate them\n- When focused, then filter elements display clear focus indicators with sufficient contrast (minimum 3:1)\n- When using screen readers, then I hear descriptive announcements including current filter count and removal confirmations\n- When on touch devices, then all interactive elements have minimum 44×44 pixel touch targets\n\n### Responsive Design\n- When on mobile (< 768px), then the Clear All button appears full-width below filter chips\n- When on tablet (768px-1024px), then filter chips stack in rows with the Clear All button inline\n- When on desktop (> 1024px), then all elements display horizontally with hover states\n- When device orientation changes, then the layout transitions smoothly while preserving filter state\n\n### Language & Cultural Support\n- When I change application language, then all filter labels and buttons update to my selected language\n- When using RTL languages (Arabic, Hebrew), then the layout mirrors with right-to-left navigation\n- When viewing project data, then dates, currencies, and numbers format according to my regional preferences\n- When viewing interface elements, then colors, icons, and imagery respect cultural associations and avoid negative meanings in my region\n- When entering names or viewing profiles, then the interface accommodates different cultural naming conventions\n\n### Error Handling\n- When operations timeout, then I see appropriate error messages with recovery options\n- When translations are unavailable, then fallback text displays with clear indication\n- When input format doesn't match regional expectations, then I receive clear format guidance\n\n## System Acceptance Criteria\n\n### State Management\n- Clear All operation validates all filter states reset before UI updates\n- Individual filter removal validates dependencies don't break remaining filter requirements\n- Filter state changes maintain consistency during layout transitions and device orientation changes\n\n### Accessibility Implementation\n- Filter controls implement proper ARIA labels and live region announcements\n- Keyboard navigation follows logical tab order with proper focus management\n- Screen reader announcements provide context about filter count and operation results\n\n### Performance\n- Clear All operations complete within 100ms for immediate visual feedback\n- Individual filter removal provides feedback within 50ms with optimistic UI updates\n- Operations exceeding 2 seconds display loading indicators\n- Failed operations timeout after 10 seconds with retry mechanisms\n\n### Security\n- Filter operations validate user authentication before processing\n- CSRF protection prevents unauthorized filter state manipulation\n- Rate limiting prevents automated abuse (maximum 10 requests/minute/session)\n- Input validation rejects malformed or malicious filter criteria\n\n### Analytics Tracking\n- Clear All button clicks captured with filter count, categories, and user context\n- Individual filter removal tracked with filter details and interaction method\n- Filter interaction sequences tracked from application through clearing\n- Cross-device behavior and abandonment patterns monitored\n\n## Implementation Notes\n\n### Component Architecture\nImplementation requires filter state management component with clear operations, responsive layout engine for breakpoint handling, and analytics integration for user behavior tracking.\n\n### Responsive Breakpoints\n- Mobile: < 768px (full-width buttons, stacked layout)\n- Tablet: 768px-1024px (multi-row chips, inline buttons)\n- Desktop: > 1024px (horizontal layout, hover states)\n\n### Internationalization\nSupport for RTL languages requires layout mirroring, bidirectional text handling, and culturally appropriate visual elements. Regional formatting engines needed for dates, currencies, and numbers.\n\n### Error Recovery\nImplement retry mechanisms for failed operations, graceful degradation for network issues, and clear user communication for all error states.\n\n## UI Mapping\n\nCore filtering interface includes Clear All Filters button, individual filter chips with remove icons, filter count indicator, and responsive container managing layout across breakpoints.\n\n## UI Mapping\n\n- \"Clear All Filters button\" → COMP-CLEAR-ALL-BUTTON\n- \"filter chips\" → COMP-FILTER-ITEM\n- \"filter count indicator\" → COMP-FILTER-BAR\n- \"individual filter remove icons\" → COMP-FILTER-ITEM\n\n## Contract Dependencies\n\n- C-STATE-FILTER-STATE\n- C-STATE-PROJECT-GRID-STATE\n- C-STATE-UI-STATE\n- E-FILTERS-CLEARED\n- E-FILTER-DESELECTED\n- E-PROJECTS-FILTERED\n\n## Ownership\n\n**Owns State**: C-STATE-FILTER-STATE\n**Consumes State**: C-STATE-PROJECT-GRID-STATE, C-STATE-UI-STATE\n**Emits Events**: E-FILTERS-CLEARED, E-FILTER-DESELECTED, E-PROJECTS-FILTERED\n**Listens To**: E-FILTER-SELECTED\n\n\n## Related Stories\n\n**Prerequisites**:\n- Project Portfolio Browser: Requires the main project portfolio browser to be implemented first with basic filtering functionality"
+    }
+  ],
+  "metrics": {
+    "averageScore": 4,
+    "scoresDistribution": {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 1,
+      "4": 0,
+      "5": 1
+    },
+    "storiesAbove4Count": 1,
+    "storiesAbove4Pct": 50,
+    "rewriteCount": 1,
+    "rewritePct": 50,
+    "manualReviewCount": 1,
+    "manualReviewPct": 50
+  },
+  "metadata": {
+    "passesCompleted": [
+      "Pass 0 (discovery)",
+      "Pass 1 (generation with refinement)",
+      "Pass 2 (interconnection)",
+      "Pass 2b (global consistency)"
+    ],
+    "refinementRounds": 3,
+    "fixesApplied": 1,
+    "fixesFlaggedForReview": 0,
+    "fixesRejected": 0
+  },
+  "systemContext": {
+    "componentGraph": {
+      "components": {
+        "COMP-FILTER-SHEET": {
+          "id": "COMP-FILTER-SHEET",
+          "productName": "Filter Sheet",
+          "description": "Document 1: 'FilterSheet (Mobile): Bottom sheet container with accordion'"
+        },
+        "COMP-FILTER-BAR": {
+          "id": "COMP-FILTER-BAR",
+          "productName": "Filter Bar",
+          "description": "Document 1: 'FilterBar (Desktop): Horizontal filter column layout'"
+        },
+        "COMP-FILTER-GROUP": {
+          "id": "COMP-FILTER-GROUP",
+          "productName": "Filter Group",
+          "description": "Document 1: 'FilterGroup: Category header + list of FilterItems + divider'"
+        },
+        "COMP-FILTER-ITEM": {
+          "id": "COMP-FILTER-ITEM",
+          "productName": "Filter Item",
+          "description": "Document 1: 'FilterItem: Single selectable filter with active/inactive states'"
+        },
+        "COMP-SPINNER-LOADING": {
+          "id": "COMP-SPINNER-LOADING",
+          "productName": "Spinner Loading",
+          "description": "Document 1: 'SpinnerLoading: Loading indicator during filter updates'"
+        },
+        "COMP-PROJECT-GRID": {
+          "id": "COMP-PROJECT-GRID",
+          "productName": "Project Grid",
+          "description": "Document 1: Data flow mentions 'Re-render project grid'"
+        },
+        "COMP-ACCORDION": {
+          "id": "COMP-ACCORDION",
+          "productName": "Accordion",
+          "description": ""
+        },
+        "COMP-CLEAR-ALL-BUTTON": {
+          "id": "COMP-CLEAR-ALL-BUTTON",
+          "productName": "Clear All Button",
+          "description": "Story 2: 'User clears all filters to see full portfolio' and Document 1: 'filters-cleared: Fired when Clear all is clicked'"
+        }
+      },
+      "compositionEdges": [],
+      "coordinationEdges": [],
+      "dataFlows": []
+    },
+    "sharedContracts": {
+      "stateModels": [
+        {
+          "id": "C-STATE-FILTER-STATE",
+          "name": "Filter State",
+          "description": "Document 1: 'Filter State' section defines selectedFilters, availableFilters, filterCounts, isLoading",
+          "owner": "",
+          "consumers": []
+        },
+        {
+          "id": "C-STATE-PROJECT-GRID-STATE",
+          "name": "Project Grid State",
+          "description": "Document 1: 'Project Grid State' section defines filteredProjects, totalCount, displayProjects",
+          "owner": "",
+          "consumers": []
+        },
+        {
+          "id": "C-STATE-UI-STATE",
+          "name": "UI State",
+          "description": "Document 1: 'UI State (Mobile)' section defines isSheetOpen, expandedGroups, scrollPosition",
+          "owner": "",
+          "consumers": []
+        }
+      ],
+      "eventRegistry": [
+        {
+          "id": "E-FILTER-SELECTED",
+          "name": "filter-selected",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-FILTER-DESELECTED",
+          "name": "filter-deselected",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-FILTERS-CLEARED",
+          "name": "filters-cleared",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-GROUP-TOGGLED",
+          "name": "group-toggled",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-SHEET-OPENED",
+          "name": "sheet-opened",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-SHEET-CLOSED",
+          "name": "sheet-closed",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-FILTERS-RECALCULATED",
+          "name": "filters-recalculated",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-PROJECTS-FILTERED",
+          "name": "projects-filtered",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "E-ZERO-RESULTS-HIDDEN",
+          "name": "zero-results-hidden",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "REL-CLEAR-ALL-FILTERS",
+          "name": "E-CLEAR-ALL-FILTERS",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "REL-FILTER-REMOVED",
+          "name": "E-FILTER-REMOVED",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        },
+        {
+          "id": "EVENT-CLEAR-ALL-TRIGGERED",
+          "name": "Clear All Filters Triggered",
+          "payload": {},
+          "emitter": "",
+          "listeners": []
+        }
+      ],
+      "standardStates": [
+        {
+          "type": "loading",
+          "description": "Data or action in progress"
+        },
+        {
+          "type": "error",
+          "description": "Error state"
+        },
+        {
+          "type": "empty",
+          "description": "No data"
+        },
+        {
+          "type": "success",
+          "description": "Data loaded or action completed"
+        }
+      ],
+      "dataFlows": []
+    },
+    "componentRoles": [],
+    "productVocabulary": {
+      "bottom sheet": "Filter Sheet",
+      "horizontal filter column layout": "Filter Bar",
+      "category header": "Filter Group",
+      "loading indicator": "Spinner Loading",
+      "clear all": "Clear All Button",
+      "selectedFilters": "Filter State",
+      "availableFilters": "Filter State",
+      "filterCounts": "Filter State",
+      "isLoading": "Filter State",
+      "filteredProjects": "Project Grid State",
+      "totalCount": "Project Grid State",
+      "displayProjects": "Project Grid State",
+      "isSheetOpen": "UI State",
+      "expandedGroups": "UI State",
+      "scrollPosition": "UI State"
+    },
+    "timestamp": "2026-01-31T04:44:18.913Z",
+    "referenceDocuments": [
+      "# Filter System Architecture Reference\n\n## System Context\nA real-time filtering system for project portfolio browsing with mobile and desktop variants.\n\n## State Management\n\n### Filter State\n- **selectedFilters**: Map of category to selected filter IDs\n  - Example: `{ expertises: ['brand-exp', 'campaign'], creativeLenses: ['ai-data'] }`\n- **availableFilters**: Dynamic list of filters that will return results\n- **filterCounts**: Number of matching projects per filter option\n- **isLoading**: Boolean indicating filter update in progress\n\n### Project Grid State\n- **filteredProjects**: Array of projects matching current filter selection\n- **totalCount**: Total number of matching projects\n- **displayProjects**: Paginated subset currently visible\n\n### UI State (Mobile)\n- **isSheetOpen**: Bottom sheet visibility\n- **expandedGroups**: Array of group IDs currently expanded in accordion\n- **scrollPosition**: Current scroll position within sheet\n\n## Events\n\n### User Interactions\n- **filter-selected**: Fired when user selects a filter option\n  - Payload: `{ category: string, filterId: string }`\n- **filter-deselected**: Fired when user deselects a filter\n  - Payload: `{ category: string, filterId: string }`\n- **filters-cleared**: Fired when \"Clear all\" is clicked\n- **group-toggled** (mobile): Fired when accordion group expanded/collapsed\n  - Payload: `{ groupId: string, isExpanded: boolean }`\n- **sheet-opened** (mobile): Fired when bottom sheet slides up\n- **sheet-closed** (mobile): Fired when bottom sheet dismissed\n\n### System Events\n- **filters-recalculated**: Fired after filter availability updated\n  - Payload: `{ availableFilters: FilterOption[], hiddenCount: number }`\n- **projects-filtered**: Fired after project list filtered\n  - Payload: `{ projects: Project[], totalCount: number }`\n- **zero-results-hidden**: Fired when filters with no results removed\n  - Payload: `{ hiddenFilters: string[] }`\n\n## API Contracts\n\n### Filter Query API\n- **Endpoint**: `GET /api/projects/filter`\n- **Query params**: `?expertises[]=id1&expertises[]=id2&creativeLenses[]=id3`\n- **Response**:\n  ```json\n  {\n    \"projects\": [...],\n    \"totalCount\": 42,\n    \"availableFilters\": {\n      \"expertises\": [\n        { \"id\": \"brand-exp\", \"label\": \"Brand & Experience Strategy\", \"count\": 15 }\n      ],\n      \"creativeLenses\": [...]\n    }\n  }\n  ```\n\n### Filter Options API\n- **Endpoint**: `GET /api/filters/options`\n- **Response**: All available filter categories and options\n  ```json\n  {\n    \"expertises\": [...],\n    \"creativeLenses\": [...]\n  }\n  ```\n\n## Components\n\n### Organisms\n- **FilterSheet** (Mobile): Bottom sheet container with accordion\n- **FilterBar** (Desktop): Horizontal filter column layout\n\n### Molecules\n- **FilterGroup**: Category header + list of FilterItems + divider\n- **FilterItem**: Single selectable filter with active/inactive states\n\n### Atoms\n- **SpinnerLoading**: Loading indicator during filter updates\n\n## Data Flow\n\n1. **User selects filter** → `filter-selected` event\n2. **Update selectedFilters** in state\n3. **Fetch filtered projects** via Filter Query API\n4. **Receive response** with projects + updated availableFilters\n5. **Update UI**:\n   - Re-render project grid\n   - Hide zero-result filters\n   - Show loading spinner during fetch\n6. **Fire `projects-filtered`** event for analytics\n\n## Product Vocabulary\n\n### Categories\n- **Expertises**: Professional skill domains\n- **Creative Lenses**: Thematic perspectives or approaches\n\n### Filter Terms\n- Brand & Experience Strategy\n- Campaign & content design\n- Digital Product & Platforms\n- AI & Data & Innovation\n- Architectural Design\n- Non-Profit\n- Out-of-the-Box Thinking\n- Social Impact\n- Storytelling\n\n### Actions\n- **Select filter**: Add filter to active selection\n- **Deselect filter**: Remove filter from active selection\n- **Clear all**: Remove all active filters\n- **Expand/Collapse group**: Toggle accordion state (mobile)\n\n## Performance Notes\n- Real-time updates should complete within 300ms\n- Debounce rapid filter changes (200ms)\n- Optimistic UI updates before API response\n- Cache filter availability calculations\n\n## Security Notes\n- Validate filter IDs against whitelist\n- Sanitize query parameters\n- Rate limit filter API requests\n"
+    ]
+  },
+  "consistencyReport": {
+    "issues": [
+      {
+        "description": "Project Portfolio Browser lists 'clear-all-active-filters' as parallel story, but Clear All Active Filters lists 'Project Portfolio Browser' as prerequisite - this creates an inconsistent relationship",
+        "suggestedFixType": "missing-bidirectional-link",
+        "confidence": 0.9,
+        "affectedStories": [
+          "Project Portfolio Browser",
+          "Clear All Active Filters"
+        ]
+      }
+    ],
+    "fixes": [
+      {
+        "type": "add-bidirectional-link",
+        "storyId": "Project Portfolio Browser",
+        "path": "outcomeAcceptanceCriteria",
+        "operation": "add",
+        "item": {
+          "id": "AC-OUT-DEP-1",
+          "text": "Clear All Active Filters depends on this story as prerequisite."
+        },
+        "confidence": 0.9,
+        "reasoning": "Clear All Active Filters lists Project Portfolio Browser as prerequisite; add reverse dependent link to Project Portfolio Browser."
+      }
+    ]
+  },
+  "acceptanceCriteria": [
+    {
+      "name": ">80% stories ≥ 4.0",
+      "value": 50,
+      "threshold": 80,
+      "pass": false
+    },
+    {
+      "name": "<5% manual review",
+      "value": 50,
+      "threshold": 5,
+      "pass": false
+    }
+  ]
+}
