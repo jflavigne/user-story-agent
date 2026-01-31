@@ -27,12 +27,13 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "typescript": "~5.7.0",
-    "tsx": "^4.0.0",
     "@types/node": "^20.0.0",
-    "eslint": "^8.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "~5.7.0",
     "vitest": "^1.0.0"
   },
   "engines": {
@@ -41,5 +42,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "license": "MIT",
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }

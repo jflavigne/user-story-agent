@@ -6,6 +6,7 @@
  * Figma fileKey="MHujefjiDpZQVpSQzE3pq1", nodeId="0:1"
  * Exit codes: 0 = success, 1 = token missing (manual action needed), 2 = API error
  */
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
