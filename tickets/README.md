@@ -73,6 +73,21 @@ Create a User Story Writer agent system with dual implementations:
 
 ---
 
+## Vision Support & Quality (Phase 3)
+
+| Ticket | Title | Priority | Status | Dependencies |
+|--------|-------|----------|--------|--------------|
+| [USA-59](./USA-59-vision-support-system-discovery.md) | Add Vision Support to System Discovery (Pass 0) | P1 | Ready | USA-30 |
+| [USA-60](./USA-60-vision-support-critical-iterations.md) | Add Vision Support to Critical Iterations | P1 | Ready | USA-59 |
+| [USA-61](./USA-61-vision-support-registry-metadata.md) | Add Vision Support Metadata to Iteration Registry | P2 | Ready | USA-60 |
+| [USA-62](./USA-62-extract-shared-overspec-patterns.md) | Extract Shared Over-Specification Patterns | P2 | Ready | USA-60 |
+| [USA-63](./USA-63-download-figma-screenshot.md) | Figma Auto-Detection & Security Fixes | P1 | ✅ Done | USA-60 |
+| [USA-64](./USA-64-figma-magic-number.md) | Extract Figma Magic Number to Constant | P3 | Ready | USA-63 |
+
+**Vision Support Progress: 1/6 tickets complete (17%)**
+
+---
+
 ## Suggested Sprint Breakdown
 
 ### Sprint 1 - Foundation
