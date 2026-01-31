@@ -232,4 +232,5 @@ export const VALIDATION_METADATA: IterationDefinition & { tokenEstimate: number 
   applicableWhen: 'When the mockup contains forms or input fields',
   order: 3,
   tokenEstimate: 1338, // ~5350 chars / 4
+  supportsVision: true,
 };

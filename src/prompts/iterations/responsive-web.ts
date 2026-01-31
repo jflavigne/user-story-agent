@@ -284,4 +284,5 @@ export const RESPONSIVE_WEB_METADATA: IterationDefinition & { tokenEstimate: num
   applicableWhen: 'When analyzing a web application or website that needs to work across different screen sizes',
   order: 7,
   tokenEstimate: 2267, // ~9067 chars / 4
+  supportsVision: true,
 };

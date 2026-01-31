@@ -243,4 +243,5 @@ export const PERFORMANCE_METADATA: IterationDefinition & { tokenEstimate: number
   applicableWhen: 'When the mockup shows loading states, actions that may take time, or performance-critical interactions',
   order: 5,
   tokenEstimate: 1561, // ~6243 chars / 4
+  supportsVision: true,
 };

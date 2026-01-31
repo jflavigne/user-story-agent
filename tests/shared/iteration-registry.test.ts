@@ -10,6 +10,7 @@ import {
   getApplicableIterations,
   getIterationById,
   getAllIterations,
+  getVisionCapableIterations,
 } from '../../src/shared/iteration-registry.js';
 
 describe('iteration-registry', () => {
@@ -160,6 +161,61 @@ describe('iteration-registry', () => {
       const iterations = getAllIterations();
       expect(iterations).toHaveLength(12);
       expect(iterations.map((i) => i.id)).toEqual([...WORKFLOW_ORDER]);
+    });
+  });
+
+  describe('getVisionCapableIterations (USA-61)', () => {
+    it('Returns exactly 6 iterations with supportsVision=true', () => {
+      const visionIterations = getVisionCapableIterations();
+      expect(visionIterations).toHaveLength(6);
+
+      // Verify all returned iterations have supportsVision=true
+      for (const iteration of visionIterations) {
+        expect(iteration.supportsVision).toBe(true);
+      }
+    });
+
+    it('Returns the correct 6 vision-capable iterations in workflow order', () => {
+      const visionIterations = getVisionCapableIterations();
+      const visionIds = visionIterations.map((i) => i.id);
+
+      expect(visionIds).toEqual([
+        'interactive-elements',
+        'validation',
+        'accessibility',
+        'performance',
+        'responsive-web',
+        'analytics',
+      ]);
+    });
+
+    it('Non-vision iterations do not have supportsVision=true', () => {
+      const nonVisionIds = [
+        'user-roles',
+        'security',
+        'responsive-native',
+        'language-support',
+        'locale-formatting',
+        'cultural-appropriateness',
+      ];
+
+      for (const id of nonVisionIds) {
+        const iteration = ITERATION_REGISTRY[id];
+        expect(iteration.supportsVision).not.toBe(true);
+      }
+    });
+
+    it('supportsVision field is optional (undefined is acceptable)', () => {
+      // Verify that iterations without supportsVision have it as undefined or false
+      const allIterations = getAllIterations();
+      const visionIterationIds = getVisionCapableIterations().map((i) => i.id);
+
+      for (const iteration of allIterations) {
+        if (!visionIterationIds.includes(iteration.id)) {
+          // Non-vision iterations should have undefined or false
+          expect(iteration.supportsVision === undefined || iteration.supportsVision === false).toBe(true);
+        }
+      }
     });
   });
 });

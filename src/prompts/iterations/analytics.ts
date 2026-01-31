@@ -301,4 +301,5 @@ export const ANALYTICS_METADATA: IterationDefinition & { tokenEstimate: number }
   applicableWhen: 'When analyzing an application that needs to understand user behavior patterns and engagement metrics',
   order: 12,
   tokenEstimate: 2601, // ~10405 chars / 4
+  supportsVision: true,
 };

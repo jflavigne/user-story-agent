@@ -207,11 +207,21 @@ export function getIterationById(id: string): IterationRegistryEntry | undefined
 
 /**
  * Get all iterations in workflow order
- * 
+ *
  * @returns Array of all iteration registry entries in workflow order
  */
 export function getAllIterations(): IterationRegistryEntry[] {
   return WORKFLOW_ORDER.map((id) => ITERATION_REGISTRY[id]);
+}
+
+/**
+ * Get all iterations that support vision analysis (images), in workflow order
+ *
+ * @returns Array of iteration registry entries that support vision, in workflow order
+ */
+export function getVisionCapableIterations(): IterationRegistryEntry[] {
+  return WORKFLOW_ORDER.map((id) => ITERATION_REGISTRY[id])
+    .filter((iteration) => iteration.supportsVision === true);
 }
 
 /**

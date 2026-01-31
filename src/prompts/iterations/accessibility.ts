@@ -264,4 +264,5 @@ export const ACCESSIBILITY_METADATA: IterationDefinition & { tokenEstimate: numb
   applicableWhen: 'For all mockups to ensure inclusive design',
   order: 4,
   tokenEstimate: 1872, // ~7487 chars / 4
+  supportsVision: true,
 };

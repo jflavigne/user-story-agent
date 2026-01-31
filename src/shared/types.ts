@@ -43,6 +43,8 @@ export interface IterationDefinition {
   allowedPaths?: PatchPath[];
   /** Output format: 'patches' for section-scoped advisors */
   outputFormat?: 'patches';
+  /** Whether this iteration supports vision analysis (images) */
+  supportsVision?: boolean;
 }
 
 /**

@@ -226,4 +226,5 @@ export const INTERACTIVE_ELEMENTS_METADATA: IterationDefinition & { tokenEstimat
   applicableWhen: 'When the mockup contains interactive UI components',
   order: 2,
   tokenEstimate: 1150, // prompt length / 4 (PATH SCOPE + OUTPUT FORMAT + body)
+  supportsVision: true,
 };

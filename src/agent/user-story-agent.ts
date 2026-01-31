@@ -758,16 +758,9 @@ export class UserStoryAgent extends EventEmitter {
         ? `${contextPrompt}\n\n---\n\n${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`
         : `${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`;
 
-      const visionIterationIds = [
-        'interactive-elements',
-        'responsive-web',
-        'accessibility',
-        'validation',
-        'performance',
-        'analytics',
-      ];
+      // Use vision if images are provided and the iteration supports it
       const useVision = Boolean(
-        this.config.mockupImages?.length && visionIterationIds.includes(iteration.id)
+        this.config.mockupImages?.length && iteration.supportsVision === true
       );
 
       const messageContent: Array<TextBlockParam | ImageBlockParam> = [{ type: 'text', text: userMessage }];
