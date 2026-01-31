@@ -2,6 +2,7 @@
  * Agent configuration and result types
  */
 
+import type { ImageInput } from '../utils/image-utils.js';
 import type { IterationId } from '../shared/iteration-registry.js';
 import type {
   ProductContext,
@@ -123,6 +124,8 @@ export interface UserStoryAgentConfig {
   verify?: boolean;
   /** Optional Claude client (for testing/benchmarking); when set, apiKey is not required */
   claudeClient?: ClaudeClient;
+  /** Optional mockup images for vision analysis (Pass 0 and vision-enabled iterations) */
+  mockupImages?: ImageInput[];
 }
 
 /**

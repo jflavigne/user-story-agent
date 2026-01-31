@@ -47,6 +47,19 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Focus indicators**: Visible focus rings, outlines, or highlight styles on interactive elements
+- **Required/error indicators**: Asterisks, "required" labels, red borders, error icons, inline error text
+- **Semantic structure**: Headings, lists, form labels visible in the layout
+- **Color and contrast**: High-contrast text, error colors, success colors; note any low-contrast areas
+- **Alt text needs**: Images, icons, or decorative elements that need alternative text
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+---
+
 Analyze the mockup or design to identify accessibility requirements and how users with disabilities will experience the interface.
 
 ## Keyboard Navigation

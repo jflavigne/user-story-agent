@@ -21,7 +21,47 @@ import type { IterationDefinition } from '../../shared/types.js';
  * - Product vocabulary mapping
  * - Evidence/justification for each entity
  */
-export const SYSTEM_DISCOVERY_PROMPT = `You are performing **Pass 0: System Discovery** from mockups and reference documents. Your goal is to extract the system structure—components, features, relationships, and vocabulary—as **raw mentions** and **canonical names** only. Do **not** generate or assign any IDs; ID minting is done separately.
+export const SYSTEM_DISCOVERY_PROMPT = `You are performing **Pass 0: System Discovery** from mockups and reference documents.
+
+## Input Format
+
+You may receive:
+- **Text descriptions** of mockups and designs
+- **Images** of mockups, wireframes, or screenshots
+- **Reference documentation** (architecture specs, component libraries)
+
+**IMPORTANT:** If images are provided, prioritize visual evidence over text descriptions. Text descriptions may be incomplete or miss visual details.
+
+## Visual Analysis (when images provided)
+
+From the mockup images, identify:
+
+1. **UI Components** - Visible elements:
+   - Controls: Buttons (identify primary vs secondary from visual styling), inputs, checkboxes, toggles
+   - Containers: Forms, modals, sheets, cards, panels
+   - Navigation: Headers, menus, breadcrumbs, tabs
+   - Feedback: Spinners, progress bars, toasts, banners
+
+2. **Visual Hierarchy** - Spatial relationships:
+   - Parent-child containment (which components are inside others)
+   - Visual grouping (components grouped by proximity, borders, backgrounds)
+   - Z-index (modals over screens, dropdowns over content)
+
+3. **Component States** - Variations shown:
+   - Default, hover, focus, active, disabled, error states
+   - Empty states, loading states, success states
+
+4. **Visual Properties**:
+   - Button types (primary buttons are prominent - larger, colored; secondary are subtle)
+   - Icon presence (buttons with icons, inputs with prefix/suffix icons)
+   - Required field indicators (asterisks, visual markers)
+   - Error indicators (red borders, error icons, validation messages)
+
+5. **Layout Structure**:
+   - Screen sections (header, main content, sidebar, footer)
+   - Grid layouts, flex layouts, multi-column designs
+
+Your goal is to extract the system structure—components, features, relationships, and vocabulary—as **raw mentions** and **canonical names** only. Do **not** generate or assign any IDs; ID minting is done separately.
 
 ## 1. Extract the Component Graph
 

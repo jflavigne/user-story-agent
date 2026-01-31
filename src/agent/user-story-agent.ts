@@ -31,6 +31,7 @@ import { AgentError } from '../shared/errors.js';
 import { StreamingHandler } from './streaming.js';
 import { Evaluator } from './evaluator.js';
 import { SYSTEM_DISCOVERY_PROMPT } from '../prompts/iterations/system-discovery.js';
+import { prepareImageForClaude } from '../utils/image-utils.js';
 import { STORY_INTERCONNECTION_PROMPT } from '../prompts/iterations/story-interconnection.js';
 import type { StoryForInterconnection } from '../prompts/iterations/story-interconnection.js';
 import { IDRegistry, mintStableId, type EntityType } from './id-registry.js';
@@ -54,6 +55,7 @@ import type {
   AdvisorOutput,
   Relationship,
 } from '../shared/types.js';
+import type { ImageBlockParam, TextBlockParam } from '@anthropic-ai/sdk/resources';
 import { PatchOrchestrator } from './patch-orchestrator.js';
 import { StoryJudge } from './story-judge.js';
 import { StoryRewriter } from './story-rewriter.js';
@@ -259,9 +261,24 @@ export class UserStoryAgent extends EventEmitter {
     }
     const userMessage = contextParts.join('\n');
 
+    const content: Array<TextBlockParam | ImageBlockParam> = [{ type: 'text', text: userMessage }];
+    if (this.config.mockupImages && this.config.mockupImages.length > 0) {
+      for (const imageInput of this.config.mockupImages) {
+        try {
+          const imageBlock = await prepareImageForClaude(imageInput);
+          content.push(imageBlock);
+        } catch (error) {
+          const imagePath = imageInput.path || imageInput.url || 'base64 image';
+          throw new Error(
+            `Failed to load mockup image: ${imagePath}. ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+    }
+
     const response = await this.claudeClient.sendMessage({
       systemPrompt: SYSTEM_DISCOVERY_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content }],
       model: this.resolveModel('discovery'),
     });
 
@@ -741,13 +758,38 @@ export class UserStoryAgent extends EventEmitter {
         ? `${contextPrompt}\n\n---\n\n${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`
         : `${iteration.prompt}\n\n---\n\nCurrent user story:\n\n${state.currentStory}`;
 
+      const visionIterationIds = [
+        'interactive-elements',
+        'responsive-web',
+        'accessibility',
+        'validation',
+      ];
+      const useVision = Boolean(
+        this.config.mockupImages?.length && visionIterationIds.includes(iteration.id)
+      );
+
+      const messageContent: Array<TextBlockParam | ImageBlockParam> = [{ type: 'text', text: userMessage }];
+      if (useVision && this.config.mockupImages) {
+        for (const imageInput of this.config.mockupImages) {
+          try {
+            const imageBlock = await prepareImageForClaude(imageInput);
+            messageContent.push(imageBlock);
+          } catch (error) {
+            const imagePath = imageInput.path || imageInput.url || 'base64 image';
+            throw new Error(
+              `Failed to load mockup image: ${imagePath}. ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+      }
+
       let responseContent: string;
       let tokenUsage: { inputTokens: number; outputTokens: number };
 
       // Use streaming if enabled
       if (this.streaming) {
         const handler = new StreamingHandler(iteration.id);
-        
+
         // Forward streaming events to agent listeners
         // Set up error listener BEFORE calling sendMessageStreaming to ensure early errors propagate
         handler.on('start', (event) => {
@@ -766,7 +808,7 @@ export class UserStoryAgent extends EventEmitter {
         const response = await this.claudeClient.sendMessageStreaming(
           {
             systemPrompt: SYSTEM_PROMPT,
-            messages: [{ role: 'user', content: userMessage }],
+            messages: [{ role: 'user', content: messageContent }],
             model: this.resolveModel('iteration'),
           },
           handler
@@ -779,7 +821,7 @@ export class UserStoryAgent extends EventEmitter {
         // Call Claude API (with retry logic already in place)
         const response = await this.claudeClient.sendMessage({
           systemPrompt: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: userMessage }],
+          messages: [{ role: 'user', content: messageContent }],
           model: this.resolveModel('iteration'),
         });
         responseContent = response.content;

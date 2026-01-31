@@ -30,6 +30,7 @@ import type {
 } from './index.js';
 import { QUALITY_PRESETS } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
+import type { ImageInput } from './utils/image-utils.js';
 import { logger, initializeLogger } from './utils/logger.js';
 
 /**
@@ -60,6 +61,7 @@ interface CliArgs {
   stream?: boolean;
   verify?: boolean;
   listSkills?: boolean;
+  mockupImages?: string;
 }
 
 /**
@@ -92,6 +94,8 @@ Options:
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --stream                Enable streaming output for real-time progress
   --verify                Enable verification of each iteration's output quality
+  --mockup-images <paths> Comma-separated mockup image paths (PNG, JPG, WEBP, GIF)
+                          Images are analyzed alongside text descriptions
   --list-skills           List all available skills and exit
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
@@ -245,6 +249,11 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--verify':
         args.verify = true;
+        break;
+      case '--mockup-images':
+        if (i + 1 < argv.length) {
+          args.mockupImages = argv[++i];
+        }
         break;
       case '--list-skills':
         args.listSkills = true;
@@ -602,6 +611,25 @@ async function main(): Promise<void> {
     // Add verification option
     if (args.verify) {
       partialConfig.verify = true;
+    }
+
+    // Add mockup images for vision (Pass 0 and vision-enabled iterations)
+    let mockupImageInputs: ImageInput[] | undefined;
+    if (args.mockupImages) {
+      const imagePaths = args.mockupImages.split(',').map((s) => s.trim()).filter(Boolean);
+      mockupImageInputs = imagePaths.map((imagePath) => {
+        // Additional security: only allow relative paths for mockup images
+        if (path.isAbsolute(imagePath)) {
+          throw new Error(`Mockup image paths must be relative to current directory: ${imagePath}`);
+        }
+        const validated = validateFilePath(imagePath);
+        return {
+          path: validated,
+        };
+      });
+    }
+    if (mockupImageInputs?.length) {
+      partialConfig.mockupImages = mockupImageInputs;
     }
 
     // Create and run agent

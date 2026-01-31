@@ -48,6 +48,19 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Layout and breakpoints**: Visible grid, columns, stacking; infer mobile vs tablet vs desktop from content density
+- **Navigation patterns**: Hamburger, bottom nav, tabs, full nav bar from what is shown
+- **Touch targets**: Button and link sizes that suggest touch-friendly vs pointer-only
+- **Content reflow**: How sections reorder or collapse; sidebars, multi-column to single column
+- **Viewport cues**: Any device frame or viewport hint in the mockup
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+---
+
 Analyze the mockup or design to identify responsive web requirements and how users experience functional behaviors across different screen sizes (mobile, tablet, desktop).
 
 ## Navigation Behavior Across Breakpoints

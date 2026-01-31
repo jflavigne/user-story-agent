@@ -45,6 +45,19 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Button types**: Primary (prominent, filled) vs secondary (outline, subtle) vs icon-only from styling and placement
+- **Input types**: Text, password, email, select, checkbox, radio from field appearance and labels
+- **Links**: Navigation vs inline vs external from context and styling
+- **Icons**: Actionable (clickable) vs decorative from placement and affordance
+- **States**: Default, hover, focus, disabled, error from any shown variants in the image
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+---
+
 Document all interactive UI elements in the mockup or design, including their types, purposes, and interaction states.
 
 ## Element Types

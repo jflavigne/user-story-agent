@@ -3,6 +3,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import type { ImageBlockParam, TextBlockParam } from '@anthropic-ai/sdk/resources';
 import { logger } from '../utils/logger.js';
 import { withRetry, type RetryOptions } from '../utils/retry.js';
 import { APIError, TimeoutError, AgentError } from '../shared/errors.js';
@@ -48,13 +49,18 @@ export interface ClaudeMessageResult {
 }
 
 /**
+ * User message content: plain text or multi-modal (text + images)
+ */
+export type UserMessageContent = string | Array<TextBlockParam | ImageBlockParam>;
+
+/**
  * Options for sending a message to Claude
  */
 export interface SendMessageOptions {
   /** System prompt to use */
   systemPrompt: string;
-  /** User messages (array of message objects) */
-  messages: Array<{ role: 'user'; content: string }>;
+  /** User messages (array of message objects); content may be string or text+image blocks */
+  messages: Array<{ role: 'user'; content: UserMessageContent }>;
   /** Optional model override */
   model?: string;
   /** Optional max tokens */
@@ -225,7 +231,7 @@ export class ClaudeClient {
             system: systemPrompt,
             messages: messages.map((msg) => ({
               role: msg.role,
-              content: msg.content,
+              content: typeof msg.content === 'string' ? msg.content : msg.content,
             })),
           });
         },
@@ -303,7 +309,7 @@ export class ClaudeClient {
         system: systemPrompt,
         messages: messages.map((msg) => ({
           role: msg.role,
-          content: msg.content,
+          content: typeof msg.content === 'string' ? msg.content : msg.content,
         })),
       });
 

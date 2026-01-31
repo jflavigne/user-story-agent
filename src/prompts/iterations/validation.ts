@@ -47,6 +47,19 @@ Required fields:
 
 ---
 
+# VISION ANALYSIS (when images provided)
+
+If mockup images are provided, use visual evidence to identify:
+- **Required field indicators**: Asterisks, "(required)" labels, or other markers on form fields
+- **Error presentation**: Red borders, error icons, inline error messages, toast or banner placement
+- **Validation feedback**: Strength indicators, checkmarks, real-time vs submit-time cues
+- **Field types**: Email, password, phone, date from labels and affordances to infer validation rules
+- **Success/error states**: Any shown success messages or error summaries
+
+Prioritize what you see in the image over text descriptions when both are present.
+
+---
+
 Analyze the mockup or design to identify form field validation rules and how users experience validation feedback.
 
 ## Validation Requirements
