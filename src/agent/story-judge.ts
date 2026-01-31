@@ -5,6 +5,7 @@
  */
 
 import type { ClaudeClient } from './claude-client.js';
+import type { OperationType } from './types.js';
 import type {
   JudgeRubric,
   GlobalConsistencyReport,
@@ -91,14 +92,20 @@ export function parseGlobalConsistencyReport(raw: unknown): GlobalConsistencyRep
  */
 export class StoryJudge {
   private claudeClient: ClaudeClient;
+  private resolveModel: (opType: OperationType) => string | undefined;
 
   /**
    * Creates a new StoryJudge instance.
    *
    * @param claudeClient - Claude client for API calls
+   * @param resolveModel - Resolver for per-operation model (judge / globalJudge)
    */
-  constructor(claudeClient: ClaudeClient) {
+  constructor(
+    claudeClient: ClaudeClient,
+    resolveModel: (opType: OperationType) => string | undefined
+  ) {
     this.claudeClient = claudeClient;
+    this.resolveModel = resolveModel;
   }
 
   /**
@@ -122,6 +129,7 @@ export class StoryJudge {
     const response = await this.claudeClient.sendMessage({
       systemPrompt: rubric,
       messages: [{ role: 'user', content: userMessage }],
+      model: this.resolveModel('judge'),
     });
 
     const json = extractJSON(response.content);
@@ -139,6 +147,7 @@ export class StoryJudge {
    *
    * @param stories - Array of stories with their interconnections
    * @param systemContext - System discovery context
+   * @param model - Optional model override; otherwise uses resolveModel('globalJudge')
    * @returns Global consistency report with issues and fixes
    */
   async judgeGlobalConsistency(
@@ -148,15 +157,18 @@ export class StoryJudge {
       content: string;
       interconnections: StoryInterconnections;
     }>,
-    systemContext: SystemDiscoveryContext
+    systemContext: SystemDiscoveryContext,
+    model?: string
   ): Promise<GlobalConsistencyReport> {
     logger.debug(`StoryJudge: judging global consistency (${stories.length} stories)`);
 
     const prompt = buildGlobalConsistencyPrompt(stories, systemContext);
+    const modelToUse = model ?? this.resolveModel('globalJudge');
 
     const response = await this.claudeClient.sendMessage({
       systemPrompt: GLOBAL_CONSISTENCY_JUDGE_PROMPT,
       messages: [{ role: 'user', content: prompt }],
+      model: modelToUse,
     });
 
     const report = this.parseGlobalConsistencyReportFromContent(response.content);

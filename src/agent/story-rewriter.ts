@@ -4,6 +4,7 @@
  */
 
 import type { ClaudeClient } from './claude-client.js';
+import type { OperationType } from './types.js';
 import type { JudgeRubric, SystemDiscoveryContext } from '../shared/types.js';
 import { SECTION_SEPARATION_REWRITER_PROMPT } from '../prompts/rewriter/section-separation.js';
 import { logger } from '../utils/logger.js';
@@ -63,14 +64,20 @@ function validateRewrittenStory(content: string): void {
  */
 export class StoryRewriter {
   private claudeClient: ClaudeClient;
+  private resolveModel: (opType: OperationType) => string | undefined;
 
   /**
    * Creates a new StoryRewriter instance.
    *
    * @param claudeClient - Claude client for API calls
+   * @param resolveModel - Resolver for per-operation model (rewrite)
    */
-  constructor(claudeClient: ClaudeClient) {
+  constructor(
+    claudeClient: ClaudeClient,
+    resolveModel: (opType: OperationType) => string | undefined
+  ) {
     this.claudeClient = claudeClient;
+    this.resolveModel = resolveModel;
   }
 
   /**
@@ -101,6 +108,7 @@ export class StoryRewriter {
     const response = await this.claudeClient.sendMessage({
       systemPrompt: SECTION_SEPARATION_REWRITER_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
+      model: this.resolveModel('rewrite'),
     });
 
     const content = extractRewrittenStory(response.content);

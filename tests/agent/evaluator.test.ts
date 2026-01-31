@@ -34,8 +34,9 @@ describe('Evaluator', () => {
     // Make ClaudeClient constructor return our mock
     vi.mocked(ClaudeClient).mockImplementation(() => mockClaudeClient as unknown as ClaudeClient);
 
-    // Create evaluator instance
-    evaluator = new Evaluator(mockClaudeClient as unknown as ClaudeClient);
+    // Create evaluator instance (resolveModel optional for tests - no model override)
+    const resolveModel = () => undefined;
+    evaluator = new Evaluator(mockClaudeClient as unknown as ClaudeClient, resolveModel);
   });
 
   describe('verify', () => {

@@ -4,6 +4,7 @@
  */
 
 import { ClaudeClient } from './claude-client.js';
+import type { OperationType } from './types.js';
 import { EVALUATOR_SYSTEM_PROMPT } from '../prompts/evaluator-prompt.js';
 import { VerificationResultSchema, type VerificationResult } from '../shared/schemas.js';
 import { extractJSON } from '../shared/json-utils.js';
@@ -14,14 +15,20 @@ import { logger } from '../utils/logger.js';
  */
 export class Evaluator {
   private claudeClient: ClaudeClient;
+  private resolveModel: (opType: OperationType) => string | undefined;
 
   /**
    * Creates a new Evaluator instance
    *
    * @param claudeClient - The Claude client to use for evaluation
+   * @param resolveModel - Resolver for per-operation model (evaluator)
    */
-  constructor(claudeClient: ClaudeClient) {
+  constructor(
+    claudeClient: ClaudeClient,
+    resolveModel: (opType: OperationType) => string | undefined
+  ) {
     this.claudeClient = claudeClient;
+    this.resolveModel = resolveModel;
   }
 
   /**
@@ -66,6 +73,7 @@ Respond with JSON in the format specified in your system prompt.`;
       const response = await this.claudeClient.sendMessage({
         systemPrompt: EVALUATOR_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userMessage }],
+        model: this.resolveModel('evaluator'),
       });
 
       // Parse and validate the response

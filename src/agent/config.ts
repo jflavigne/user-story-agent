@@ -49,9 +49,12 @@ export function mergeConfigWithDefaults(
     iterations: partial.iterations,
     productContext: partial.productContext,
     apiKey: partial.apiKey ?? envConfig.apiKey,
-    model: partial.model ?? DEFAULT_MODEL,
+    model: partial.model ?? 'balanced',
     onIterationSelection: partial.onIterationSelection,
     maxRetries: partial.maxRetries ?? 3,
+    streaming: partial.streaming,
+    verify: partial.verify,
+    claudeClient: partial.claudeClient,
   };
 
   return merged;

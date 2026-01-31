@@ -65,7 +65,8 @@ describe('StoryJudge', () => {
     vi.clearAllMocks();
     mockSendMessage = vi.fn();
     mockClient = { sendMessage: mockSendMessage } as unknown as ClaudeClient;
-    judge = new StoryJudge(mockClient);
+    const resolveModel = () => undefined;
+    judge = new StoryJudge(mockClient, resolveModel);
   });
 
   it('returns parsed JudgeRubric from mock LLM response', async () => {
@@ -381,7 +382,7 @@ describe('StoryJudge', () => {
         usage: { inputTokens: 200, outputTokens: 100 },
       });
 
-      const judge = new StoryJudge(mockClient);
+      const judge = new StoryJudge(mockClient, () => undefined);
       const systemContext = buildMinimalSystemContext();
 
       const stories = [
@@ -455,7 +456,7 @@ describe('StoryJudge', () => {
         usage: { inputTokens: 200, outputTokens: 100 },
       });
 
-      const judge = new StoryJudge(mockClient);
+      const judge = new StoryJudge(mockClient, () => undefined);
       const systemContext = buildMinimalSystemContext();
 
       const stories = [
@@ -516,7 +517,7 @@ describe('StoryJudge', () => {
         usage: { inputTokens: 200, outputTokens: 100 },
       });
 
-      const judge = new StoryJudge(mockClient);
+      const judge = new StoryJudge(mockClient, () => undefined);
       const systemContext = buildMinimalSystemContext();
 
       const stories = [
@@ -561,7 +562,7 @@ describe('StoryJudge', () => {
         usage: { inputTokens: 200, outputTokens: 100 },
       });
 
-      const judge = new StoryJudge(mockClient);
+      const judge = new StoryJudge(mockClient, () => undefined);
       const systemContext = buildMinimalSystemContext();
 
       await expect(judge.judgeGlobalConsistency([], systemContext)).rejects.toThrow(

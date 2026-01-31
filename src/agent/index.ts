@@ -19,7 +19,11 @@ export type {
   StreamCompleteEvent,
   StreamErrorEvent,
   StreamEventUnion,
+  OperationType,
+  ModelConfig,
+  QualityPreset,
 } from './types.js';
+export { QUALITY_PRESETS } from './types.js';
 
 // Claude client
 export { ClaudeClient } from './claude-client.js';

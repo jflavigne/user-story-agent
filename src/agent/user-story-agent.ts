@@ -10,7 +10,11 @@ import type {
   Pass2StoryInput,
   Pass2InterconnectionResult,
   SystemWorkflowResult,
+  OperationType,
+  ModelConfig,
+  QualityPreset,
 } from './types.js';
+import { QUALITY_PRESETS } from './types.js';
 import { buildStoryInterconnectionPrompt } from '../prompts/iterations/story-interconnection.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
@@ -54,6 +58,7 @@ import { PatchOrchestrator } from './patch-orchestrator.js';
 import { StoryJudge } from './story-judge.js';
 import { StoryRewriter } from './story-rewriter.js';
 import { mergeNewRelationships as mergeRelationships } from './relationship-merger.js';
+import { DEFAULT_MODEL } from './config.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -82,6 +87,7 @@ function classifyCanonical(
  */
 export class UserStoryAgent extends EventEmitter {
   private config: UserStoryAgentConfig;
+  private modelConfig: ModelConfig;
   private claudeClient: ClaudeClient;
   private contextManager: ContextManager;
   private evaluator?: Evaluator;
@@ -97,16 +103,50 @@ export class UserStoryAgent extends EventEmitter {
   constructor(config: UserStoryAgentConfig) {
     super();
     this.config = config;
+    this.modelConfig = this.normalizeModelConfig(config.model);
     this.streaming = config.streaming ?? false;
     this.validateConfig();
+    const defaultModelStr =
+      this.modelConfig.default ??
+      this.modelConfig.iteration ??
+      DEFAULT_MODEL;
     this.claudeClient =
-      config.claudeClient ?? new ClaudeClient(config.apiKey, config.model, config.maxRetries ?? 3);
+      config.claudeClient ??
+      new ClaudeClient(config.apiKey, defaultModelStr, config.maxRetries ?? 3);
     this.contextManager = new ContextManager();
-    
+
     // Create evaluator if verification is enabled
     if (config.verify === true) {
-      this.evaluator = new Evaluator(this.claudeClient);
+      this.evaluator = new Evaluator(this.claudeClient, this.resolveModel.bind(this));
     }
+  }
+
+  /**
+   * Normalizes model config from string, preset name, or ModelConfig to ModelConfig.
+   */
+  private normalizeModelConfig(
+    input: string | ModelConfig | QualityPreset | undefined
+  ): ModelConfig {
+    if (input === undefined || input === null) {
+      return QUALITY_PRESETS.balanced;
+    }
+    if (typeof input === 'string') {
+      if (input === 'balanced' || input === 'premium' || input === 'fast') {
+        return { ...QUALITY_PRESETS[input as QualityPreset] };
+      }
+      return { default: input };
+    }
+    return { ...(input as ModelConfig) };
+  }
+
+  /**
+   * Resolves model for an operation: operation-specific override, then default, then undefined (client default).
+   */
+  resolveModel(operationType: OperationType): string | undefined {
+    const config = this.modelConfig as ModelConfig & Record<string, string | undefined>;
+    const op = config[operationType];
+    if (typeof op === 'string') return op;
+    return this.modelConfig.default;
   }
 
   /**
@@ -222,7 +262,7 @@ export class UserStoryAgent extends EventEmitter {
     const response = await this.claudeClient.sendMessage({
       systemPrompt: SYSTEM_DISCOVERY_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
-      model: this.config.model,
+      model: this.resolveModel('discovery'),
     });
 
     const parsed = this.parseSystemDiscoveryMentions(response.content);
@@ -351,7 +391,7 @@ export class UserStoryAgent extends EventEmitter {
       const response = await this.claudeClient.sendMessage({
         systemPrompt: STORY_INTERCONNECTION_PROMPT,
         messages: [{ role: 'user', content: prompt }],
-        model: this.config.model,
+        model: this.resolveModel('interconnection'),
       });
 
       const interconnections = this.parseInterconnections(response.content);
@@ -727,7 +767,7 @@ export class UserStoryAgent extends EventEmitter {
           {
             systemPrompt: SYSTEM_PROMPT,
             messages: [{ role: 'user', content: userMessage }],
-            model: this.config.model,
+            model: this.resolveModel('iteration'),
           },
           handler
         );
@@ -740,7 +780,7 @@ export class UserStoryAgent extends EventEmitter {
         const response = await this.claudeClient.sendMessage({
           systemPrompt: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: userMessage }],
-          model: this.config.model,
+          model: this.resolveModel('iteration'),
         });
         responseContent = response.content;
         tokenUsage = response.usage;
@@ -958,7 +998,7 @@ export class UserStoryAgent extends EventEmitter {
   ): Promise<StoryState> {
     const QUALITY_THRESHOLD = 3.5;
 
-    const judge = new StoryJudge(this.claudeClient);
+    const judge = new StoryJudge(this.claudeClient, this.resolveModel.bind(this));
     const judgeResult = await judge.judgeStory(
       state.currentStory,
       systemContext ?? this.buildEmptySystemContext()
@@ -978,7 +1018,7 @@ export class UserStoryAgent extends EventEmitter {
     if (judgeResult.overallScore < QUALITY_THRESHOLD) {
       logger.info(`Score below threshold, triggering rewrite (Pass 1b)`);
 
-      const rewriter = new StoryRewriter(this.claudeClient);
+      const rewriter = new StoryRewriter(this.claudeClient, this.resolveModel.bind(this));
       const rewrittenStory = await rewriter.rewriteForSectionSeparation(
         state.currentStory,
         judgeResult,
@@ -1212,10 +1252,11 @@ export class UserStoryAgent extends EventEmitter {
 
     // Pass 2b: Global Consistency
     logger.info('runSystemWorkflow: Pass 2b (global consistency)');
-    const judge = new StoryJudge(this.claudeClient);
+    const judge = new StoryJudge(this.claudeClient, this.resolveModel.bind(this));
     const consistencyReport = await judge.judgeGlobalConsistency(
       storiesWithInterconnections,
-      finalContext
+      finalContext,
+      this.resolveModel('globalJudge')
     );
     passesCompleted.push('Pass 2b (global consistency)');
 

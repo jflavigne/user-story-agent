@@ -48,7 +48,8 @@ describe('StoryRewriter', () => {
     vi.clearAllMocks();
     mockSendMessage = vi.fn();
     const mockClient = { sendMessage: mockSendMessage } as unknown as ClaudeClient;
-    rewriter = new StoryRewriter(mockClient);
+    const resolveModel = () => undefined;
+    rewriter = new StoryRewriter(mockClient, resolveModel);
   });
 
   it('returns rewritten markdown from mock LLM response', async () => {

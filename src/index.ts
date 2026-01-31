@@ -13,6 +13,7 @@ export {
   loadConfigFromEnv,
   mergeConfigWithDefaults,
   DEFAULT_MODEL,
+  QUALITY_PRESETS,
 } from './agent/index.js';
 
 export type {
@@ -21,6 +22,9 @@ export type {
   IterationOption,
   IterationSelectionCallback,
   StreamEventUnion,
+  OperationType,
+  ModelConfig,
+  QualityPreset,
 } from './agent/index.js';
 
 // Re-export shared types

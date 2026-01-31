@@ -15,6 +15,68 @@ import type {
 import type { IterationResult } from './state/story-state.js';
 import type { ClaudeClient } from './claude-client.js';
 
+/** Operation types that can have per-operation model overrides */
+export type OperationType =
+  | 'discovery'
+  | 'iteration'
+  | 'judge'
+  | 'rewrite'
+  | 'interconnection'
+  | 'globalJudge'
+  | 'evaluator';
+
+/** Per-operation model overrides; each field is optional and falls back to default */
+export interface ModelConfig {
+  default?: string;
+  discovery?: string;
+  iteration?: string;
+  judge?: string;
+  rewrite?: string;
+  interconnection?: string;
+  globalJudge?: string;
+  evaluator?: string;
+}
+
+/** Quality presets: balanced (cost/quality), premium (best quality), fast (speed) */
+export type QualityPreset = 'balanced' | 'premium' | 'fast';
+
+/** Model IDs used in quality presets */
+const OPUS_4_5 = 'claude-opus-4-20250514';
+const SONNET_4_5 = 'claude-sonnet-4-20250514';
+const HAIKU_4_5 = 'claude-3-5-haiku-20241022';
+
+/** Quality preset configurations (per-operation model assignment) */
+export const QUALITY_PRESETS: Record<QualityPreset, ModelConfig> = {
+  balanced: {
+    discovery: OPUS_4_5,
+    iteration: HAIKU_4_5,
+    judge: OPUS_4_5,
+    rewrite: SONNET_4_5,
+    interconnection: SONNET_4_5,
+    globalJudge: OPUS_4_5,
+    evaluator: HAIKU_4_5,
+  },
+  premium: {
+    default: OPUS_4_5,
+    discovery: OPUS_4_5,
+    iteration: OPUS_4_5,
+    judge: OPUS_4_5,
+    rewrite: OPUS_4_5,
+    interconnection: OPUS_4_5,
+    globalJudge: OPUS_4_5,
+    evaluator: OPUS_4_5,
+  },
+  fast: {
+    discovery: SONNET_4_5,
+    iteration: HAIKU_4_5,
+    judge: SONNET_4_5,
+    rewrite: SONNET_4_5,
+    interconnection: SONNET_4_5,
+    globalJudge: SONNET_4_5,
+    evaluator: HAIKU_4_5,
+  },
+};
+
 /**
  * Information about an available iteration for interactive selection
  */
@@ -49,8 +111,8 @@ export interface UserStoryAgentConfig {
   productContext?: ProductContext;
   /** Optional API key (defaults to ANTHROPIC_API_KEY env var) */
   apiKey?: string;
-  /** Optional model name (defaults to claude-sonnet-4-20250514) */
-  model?: string;
+  /** Optional model: single string, quality preset ('balanced' | 'premium' | 'fast'), or per-operation ModelConfig (default: balanced) */
+  model?: string | ModelConfig | QualityPreset;
   /** Callback for iteration selection (required for interactive mode) */
   onIterationSelection?: IterationSelectionCallback;
   /** Maximum number of retry attempts for API calls (defaults to 3) */

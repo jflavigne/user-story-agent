@@ -20,7 +20,15 @@ import {
   getIterationById,
   loadSkills,
 } from './index.js';
-import type { UserStoryAgentConfig, IterationOption, ProductContext, StreamEventUnion } from './index.js';
+import type {
+  UserStoryAgentConfig,
+  IterationOption,
+  ProductContext,
+  StreamEventUnion,
+  ModelConfig,
+  QualityPreset,
+} from './index.js';
+import { QUALITY_PRESETS } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
 import { logger, initializeLogger } from './utils/logger.js';
 
@@ -35,6 +43,14 @@ interface CliArgs {
   output?: string;
   apiKey?: string;
   model?: string;
+  qualityTier?: string;
+  modelDiscovery?: string;
+  modelIteration?: string;
+  modelJudge?: string;
+  modelRewrite?: string;
+  modelInterconnection?: string;
+  modelGlobalJudge?: string;
+  modelEvaluator?: string;
   maxRetries?: string;
   help?: boolean;
   version?: boolean;
@@ -64,7 +80,15 @@ Options:
   --output <file>         Output file path (default: stdout)
   --api-key <key>         Anthropic API key (default: ANTHROPIC_API_KEY env var)
                           Note: Prefer env var; CLI args may be visible in process lists
-  --model <model>         Claude model to use (default: claude-sonnet-4-20250514)
+  --model <model>         Single Claude model for all operations (overrides --quality-tier)
+  --quality-tier <preset> Quality preset: balanced (default), premium, or fast
+  --model-discovery <m>   Model for system discovery (Pass 0)
+  --model-iteration <m>    Model for story iterations
+  --model-judge <m>       Model for story quality judge (Pass 1c)
+  --model-rewrite <m>     Model for section-separation rewriter
+  --model-interconnection Model for Pass 2 interconnection
+  --model-global-judge    Model for global consistency (Pass 2b)
+  --model-evaluator <m>   Model for iteration verification
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --stream                Enable streaming output for real-time progress
   --verify                Enable verification of each iteration's output quality
@@ -74,6 +98,11 @@ Options:
   --quiet                 Suppress all output except errors
   --help                  Show this help message
   --version               Show version number
+
+Quality presets (--quality-tier):
+  balanced  Discovery/judge/globalJudge: opus-4.5; iteration/evaluator: haiku-4.5; rewrite/interconnection: sonnet-4.5
+  premium   All operations use opus-4.5
+  fast      Discovery/judge/rewrite/interconnection/globalJudge: sonnet-4.5; iteration/evaluator: haiku-4.5
 
 Environment Variables:
   ANTHROPIC_API_KEY       API key for Anthropic Claude API
@@ -85,6 +114,12 @@ Available Iterations:
 Examples:
   # Individual mode with specific iterations
   echo "As a user..." | npm run agent -- --mode individual --iterations validation,accessibility
+
+  # Use premium quality (all operations opus-4.5)
+  npm run agent -- --mode individual --iterations validation --quality-tier premium --input story.md
+
+  # Override only judge model
+  npm run agent -- --mode individual --iterations validation --model-judge claude-opus-4-20250514
 
   # Workflow mode for web product
   cat story.txt | npm run agent -- --mode workflow --product-type web
@@ -142,6 +177,46 @@ function parseArgs(argv: string[]): CliArgs {
           args.model = argv[++i];
         }
         break;
+      case '--quality-tier':
+        if (i + 1 < argv.length) {
+          args.qualityTier = argv[++i];
+        }
+        break;
+      case '--model-discovery':
+        if (i + 1 < argv.length) {
+          args.modelDiscovery = argv[++i];
+        }
+        break;
+      case '--model-iteration':
+        if (i + 1 < argv.length) {
+          args.modelIteration = argv[++i];
+        }
+        break;
+      case '--model-judge':
+        if (i + 1 < argv.length) {
+          args.modelJudge = argv[++i];
+        }
+        break;
+      case '--model-rewrite':
+        if (i + 1 < argv.length) {
+          args.modelRewrite = argv[++i];
+        }
+        break;
+      case '--model-interconnection':
+        if (i + 1 < argv.length) {
+          args.modelInterconnection = argv[++i];
+        }
+        break;
+      case '--model-global-judge':
+        if (i + 1 < argv.length) {
+          args.modelGlobalJudge = argv[++i];
+        }
+        break;
+      case '--model-evaluator':
+        if (i + 1 < argv.length) {
+          args.modelEvaluator = argv[++i];
+        }
+        break;
       case '--max-retries':
         if (i + 1 < argv.length) {
           args.maxRetries = argv[++i];
@@ -178,6 +253,38 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return args;
+}
+
+/**
+ * Builds model config from CLI args: single --model, or --quality-tier with optional per-operation overrides.
+ */
+function buildModelFromArgs(args: CliArgs): string | ModelConfig | QualityPreset {
+  if (args.model) return args.model;
+  const preset = args.qualityTier as QualityPreset | undefined;
+  const hasOverrides =
+    !!args.modelDiscovery ||
+    !!args.modelIteration ||
+    !!args.modelJudge ||
+    !!args.modelRewrite ||
+    !!args.modelInterconnection ||
+    !!args.modelGlobalJudge ||
+    !!args.modelEvaluator;
+  const base =
+    preset === 'balanced' || preset === 'premium' || preset === 'fast'
+      ? { ...QUALITY_PRESETS[preset] }
+      : (preset ? {} : { ...QUALITY_PRESETS.balanced });
+  const config: ModelConfig = { ...base };
+  if (args.modelDiscovery) config.discovery = args.modelDiscovery;
+  if (args.modelIteration) config.iteration = args.modelIteration;
+  if (args.modelJudge) config.judge = args.modelJudge;
+  if (args.modelRewrite) config.rewrite = args.modelRewrite;
+  if (args.modelInterconnection) config.interconnection = args.modelInterconnection;
+  if (args.modelGlobalJudge) config.globalJudge = args.modelGlobalJudge;
+  if (args.modelEvaluator) config.evaluator = args.modelEvaluator;
+  if (hasOverrides || (preset !== 'balanced' && preset !== 'premium' && preset !== 'fast')) {
+    return config;
+  }
+  return preset ?? 'balanced';
 }
 
 /**
@@ -381,6 +488,10 @@ function validateArgs(args: CliArgs): string | null {
     return `Invalid product type: ${args.productType}. Must be one of: ${PRODUCT_TYPES.join(', ')}`;
   }
 
+  if (args.qualityTier && !['balanced', 'premium', 'fast'].includes(args.qualityTier)) {
+    return `Invalid quality tier: ${args.qualityTier}. Must be one of: balanced, premium, fast`;
+  }
+
   // Validate iteration IDs if provided
   if (args.iterations) {
     const ids = args.iterations.split(',').map((s) => s.trim());
@@ -448,7 +559,7 @@ async function main(): Promise<void> {
     const partialConfig: Partial<UserStoryAgentConfig> = {
       mode: args.mode,
       apiKey: args.apiKey,
-      model: args.model,
+      model: buildModelFromArgs(args),
     };
 
     // Parse maxRetries if provided
