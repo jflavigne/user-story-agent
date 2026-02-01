@@ -11,188 +11,128 @@ outputFormat: patches
 ---
 
 # PATH SCOPE
-This iteration is allowed to modify only these sections:
-- outcomeAcceptanceCriteria (AC-OUT-* items)
 
-All patches MUST target only these paths. Patches targeting other sections will be rejected.
+This iteration may modify only this section (exact value):
 
-# OUTPUT FORMAT
-Respond with valid JSON only (no markdown code fence, no prose):
+- `outcomeAcceptanceCriteria` (AC-OUT-* items only)
+
+Any patch targeting other paths must be rejected.
+
+# OUTPUT FORMAT (JSON ONLY)
+
+Return valid JSON only (no prose, no markdown, no code fences) with this shape:
+
+```json
 {
   "patches": [
     {
       "op": "add",
       "path": "outcomeAcceptanceCriteria",
-      "item": { "id": "AC-OUT-001", "text": "..." },
-      "metadata": { "advisorId": "cultural-appropriateness", "reasoning": "..." }
+      "item": { "id": "AC-OUT-001", "text": "…" },
+      "metadata": { "advisorId": "cultural-appropriateness", "reasoning": "…" }
     }
   ]
 }
+```
 
-Required fields:
-- op: "add" | "replace" | "remove"
-- path: Must be one of the allowed paths above
-- item: { id: string, text: string } for add/replace
-- match: { id?: string, textEquals?: string } for replace/remove
-- metadata: { advisorId: "cultural-appropriateness", reasoning?: string }
+# PATCH RULES
 
----
+**Required fields by op:**
 
-Analyze the mockup or design to identify cultural appropriateness requirements and how users from different cultural backgrounds experience and interpret interface elements.
+- `op: "add"`
+  - required: op, path, item, metadata
+  - forbidden: match
+- `op: "replace"`
+  - required: op, path, match, item, metadata
+  - match must include: `{ "id": "…" }`
+- `op: "remove"`
+  - required: op, path, match, metadata
+  - match must include: `{ "id": "…" }`
+  - forbidden: item
 
-## Color Meanings Across Cultures
+**Path and ID constraints:**
 
-1. **Color Symbolism**: Identify how colors are interpreted:
-   - How do different colors convey meaning in different cultures (red for danger vs. luck, white for weddings vs. funerals)?
-   - What color associations could be confusing or offensive in certain cultures?
-   - How do users understand color-coded information when meanings differ?
-   - Are there color choices that could negatively impact user experience in specific regions?
+- path MUST be `"outcomeAcceptanceCriteria"`
+- item.id MUST start with `"AC-OUT-"`
 
-2. **Color Usage in UI**: Document how colors are used in the interface:
-   - How are colors used to indicate status, importance, or actions?
-   - What happens when color meanings conflict with cultural expectations?
-   - How do users understand color-coded features when cultural meanings differ?
-   - Are there color-dependent features that need alternative indicators?
+**Metadata constraints:**
 
-3. **Accessibility and Color**: Determine how color usage affects accessibility:
-   - How do users with color vision deficiencies experience color-coded information?
-   - What alternative indicators exist beyond color for important information?
-   - How do users understand information when color is the only indicator?
-   - Are there color-dependent features that exclude users with color blindness?
+- metadata.advisorId MUST be `"cultural-appropriateness"`
+- metadata.reasoning is optional but, if present, MUST be <= 240 characters and explain why the patch is needed.
 
-4. **Cultural Color Preferences**: Identify color preferences by region:
-   - What color palettes are preferred or avoided in different regions?
-   - How do users experience color choices that don't align with cultural preferences?
-   - What happens when brand colors conflict with cultural associations?
-   - Are there color choices that could affect user engagement in specific markets?
+# Scope gate should pass if:
 
-## Icons and Symbols Interpretation
+- The story mentions global markets, localization, regions/countries, cultural sensitivity, brand safety, or "international"; or
+- The mockup includes culturally loaded signals (flags, country selector, culturally specific imagery/holidays, hand gestures, religious symbols, region-specific formats, region names).
 
-5. **Icon Meaning Variations**: Identify how icons are interpreted:
-   - How do common icons (checkmarks, X marks, arrows, gestures) vary in meaning across cultures?
-   - What icons could be confusing or have negative associations in certain cultures?
-   - How do users understand icon meanings when they differ from expectations?
-   - Are there icons that need to be replaced or adapted for different regions?
+If the gate does not pass: return `{ "patches": [] }`.
 
-6. **Symbol Recognition**: Document how symbols are recognized:
-   - How do users recognize and understand symbols from different cultural contexts?
-   - What happens when symbols are unfamiliar to users from certain regions?
-   - How do users understand symbolic representations that differ from their culture?
-   - Are there symbols that need explanation or alternatives for international users?
 
-7. **Gesture Icons**: Determine how gesture-based icons are understood:
-   - How are hand gestures and body language icons interpreted across cultures?
-   - What gesture icons could be offensive or inappropriate in certain cultures?
-   - How do users understand gesture-based interactions when meanings differ?
-   - Are there gesture icons that need to be avoided or replaced?
+# NON-INVENTION RULE
 
-8. **Religious and Cultural Symbols**: Identify potentially sensitive symbols:
-   - How are religious or cultural symbols used in the interface?
-   - What symbols could be offensive or inappropriate in certain cultural contexts?
-   - How do users experience symbols that conflict with their beliefs or values?
-   - Are there symbols that should be avoided or require careful consideration?
+Do not add requirements unrelated to the provided user story or mockups.
+Only add or refine requirements that are:
 
-## Cultural Sensitivity in Imagery
+- explicitly stated in the story/criteria, OR
+- clearly implied as necessary to avoid cultural harm or confusion in the described user experience, OR
+- supported by visible evidence in provided mockups.
 
-9. **People and Representation**: Document how people are represented:
-   - How are people of different ethnicities, genders, and ages represented in imagery?
-   - What happens when imagery doesn't reflect the diversity of the user base?
-   - How do users see themselves represented in the application?
-   - Are there representation issues that could affect user engagement or trust?
+# VISION ANALYSIS (ONLY WHEN IMAGES ARE PROVIDED)
 
-10. **Cultural Context in Images**: Identify cultural context in imagery:
-    - How are cultural settings, clothing, and environments depicted?
-    - What happens when imagery shows cultural contexts unfamiliar to users?
-    - How do users understand imagery that reflects different cultural norms?
-    - Are there images that could be confusing or inappropriate for certain audiences?
+If mockup images are provided, use visual evidence to identify culturally sensitive or culture-dependent elements such as:
 
-11. **Stereotypes and Assumptions**: Determine how stereotypes are avoided:
-    - How are cultural stereotypes avoided in imagery and content?
-    - What happens when imagery reinforces negative stereotypes?
-    - How do users experience content that makes cultural assumptions?
-    - Are there imagery choices that could perpetuate harmful stereotypes?
+- Color-coded meaning (success, error, warning, celebration, mourning)
+- Icons, gestures, symbols, flags, maps, animals, hand signs, and metaphors
+- Photos/illustrations of people, clothing, settings, holidays, food, or rituals
+- Names, titles, honorifics, and the way people are addressed
+- Dates, times, calendars, numbers, currencies, measurement units
+- Workflows that assume specific norms (weekends, holidays, business customs, family structures)
 
-12. **Localized Imagery**: Document how imagery is adapted for regions:
-    - How is imagery selected or adapted for different cultural contexts?
-    - What happens when imagery needs to be culturally appropriate for specific regions?
-    - How do users see imagery that's relevant to their cultural context?
-    - Are there imagery requirements that vary by region or market?
+Use images to add or clarify requirements; do not override explicit written requirements.
 
-## Name and Title Conventions
+# FUNCTIONAL (NOT OVER-SPECIFIED) WRITING RULES
 
-13. **Name Format Variations**: Identify how names are displayed and entered:
-    - How are names formatted for different cultures (given name first vs. last, middle names, honorifics)?
-    - What name format do users expect in their region?
-    - How do users understand name fields that don't match their cultural conventions?
-    - Are there name formats that could cause confusion or validation issues?
+Write acceptance criteria as user-observable outcomes:
 
-14. **Title and Honorific Conventions**: Document how titles are used:
-    - How are titles and honorifics used in different cultures (Mr., Mrs., Dr., san, sama)?
-    - What title conventions do users expect in their region?
-    - How do users understand title options when they differ from cultural norms?
-    - Are there title conventions that could be confusing or inappropriate?
+- Use plain language.
+- Avoid country-by-country exhaustive lists.
+- Avoid implementation details (no "use i18n library", no internal data models).
+- Prefer outcome statements like:
+  - "Color is not the only way meaning is communicated."
+  - "Icons and symbols are understandable and not offensive to target audiences."
+  - "Images avoid stereotypes and represent users respectfully."
 
-15. **Name Input Fields**: Determine how name input is structured:
-    - How are name input fields organized for different naming conventions?
-    - What name fields are required or optional for different cultures?
-    - How do users understand which name format to use?
-    - Are there name input methods that work better for specific naming conventions?
+# CULTURAL APPROPRIATENESS COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
-16. **Name Display and Sorting**: Identify how names are displayed:
-    - How are names sorted and displayed in lists (by first name vs. last name)?
-    - What name display format do users expect?
-    - How do users find and identify people when name formats differ?
-    - Are there name display methods that could be confusing for international users?
+Ensure the refined AC-OUT-* items collectively cover:
 
-## Cultural Assumptions in Workflows
+1. **Meaning and clarity across cultures**
+   - Key status/meaning is not communicated only through culturally dependent color or symbolism.
+   - When meaning could vary by culture, the UI provides a clear text cue.
 
-17. **Workflow Cultural Context**: Document how workflows reflect cultural assumptions:
-    - How do workflows assume certain cultural norms or practices?
-    - What happens when workflows don't align with cultural expectations?
-    - How do users understand workflows that reflect different cultural contexts?
-    - Are there workflow assumptions that could confuse or exclude users?
+2. **Icons, symbols, and gestures**
+   - Icons and gestures avoid common offensive interpretations in target markets.
+   - Any potentially ambiguous symbol includes a text label or tooltip-style clarification.
 
-18. **Business Practice Assumptions**: Identify assumptions about business practices:
-    - How do workflows assume certain business practices or norms?
-    - What happens when business practices differ across cultures?
-    - How do users understand workflows that reflect unfamiliar business contexts?
-    - Are there business practice assumptions that need adaptation?
+3. **Imagery and representation**
+   - People and cultures are represented respectfully and without stereotypes.
+   - Imagery does not rely on culturally narrow references that would confuse users in target markets (unless intentionally localized).
 
-19. **Social and Communication Norms**: Determine how social norms affect workflows:
-    - How do workflows assume certain communication styles or social norms?
-    - What happens when communication norms differ across cultures?
-    - How do users understand workflows that reflect different social contexts?
-    - Are there social norm assumptions that could affect user experience?
+4. **Language and tone**
+   - Copy avoids idioms, slang, or humor that may not translate well (unless intentionally localized).
+   - Terms that can be culturally sensitive are reviewed and adjusted for the audience.
 
-20. **Time and Scheduling Assumptions**: Identify assumptions about time and scheduling:
-    - How do workflows assume certain time conventions (work hours, weekends, holidays)?
-    - What happens when time conventions differ across cultures?
-    - How do users understand scheduling features that reflect different time contexts?
-    - Are there time assumptions that could cause confusion or scheduling issues?
+5. **Names and forms of address (if names/titles appear)**
+   - Name fields and display do not assume a single naming convention.
+   - Titles/honorifics are optional and culturally appropriate where used.
 
-## User Story Implications
+6. **Dates, times, numbers, money, and units (if present)**
+   - Date/time formats, week starts, and number formats match locale expectations.
+   - Currency and units are presented in a way users in the target market understand.
 
-21. **Story Requirements**: For each cultural appropriateness feature, determine:
-    - How colors are interpreted and used in culturally appropriate ways
-    - How icons and symbols are understood across different cultural contexts
-    - How imagery reflects cultural sensitivity and diversity
-    - How names and titles follow cultural conventions
-    - How workflows avoid cultural assumptions and accommodate different practices
-    - How users experience culturally appropriate and sensitive interfaces
+7. **Cultural assumptions in workflows**
+   - The flow does not assume specific holidays, weekends, work hours, family structures, or business norms without an alternative.
 
-22. **Acceptance Criteria**: Document acceptance criteria that cover:
-    - Color choices that respect cultural meanings and associations
-    - Icon and symbol selection that's appropriate across cultures
-    - Imagery that's culturally sensitive and representative
-    - Name and title conventions that match cultural expectations
-    - Workflows that avoid cultural assumptions and accommodate differences
-    - User experience of culturally appropriate interfaces, not technical implementation
+# TASK
 
-## Output
-
-Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria. Add or replace items to document:
-- Color meanings and usage that respect cultural differences
-- Icon and symbol interpretation across cultures
-- Cultural sensitivity requirements for imagery
-- Name and title convention adaptations
-- Acceptance criteria for cultural appropriateness (AC-OUT-*)
+Review existing outcomeAcceptanceCriteria (AC-OUT-*) for redundancies and gaps related to cultural appropriateness. Consolidate overlaps, replace unclear items, remove duplicates, and add missing items only when justified by the NON-INVENTION RULE. Output patches only.

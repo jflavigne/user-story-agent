@@ -11,214 +11,125 @@ outputFormat: patches
 ---
 
 # PATH SCOPE
-This iteration is allowed to modify only these sections:
-- userVisibleBehavior (UVB-* items)
-- systemAcceptanceCriteria (AC-SYS-* items)
 
-All patches MUST target only these paths. Patches targeting other sections will be rejected.
+This iteration may modify only these sections (exact values):
 
-# OUTPUT FORMAT
-Respond with valid JSON only (no markdown code fence, no prose):
+- "userVisibleBehavior" (UVB-* items only)
+- "systemAcceptanceCriteria" (AC-SYS-* items only)
+
+Any patch targeting other paths must be rejected.
+
+# OUTPUT FORMAT (JSON ONLY)
+
+Return valid JSON only (no prose, no markdown, no code fences) with this shape:
+
+```json
 {
   "patches": [
     {
       "op": "add",
       "path": "userVisibleBehavior",
-      "item": { "id": "UVB-001", "text": "..." },
-      "metadata": { "advisorId": "responsive-native", "reasoning": "..." }
+      "item": { "id": "UVB-001", "text": "…" },
+      "metadata": { "advisorId": "responsive-native", "reasoning": "…" }
     }
   ]
 }
+```
 
-Required fields:
-- op: "add" | "replace" | "remove"
-- path: Must be one of the allowed paths above
-- item: { id: string, text: string } for add/replace
-- match: { id?: string, textEquals?: string } for replace/remove
-- metadata: { advisorId: "responsive-native", reasoning?: string }
+# PATCH RULES
 
----
+Required fields by op:
 
-Analyze the mockup or design to identify responsive native app requirements and how users experience functional behaviors specific to mobile devices (iOS and Android).
+- **op: "add"**
+  - required: `op`, `path`, `item`, `metadata`
+  - forbidden: `match`
+- **op: "replace"**
+  - required: `op`, `path`, `match`, `item`, `metadata`
+  - `match` must include: `{ "id": "…" }`
+- **op: "remove"**
+  - required: `op`, `path`, `match`, `metadata`
+  - `match` must include: `{ "id": "…" }`
+  - forbidden: `item`
 
-## Device Capabilities and Features
+Path and ID constraints:
 
-1. **Camera Integration**: Identify camera-related functionality:
-   - How do users capture photos or videos within the app?
-   - What happens when users need to access the camera but don't have permission?
-   - How are camera features presented and accessed in the interface?
-   - What feedback do users receive during photo/video capture?
-   - How do users preview, edit, or retake captured media?
+- If `path == "userVisibleBehavior"`, `item.id` MUST start with "UVB-"
+- If `path == "systemAcceptanceCriteria"`, `item.id` MUST start with "AC-SYS-"
 
-2. **Location Services**: Document location-based features:
-   - How do users enable location services for the app?
-   - What happens when location permission is denied or unavailable?
-   - How is user location displayed or used in the interface?
-   - What feedback indicates location is being accessed or updated?
-   - How do users control location sharing or privacy settings?
+Metadata constraints:
 
-3. **Biometric Authentication**: Identify biometric security features:
-   - How do users authenticate using Face ID, Touch ID, or fingerprint?
-   - What happens when biometric authentication fails or isn't available?
-   - How are biometric options presented alongside password authentication?
-   - What feedback confirms successful biometric authentication?
-   - How do users set up or manage biometric authentication?
+- `metadata.advisorId` MUST be "responsive-native"
+- `metadata.reasoning` is optional but, if present, MUST be <= 240 characters and explain why the patch is needed.
 
-4. **Device Sensors**: Determine sensor-based functionality:
-   - How do accelerometer or gyroscope features work (shake to refresh, orientation)?
-   - What happens when required sensors aren't available on a device?
-   - How are sensor-based interactions communicated to users?
-   - What feedback indicates sensor data is being used?
+# NON-INVENTION RULE
 
-5. **File System Access**: Document file access and storage:
-   - How do users access device files, photos, or documents?
-   - What happens when file permissions are denied?
-   - How are files selected, uploaded, or shared from the device?
-   - What feedback indicates file operations are in progress or complete?
+Do not add requirements unrelated to the provided user story or mockups.
+Only add or refine requirements that are:
 
-## Platform Conventions (iOS vs Android)
+- explicitly stated in the story/criteria, OR
+- clearly implied by the described mobile/native user experience, OR
+- supported by visible evidence in provided mockups.
 
-6. **Navigation Patterns**: Identify platform-specific navigation:
-   - How does iOS navigation (back button, navigation bar) differ from Android?
-   - What navigation patterns follow platform conventions?
-   - How do users understand navigation differences between platforms?
-   - Are there platform-specific navigation gestures (swipe back, hamburger menu)?
+# VISION ANALYSIS (ONLY WHEN IMAGES ARE PROVIDED)
 
-7. **UI Components**: Document platform-specific UI elements:
-   - How do buttons, inputs, and controls follow platform design guidelines?
-   - What platform-specific components are used (iOS pickers, Android material design)?
-   - How do users recognize familiar platform patterns?
-   - Are there platform-specific interaction patterns (long press, force touch)?
+If mockup images are provided, use visual evidence to identify native/mobile needs such as:
 
-8. **System Integration**: Determine system-level integrations:
-   - How does the app integrate with iOS Share Sheet or Android Share menu?
-   - What system notifications or alerts are used?
-   - How does the app appear in system settings or app switcher?
-   - What platform-specific features are leveraged (iOS widgets, Android shortcuts)?
+- Permission triggers (camera, photos, location, notifications, biometrics) and related user prompts
+- Mobile navigation conventions (back behavior, tab bars, drawers, swipe gestures)
+- Touch-first patterns (tap targets, long-press, pull-to-refresh, swipe actions)
+- Offline/poor connection cues (banners, retry, "saved locally", sync indicators)
+- Background states (uploading, syncing, "continue later", resumed tasks)
+- Orientation and screen-size behavior (phone vs tablet, rotation implications)
+- System integrations (share sheet, open in maps, file picker, deep links)
+- Platform-specific UI cues (iOS vs Android patterns) if shown or implied
 
-9. **Platform-Specific Behaviors**: Identify behaviors unique to each platform:
-   - How do iOS and Android handle app backgrounding differently?
-   - What platform-specific permissions or settings are needed?
-   - How do platform conventions affect user workflows?
-   - What platform differences should users be aware of?
+Use images to add or clarify requirements; do not override explicit written requirements.
 
-## Offline Functionality
+# WRITING RULES (FUNCTIONAL, USER-CENTRIC)
 
-10. **Offline Detection**: Identify offline state handling:
-    - How do users know when the app is offline vs. online?
-    - What visual indicators show connection status?
-    - How does the app behave differently when offline?
-    - What features are available when offline vs. require connectivity?
+Write items as user-observable outcomes:
 
-11. **Data Synchronization**: Document offline data handling:
-    - How does the app store data locally for offline access?
-    - What happens to user actions performed while offline?
-    - How are offline changes synchronized when connection is restored?
-    - What feedback indicates data is syncing or has synced?
+- Use plain language.
+- Avoid implementation details (OS APIs, libraries, device models).
+- Avoid exhaustive feature lists: only cover what the story/mockup implies.
+- Keep UVB items behavior-focused; keep AC-SYS items test-focused.
+- Distinguish "what users see/do" from "what the system guarantees."
 
-12. **Offline Feature Availability**: Determine offline capabilities:
-    - What features work completely offline?
-    - What features are limited or unavailable offline?
-    - How do users understand what they can do offline?
-    - What happens when users try to use online-only features offline?
+# RESPONSIVE NATIVE COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
-13. **Conflict Resolution**: Identify data conflict handling:
-    - How are conflicts resolved when offline changes conflict with data from other devices or the cloud?
-    - What feedback do users receive about data conflicts?
-    - How do users resolve or choose between conflicting data?
-    - What happens to user work if conflicts can't be automatically resolved?
+Ensure the combined UVB-* and AC-SYS-* cover, as applicable:
 
-## Push Notifications and Background Behavior
+1. **Permissions and fallbacks** (only if capabilities are used)
+   - Users understand why a permission is needed.
+   - If denied/unavailable, users get a clear alternative (manual input, limited mode) or a clear next step.
+   - Users can retry or change the permission later without being blocked unexpectedly.
 
-14. **Notification Permissions**: Document notification setup:
-    - How do users grant permission for push notifications?
-    - What happens when notification permission is denied?
-    - How are notification preferences presented and managed?
-    - What feedback confirms notification settings have been saved?
+2. **Platform conventions** (iOS vs Android)
+   - Navigation and back behavior matches platform expectations.
+   - Common gestures behave as users expect (where applicable).
+   - Platform differences do not change outcomes (users can still complete the task).
 
-15. **Notification Types**: Identify different notification scenarios:
-    - What types of notifications does the app send (alerts, badges, sounds)?
-    - How do users understand what each notification means?
-    - What actions can users take directly from notifications?
-    - How do users manage notification frequency or types?
+3. **Touch interactions**
+   - Primary actions are easy to trigger on touch.
+   - Long-running actions show clear in-progress feedback.
+   - Accidental double-taps don't cause duplicate actions.
 
-16. **Background Behavior**: Determine app behavior when backgrounded:
-    - What happens to ongoing tasks when the app goes to background?
-    - How do users know if background tasks are still running?
-    - What features continue working when the app is in background?
-    - How do users resume tasks when returning to the app?
+4. **Offline and sync** (only if relevant)
+   - Users can tell when they are offline or on a poor connection.
+   - Actions taken offline are handled predictably (queued, saved locally, or blocked with explanation).
+   - Users see when content is syncing and when it's done; conflicts are handled clearly if they can occur.
 
-17. **Background Updates**: Document background data and updates:
-    - How does the app update content in the background?
-    - What feedback indicates background updates are happening?
-    - How do users control background data usage?
-    - What happens when background updates fail or are interrupted?
+5. **Background and resume behavior** (only if relevant)
+   - If a task continues in the background, users can tell what's happening and what to do next.
+   - Returning to the app restores users to a sensible state without losing work.
 
-## Device Orientation Handling
+6. **Screen sizes and orientation** (only if relevant)
+   - The experience remains usable on common phone sizes; tablet behavior is defined if tablets are in scope.
+   - Rotation does not break the flow or lose user progress where supported.
 
-18. **Orientation Support**: Identify orientation requirements:
-    - Does the app support portrait, landscape, or both orientations?
-    - How does the layout adapt when users rotate their device?
-    - What features work better in one orientation vs. another?
-    - How do users understand orientation support and limitations?
+7. **Accessibility on mobile** (only at outcome level, if in scope)
+   - Works with screen readers and system text size settings where required by the story.
 
-19. **Orientation Transitions**: Document orientation change behavior:
-    - How smoothly does the layout transition when orientation changes?
-    - What happens to user state or position when orientation changes?
-    - Are there features that lock to a specific orientation?
-    - How do users experience orientation changes (smooth, jarring, helpful)?
+# TASK
 
-20. **Orientation-Specific Features**: Determine orientation-optimized features:
-    - What features are optimized for portrait mode (reading, scrolling)?
-    - What features are optimized for landscape mode (video, games, data entry)?
-    - How do users understand which orientation works best for each feature?
-    - Are there features that require a specific orientation?
-
-## Device-Specific User Experience
-
-21. **Screen Size Adaptation**: Identify behavior across device sizes:
-    - How does the app adapt to different phone and tablet screen sizes?
-    - What layout changes occur on larger vs. smaller devices?
-    - Are there features optimized for tablet vs. phone screens?
-    - How do users experience the app on different device sizes?
-
-22. **Performance on Different Devices**: Document performance considerations:
-    - How does the app perform on older or less capable devices?
-    - What features might be disabled or simplified on lower-end devices?
-    - How do users understand performance limitations?
-    - What feedback indicates the app is working within device capabilities?
-
-23. **Accessibility Features**: Determine accessibility support:
-    - How does the app work with screen readers (VoiceOver, TalkBack)?
-    - What accessibility features are supported (larger text, reduced motion)?
-    - How do users with disabilities experience the app?
-    - What accessibility settings affect app behavior?
-
-## User Story Implications
-
-24. **Story Requirements**: For each native app feature, determine:
-    - What device capabilities are required and how permissions are handled?
-    - How do platform conventions (iOS vs Android) affect the feature?
-    - What offline functionality is needed?
-    - How do push notifications and background behavior work?
-    - How does device orientation affect the feature?
-    - What device-specific adaptations are needed?
-
-25. **Acceptance Criteria**: Document acceptance criteria that cover:
-    - Device capability requirements and permission handling
-    - Platform-specific behaviors (iOS vs Android)
-    - Offline functionality and data synchronization
-    - Push notification setup and management
-    - Background behavior and task handling
-    - Device orientation support and transitions
-    - Screen size adaptation and performance considerations
-    - Functional behaviors users experience on native devices
-
-## Output
-
-Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target userVisibleBehavior or systemAcceptanceCriteria. Add or replace items to document:
-- Device capability requirements and permission handling
-- Platform-specific conventions and behaviors (iOS vs Android)
-- Offline functionality and data synchronization
-- Push notification setup and background behavior
-- Acceptance criteria for responsive native (UVB-*, AC-SYS-*)
+Review existing "userVisibleBehavior" (UVB-) and "systemAcceptanceCriteria" (AC-SYS-) for overlaps, redundancies, and gaps related to responsive native app behavior. Consolidate duplicates, replace unclear items, remove duplicates, and add missing items only when justified by the NON-INVENTION RULE. Output patches only.

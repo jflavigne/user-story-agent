@@ -11,87 +11,112 @@ outputFormat: patches
 ---
 
 # PATH SCOPE
-This iteration is allowed to modify only these sections:
-- story.asA
-- story.iWant
-- story.soThat
-- outcomeAcceptanceCriteria (AC-OUT-* items)
 
-All patches MUST target only these paths. Patches targeting other sections will be rejected.
+This iteration may modify only these sections (exact values):
 
-# OUTPUT FORMAT
-Respond with valid JSON only (no markdown code fence, no prose):
+- `story.asA`
+- `story.iWant`
+- `story.soThat`
+- `outcomeAcceptanceCriteria` (AC-OUT-* items only)
+
+Any patch targeting other paths must be rejected.
+
+# OUTPUT FORMAT (JSON ONLY)
+
+Return valid JSON only (no prose, no markdown, no code fences) with this shape:
+
+```json
 {
   "patches": [
     {
-      "op": "add",
-      "path": "outcomeAcceptanceCriteria",
-      "item": { "id": "AC-OUT-001", "text": "..." },
-      "metadata": { "advisorId": "user-roles", "reasoning": "..." }
+      "op": "replace",
+      "path": "story.asA",
+      "item": { "id": "story.asA", "text": "…" },
+      "metadata": { "advisorId": "user-roles", "reasoning": "…" }
     }
   ]
 }
+```
 
-Required fields:
-- op: "add" | "replace" | "remove"
-- path: Must be one of the allowed paths above
-- item: { id: string, text: string } for add/replace
-- match: { id?: string, textEquals?: string } for replace/remove
-- metadata: { advisorId: "user-roles", reasoning?: string }
+# PATCH RULES
 
----
+Required fields by op:
 
-Analyze the mockup or design to identify distinct user roles and their specific interactions with the interface.
+- **op: "add"**
+  - required: op, path, item, metadata
+  - forbidden: match
+- **op: "replace"**
+  - required: op, path, match, item, metadata
+  - match must include: `{ "id": "…" }`
+- **op: "remove"**
+  - required: op, path, match, metadata
+  - match must include: `{ "id": "…" }`
+  - forbidden: item
 
-## Role Identification
+Path constraints and item.id rules:
 
-1. **Identify User Types**: Examine the interface to determine what types of users might interact with it:
-   - Anonymous visitors or guests
-   - Registered or authenticated users
-   - Administrators or power users
-   - Specific role-based users (e.g., editors, moderators, customers, vendors)
+- If path is `story.asA`, `story.iWant`, or `story.soThat`:
+  - item.id MUST equal the path string (e.g., `"story.asA"`)
+  - item.text MUST be a single sentence fragment appropriate for a user story field
+- If path is `outcomeAcceptanceCriteria`:
+  - item.id MUST start with `AC-OUT-`
 
-2. **Role Goals and Motivations**: For each identified role, determine:
-   - What are their primary goals when using this interface?
-   - What motivates them to interact with specific features?
-   - What outcomes are they trying to achieve?
+Metadata constraints:
 
-3. **Role-Specific Interactions**: Map how each role interacts with UI elements:
-   - Which features are visible or accessible to each role?
-   - What actions can each role perform?
-   - Are there role-specific workflows or navigation paths?
-   - Do different roles see different content or layouts?
+- metadata.advisorId MUST be `"user-roles"`
+- metadata.reasoning is optional but, if present, MUST be <= 240 characters and explain why the patch is needed.
 
-## Access and Permissions
+# NON-INVENTION RULE
 
-4. **Role-Based Access Control**: Identify any role-based restrictions:
-   - Features that are only available to certain roles
-   - Content that varies by user role
-   - Actions that require specific permissions
-   - UI elements that appear or disappear based on role
+Do not invent new roles, permissions, or workflows that are not supported by the user story or mockups.
 
-5. **Permission Indicators**: Note any visual indicators of permissions:
-   - Disabled buttons or features for unauthorized roles
-   - Different navigation menus or options
-   - Role-specific dashboards or views
-   - Access level indicators or badges
+Only add or refine role-related content that is:
 
-## User Story Implications
+- explicitly stated in the story/criteria, OR
+- clearly implied by visible UI evidence (e.g., admin controls, moderation tools, "manage users", role labels), OR
+- necessary to remove ambiguity in who the story applies to.
 
-6. **Story Variations**: Consider how user stories might differ by role:
-   - Should separate stories be created for each role?
-   - Can a single story accommodate multiple roles with variations?
-   - What role-specific acceptance criteria are needed?
+# VISION ANALYSIS (ONLY WHEN IMAGES ARE PROVIDED)
 
-7. **Role Context in Stories**: When documenting user stories:
-   - Clearly specify the role in the "As a [role]" format
-   - Include role-specific acceptance criteria
-   - Document any role-based constraints or permissions
-   - Note any differences in behavior or access between roles
+If mockup images are provided, use visual evidence to identify role signals such as:
 
-## Output
+- **Account state:** guest vs signed-in user (login/logout, profile menu)
+- **Admin/power tools:** user management, configuration, approvals, bulk actions
+- **Role labels:** "Admin", "Editor", "Moderator", "Owner", "Member"
+- **Permission cues:** disabled actions with "not allowed", "request access", "upgrade"
+- **Content variants:** dashboards, queues, review screens suggesting specialized roles
 
-Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target story.asA, story.iWant, story.soThat, or outcomeAcceptanceCriteria. Add or replace items to document:
-- Identified user roles (story.asA, story.iWant, story.soThat)
-- Role-specific acceptance criteria (AC-OUT-* in outcomeAcceptanceCriteria)
-- Role-based features and permissions
+Use images to clarify roles and role-specific outcomes; do not override explicit written requirements.
+
+# WRITING RULES (PLAIN, USER-CENTRIC)
+
+- Keep roles human-readable (e.g., "signed-in customer", "admin", "content editor").
+- Avoid internal org jargon and system terms ("RBAC", "ACL") in AC-OUT text.
+- If multiple roles exist, prefer:
+  - a single primary role in story.asA, AND
+  - acceptance criteria describing differences for other roles.
+- Split role differences into clear, testable outcomes.
+
+# ROLE COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
+
+Ensure the resulting story + AC-OUT cover, as applicable:
+
+1. **Role clarity in the story**
+   - story.asA names the primary role unambiguously.
+   - story.iWant describes the user goal (not the UI).
+   - story.soThat explains the value/outcome.
+
+2. **Role-based visibility and access (if applicable)**
+   - Which actions/content are available to each role.
+   - What users see when they do not have access (clear message and next step).
+
+3. **Role-based outcomes**
+   - Each role's "happy path" outcome is clear.
+   - Any role-specific restrictions or alternative flows are captured.
+
+4. **Avoid over-splitting**
+   - Only create multiple role behaviors if the story/mockup indicates meaningful differences.
+
+# TASK
+
+Review the existing story fields (asA/iWant/soThat) and outcomeAcceptanceCriteria (AC-OUT-*) for role ambiguity, overlaps, and missing role-specific outcomes. Consolidate redundant criteria, clarify the primary role in the story fields when needed, and add role-specific AC-OUT items only when justified by the NON-INVENTION RULE. Output patches only.

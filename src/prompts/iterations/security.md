@@ -11,171 +11,124 @@ outputFormat: patches
 ---
 
 # PATH SCOPE
-This iteration is allowed to modify only these sections:
-- systemAcceptanceCriteria (AC-SYS-* items)
-- implementationNotes.securityNotes
 
-All patches MUST target only these paths. Patches targeting other sections will be rejected.
+This iteration may modify only these sections (exact values):
+- `"systemAcceptanceCriteria"` (AC-SYS-* items only)
+- `"implementationNotes.securityNotes"`
 
-# OUTPUT FORMAT
-Respond with valid JSON only (no markdown code fence, no prose):
+Any patch targeting other paths must be rejected.
+
+## OUTPUT FORMAT (JSON ONLY)
+
+Return valid JSON only (no prose, no markdown, no code fences) with this shape:
+
+```json
 {
   "patches": [
     {
       "op": "add",
       "path": "systemAcceptanceCriteria",
-      "item": { "id": "AC-SYS-001", "text": "..." },
-      "metadata": { "advisorId": "security", "reasoning": "..." }
+      "item": { "id": "AC-SYS-001", "text": "…" },
+      "metadata": { "advisorId": "security", "reasoning": "…" }
     }
   ]
 }
+```
 
-Required fields:
-- op: "add" | "replace" | "remove"
-- path: Must be one of the allowed paths above
-- item: { id: string, text: string } for add/replace
-- match: { id?: string, textEquals?: string } for replace/remove
-- metadata: { advisorId: "security", reasoning?: string }
+## PATCH RULES
 
----
+**Required fields by op:**
 
-Analyze the mockup or design to identify security requirements and how users experience trust, data protection, and secure interactions.
+- **op: "add"**
+  - required: `op`, `path`, `item`, `metadata`
+  - forbidden: `match`
+- **op: "replace"**
+  - required: `op`, `path`, `match`, `item`, `metadata`
+  - `match` must include: `{ "id": "…" }`
+- **op: "remove"**
+  - required: `op`, `path`, `match`, `metadata`
+  - `match` must include: `{ "id": "…" }`
+  - forbidden: `item`
 
-## Data Handling Transparency
+**Path and ID constraints:**
+- If `path == "systemAcceptanceCriteria"`, `item.id` MUST start with `"AC-SYS-"`
+- If `path == "implementationNotes.securityNotes"`, `item.id` MUST be `"securityNotes"`
 
-1. **Data Collection Communication**: Identify how data collection is communicated:
-   - What information is collected from users and why?
-   - How are users informed about data usage and storage?
-   - Are there clear explanations of what data is required vs. optional?
-   - How do users understand what happens to their data after submission?
+**Metadata constraints:**
+- `metadata.advisorId` MUST be `"security"`
+- `metadata.reasoning` is optional but, if present, MUST be <= 240 characters and explain why the patch is needed.
 
-2. **Privacy Indicators**: Document privacy and data protection indicators:
-   - Are there visual indicators showing data is protected?
-   - How do users know their information is secure?
-   - What messaging builds trust around data handling?
-   - Are privacy policies and terms easily accessible?
+## NON-INVENTION RULE
 
-3. **Data Visibility**: Determine what users can see about their data:
-   - Can users view what data is stored about them?
-   - Are there dashboards showing account activity or data access?
-   - How do users understand what data is shared with third parties?
-   - What transparency features help users feel in control?
+Do not add requirements unrelated to the provided user story or mockups.
+Only add or refine requirements that are:
+- explicitly stated in the story/criteria, OR
+- clearly implied as necessary for safe and trustworthy use of the described flow, OR
+- supported by visible evidence in provided mockups.
 
-## Authentication Experience
+## VISION ANALYSIS (ONLY WHEN IMAGES ARE PROVIDED)
 
-4. **Login Flow**: Identify authentication user experience:
-   - How do users know they're on a secure login page?
-   - What visual indicators show the login form is legitimate?
-   - How are login errors communicated without revealing security details?
-   - What feedback confirms successful authentication?
+If mockup images are provided, use visual evidence to identify security and trust needs such as:
+- Authentication surfaces (login, sign up, password reset, MFA prompts)
+- Sensitive data collection (payment, identity, contact details, documents)
+- Permission/role cues (disabled actions, "not allowed", admin-only sections)
+- Security messaging (privacy/terms links, consent prompts, "secure" indicators)
+- Risky UI patterns (exposed secrets, overly detailed error messages, unsafe defaults)
+- Account/security controls (logout, session timeout messaging, device/account activity)
 
-5. **Password Security UX**: Document password-related user experience:
-   - How do users understand password requirements?
-   - What feedback is provided during password creation?
-   - How are password strength indicators shown?
-   - What happens when users forget passwords or need to reset?
+Use images to add or clarify requirements; do not override explicit written requirements.
 
-6. **Multi-Factor Authentication**: Identify MFA user experience:
-   - How is multi-factor authentication presented to users?
-   - What feedback guides users through MFA steps?
-   - How are authentication codes or tokens communicated?
-   - What happens if MFA fails or times out?
+## WRITING RULES (FUNCTIONAL, USER-CENTRIC)
 
-7. **Session Management**: Document session-related user experience:
-   - How do users know they're logged in?
-   - What happens when sessions expire?
-   - How are "remember me" or "stay logged in" options presented?
-   - What feedback indicates when users are logged out?
+Write requirements as user-observable outcomes and system guarantees:
+- Use plain language.
+- Avoid implementation details (encryption algorithms, headers, vendor services).
+- Avoid "security theater" requirements (badges) unless the story/mockup includes them.
+- Do not require exposing sensitive details to users (e.g., "user not found" messaging).
 
-## Authorization and Permissions
+## SECURITY COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
-8. **Permission Indicators**: Identify how permissions are communicated:
-   - How do users know what actions they're authorized to perform?
-   - What visual indicators show restricted vs. allowed actions?
-   - How are permission errors communicated clearly?
-   - What messaging explains why certain actions aren't available?
+Ensure the combined AC-SYS-* and implementationNotes.securityNotes cover, as applicable:
 
-9. **Access Control Feedback**: Document authorization feedback:
-   - How do users understand when they lack permission for an action?
-   - What happens when users try to access restricted content?
-   - Are there clear explanations of why access is denied?
-   - How do users know what permissions they have vs. need?
+### 1. Data collection and consent (when data is collected)
 
-10. **Role-Based Access**: Determine role-based access indicators:
-    - How do users understand their role and associated permissions?
-    - What visual differences indicate different access levels?
-    - How are role-specific features and restrictions communicated?
-    - What feedback helps users understand their authorization level?
+- Users can tell what information is required vs optional.
+- Users can access privacy/terms information where relevant.
+- Users receive clear confirmation when sensitive data is submitted.
 
-## Secure Transmission Indicators
+### 2. Authentication experience (if login exists)
 
-11. **Connection Security**: Identify secure connection indicators:
-    - How do users know their connection is secure (HTTPS indicators)?
-    - What visual cues show encrypted transmission?
-    - How are security warnings or certificate issues communicated?
-    - What messaging builds confidence in secure connections?
+- Login, reset, and verification flows are understandable and resilient.
+- Errors are helpful without revealing sensitive account details.
+- Users can recover (reset password, retry MFA) when steps fail.
 
-12. **Secure Form Submission**: Document secure form indicators:
-    - How do users know form submissions are secure?
-    - What feedback confirms data is being transmitted securely?
-    - Are there indicators during secure file uploads?
-    - How is payment or sensitive data submission communicated as secure?
+### 3. Session safety
 
-## Privacy Controls
+- Users can tell when they are signed in and how to sign out.
+- Sessions expire safely; users are prompted to re-authenticate where appropriate.
+- "Stay signed in" behavior, if present, is clear to users.
 
-13. **Privacy Settings**: Identify user privacy controls:
-    - Where can users manage their privacy preferences?
-    - How are privacy settings organized and explained?
-    - What granular controls do users have over data sharing?
-    - How do users understand the impact of privacy choices?
+### 4. Authorization and permission feedback
 
-14. **Data Management**: Document user data management features:
-    - Can users view, edit, or delete their data?
-    - How do users export their data?
-    - What controls exist for data retention or deletion?
-    - How are data management actions confirmed and communicated?
+- Restricted actions are clearly indicated.
+- Access-denied experiences explain what users can do next (request access, switch account, contact support).
 
-15. **Consent Management**: Determine consent and preference management:
-    - How are users asked for consent for data usage?
-    - Can users easily change consent preferences?
-    - What feedback confirms consent choices have been saved?
-    - How are consent requirements communicated clearly?
+### 5. Sensitive actions protection (if applicable)
 
-## Trust and Security Messaging
+- High-risk actions (payment, deletion, permission changes) require clear user intent (confirmation/review).
+- Users receive clear success/failure feedback for sensitive actions.
 
-16. **Trust Indicators**: Identify elements that build user trust:
-    - What visual elements communicate security and trustworthiness?
-    - Are there security badges, certifications, or trust marks?
-    - How is security information presented without overwhelming users?
-    - What messaging balances security with usability?
+### 6. Error and recovery
 
-17. **Security Notifications**: Document security-related notifications:
-    - How are users notified of security events (login from new device, password change)?
-    - What alerts or warnings are shown for suspicious activity?
-    - How are security updates or breaches communicated?
-    - What actions can users take in response to security notifications?
+- Security-related failures (timeouts, verification failures) provide a safe recovery path.
+- Users are not stuck in loops without next steps.
 
-## User Story Implications
+### 7. Implementation notes (implementationNotes.securityNotes)
 
-18. **Story Requirements**: For each security-related feature, determine:
-    - What authentication and authorization flows are needed?
-    - How is data handling and privacy communicated to users?
-    - What security indicators and trust elements are required?
-    - How do users experience secure interactions and data protection?
+- List the sensitive data handled in this flow (types only, not values).
+- Note required privacy/consent surfaces and where they appear.
+- Note any special handling for auth, sessions, and permissions relevant to this story.
 
-19. **Acceptance Criteria**: Document acceptance criteria that cover:
-    - Authentication user experience and feedback
-    - Authorization indicators and permission communication
-    - Data handling transparency and privacy controls
-    - Secure transmission indicators
-    - Trust-building elements and security messaging
-    - User control over privacy and data management
+## TASK
 
-## Output
-
-Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target systemAcceptanceCriteria or implementationNotes.securityNotes. Add or replace items to document:
-- Authentication and authorization user experience requirements
-- Data handling and privacy communication
-- Security indicators and trust-building elements
-- Acceptance criteria for security (AC-SYS-*)
-- Security notes in implementationNotes
+Review existing `"systemAcceptanceCriteria"` (AC-SYS-*) and `"implementationNotes.securityNotes"` for redundancies and gaps. Consolidate overlaps, replace unclear items, remove duplicates, and add missing items only when justified by the NON-INVENTION RULE. Output patches only.

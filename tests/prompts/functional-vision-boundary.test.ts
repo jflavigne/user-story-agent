@@ -31,33 +31,35 @@ const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = VISION_I
 describe('functional vision boundary', () => {
   describe('iteration prompts include functional guidance sections', () => {
     for (const { id, prompt } of VISION_ITERATION_PROMPTS) {
-      it(`${id} contains FUNCTIONAL VISION ANALYSIS section`, () => {
-        expect(prompt).toContain('## FUNCTIONAL VISION ANALYSIS');
+      it(`${id} contains NON-INVENTION RULE section`, () => {
+        expect(prompt).toMatch(/# NON-INVENTION RULE/i);
       });
-      it(`${id} contains ANTI-PATTERNS section`, () => {
-        expect(prompt).toContain('## ANTI-PATTERNS');
+      it(`${id} contains WRITING RULES section with functional guidance`, () => {
+        // Accept either format: "WRITING RULES (FUNCTIONAL..." or "FUNCTIONAL (...) WRITING RULES"
+        expect(prompt).toMatch(/WRITING RULES.*FUNCTIONAL|FUNCTIONAL.*WRITING RULES/i);
       });
-      it(`${id} contains EXAMPLES section (functional vs visual)`, () => {
-        expect(prompt).toMatch(/## EXAMPLES.*Functional vs Visual/i);
+      it(`${id} contains VISION ANALYSIS section when applicable`, () => {
+        // Vision-capable iterations should have vision guidance
+        expect(prompt).toMatch(/# VISION ANALYSIS|ONLY WHEN IMAGES ARE PROVIDED/i);
       });
     }
   });
 
   describe('iteration prompts include iteration-specific guidance', () => {
-    it('interactive-elements includes button hierarchy without color values', () => {
+    it('interactive-elements includes button hierarchy guidance', () => {
       const prompt = getIterationById('interactive-elements')?.prompt ?? '';
       expect(prompt).toMatch(/primary.*action|secondary.*action/i);
-      expect(prompt).toMatch(/DO NOT specify exact colors/i);
+      expect(prompt).toMatch(/NON-INVENTION RULE/i);
     });
-    it('validation includes error mechanisms without styling specs', () => {
+    it('validation includes error mechanisms guidance', () => {
       const prompt = getIterationById('validation')?.prompt ?? '';
       expect(prompt).toMatch(/error.*feedback|validation.*feedback/i);
-      expect(prompt).toMatch(/DO NOT specify.*border.*color|error.*message/i);
+      expect(prompt).toMatch(/NON-INVENTION RULE/i);
     });
     it('accessibility includes contrast requirements functionally', () => {
       const prompt = getIterationById('accessibility')?.prompt ?? '';
-      expect(prompt).toMatch(/contrast|readability|focus indicator/i);
-      expect(prompt).toMatch(/DO NOT specify.*ratio|hex/i);
+      expect(prompt).toMatch(/contrast|readability|focus/i);
+      expect(prompt).toMatch(/NON-INVENTION RULE/i);
     });
   });
 

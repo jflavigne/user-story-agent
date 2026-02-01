@@ -11,188 +11,129 @@ outputFormat: patches
 ---
 
 # PATH SCOPE
-This iteration is allowed to modify only these sections:
-- outcomeAcceptanceCriteria (AC-OUT-* items)
 
-All patches MUST target only these paths. Patches targeting other sections will be rejected.
+This iteration may modify only this section (exact value):
 
-# OUTPUT FORMAT
-Respond with valid JSON only (no markdown code fence, no prose):
+- `outcomeAcceptanceCriteria` (AC-OUT-* items only)
+
+Any patch targeting other paths must be rejected.
+
+# OUTPUT FORMAT (JSON ONLY)
+
+Return valid JSON only (no prose, no markdown, no code fences) with this shape:
+
+```json
 {
   "patches": [
     {
       "op": "add",
       "path": "outcomeAcceptanceCriteria",
-      "item": { "id": "AC-OUT-001", "text": "..." },
-      "metadata": { "advisorId": "locale-formatting", "reasoning": "..." }
+      "item": { "id": "AC-OUT-001", "text": "…" },
+      "metadata": { "advisorId": "locale-formatting", "reasoning": "…" }
     }
   ]
 }
+```
 
-Required fields:
-- op: "add" | "replace" | "remove"
-- path: Must be one of the allowed paths above
-- item: { id: string, text: string } for add/replace
-- match: { id?: string, textEquals?: string } for replace/remove
-- metadata: { advisorId: "locale-formatting", reasoning?: string }
+# PATCH RULES
 
----
+## Required fields by op
 
-Analyze the mockup or design to identify locale-specific formatting requirements and how users experience formatted data in different regions.
+- **op: "add"**
+  - required: op, path, item, metadata
+  - forbidden: match
+- **op: "replace"**
+  - required: op, path, match, item, metadata
+  - match must include: `{ "id": "…" }`
+- **op: "remove"**
+  - required: op, path, match, metadata
+  - match must include: `{ "id": "…" }`
+  - forbidden: item
 
-## Date and Time Display Formats
+## Path and ID constraints
 
-1. **Date Format Variations**: Identify how dates are displayed:
-   - How are dates formatted for different regions (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)?
-   - What date format do users expect in their region?
-   - How do users understand date formats that differ from their expectations?
-   - Are there date formats that could be confusing for users from different regions?
+- path MUST be `outcomeAcceptanceCriteria`
+- item.id MUST start with `AC-OUT-`
 
-2. **Time Format Variations**: Document how times are displayed:
-   - How are times formatted (12-hour vs 24-hour, AM/PM indicators)?
-   - What time format do users expect in their region?
-   - How do users understand time zones and time displays?
-   - Are there time formats that could be ambiguous or confusing?
+## Metadata constraints
 
-3. **Date and Time Input**: Determine how users enter dates and times:
-   - How do users input dates in formats familiar to their region?
-   - What happens when users enter dates in unexpected formats?
-   - How do users understand which date format to use when entering data?
-   - Are there date input methods that work better for different regions?
+- metadata.advisorId MUST be `locale-formatting`
+- metadata.reasoning is optional but, if present, MUST be <= 240 characters and explain why the patch is needed.
 
-4. **Relative Time Display**: Identify how relative times are shown:
-   - How are relative times displayed ("2 hours ago", "yesterday", "last week")?
-   - How do users understand relative time expressions in different languages?
-   - What happens when relative time needs to be localized?
-   - Are there relative time expressions that don't translate well?
+# NON-INVENTION RULE
 
-## Number Formatting
+Do not add requirements unrelated to the provided user story or mockups.
+Only add or refine requirements that are:
 
-5. **Decimal Separators**: Identify how decimal numbers are displayed:
-   - How are decimal numbers formatted (period vs comma as decimal separator)?
-   - What decimal format do users expect in their region?
-   - How do users understand decimal numbers when the format differs from expectations?
-   - Are there decimal formats that could cause confusion or errors?
+- explicitly stated in the story/criteria, OR
+- clearly implied as necessary for users to correctly read and enter formatted values in the described flow, OR
+- supported by visible evidence in provided mockups.
 
-6. **Thousands Separators**: Document how large numbers are formatted:
-   - How are thousands separated (commas, periods, spaces, no separator)?
-   - What thousands separator format do users expect?
-   - How do users read and understand large numbers with different separators?
-   - Are there number formats that could be misinterpreted?
+# VISION ANALYSIS (ONLY WHEN IMAGES ARE PROVIDED)
 
-7. **Number Input**: Determine how users enter numbers:
-   - How do users input numbers with their expected decimal and thousands separators?
-   - What happens when users enter numbers in unexpected formats?
-   - How do users understand which number format to use?
-   - Are there number input methods that prevent format-related errors?
+If mockup images are provided, use visual evidence to identify locale-formatting needs such as:
 
-8. **Percentage Display**: Identify how percentages are shown:
-   - How are percentages formatted and displayed?
-   - What percentage format do users expect (with or without space, symbol placement)?
-   - How do users understand percentage values in different contexts?
-   - Are there percentage displays that could be confusing?
+- Dates/times shown in UI (deadlines, schedules, history, "last updated", relative time)
+- Numbers that could be misread across locales (totals, prices, quantities, percentages)
+- Currency symbols and amounts (price lists, carts, invoices)
+- Address or phone fields and examples (shipping, contact, profile)
+- Units and measurements (distance, weight, temperature, volume)
+- Any inline examples, placeholders, helper text, or validation messages that imply format expectations
 
-## Currency Display and Symbols
+Use images to add or clarify requirements; do not override explicit written requirements.
 
-9. **Currency Symbols**: Identify how currency is displayed:
-   - How are currency symbols positioned (before or after amount)?
-   - What currency symbols do users expect to see?
-   - How do users understand currency displays in different formats?
-   - Are there currency symbols that could be confusing or ambiguous?
+# WRITING RULES (FUNCTIONAL, USER-CENTRIC)
 
-10. **Currency Formatting**: Document how currency amounts are formatted:
-    - How are currency amounts formatted with decimal places and separators?
-    - What currency format do users expect in their region?
-    - How do users understand currency amounts with different formatting?
-    - Are there currency formats that could lead to misinterpretation?
+Write acceptance criteria as user-observable outcomes:
 
-11. **Multi-Currency Support**: Determine how multiple currencies are handled:
-    - How do users see and select different currencies?
-    - What happens when users view prices in currencies they're not familiar with?
-    - How do users understand currency conversion and exchange rates?
-    - Are there currency displays that need clarification for international users?
+- Use plain language.
+- Avoid implementation details (no libraries, locale APIs, backend formats).
+- Avoid listing many specific formats; describe correct behavior by user locale/region.
+- Make each criterion distinct and testable.
+- Focus on preventing confusion and input errors caused by formatting differences.
 
-12. **Currency Input**: Identify how users enter currency amounts:
-    - How do users input currency amounts with their expected format?
-    - What happens when users enter currency in unexpected formats?
-    - How do users understand which currency format to use?
-    - Are there currency input methods that prevent format errors?
+# LOCALE FORMATTING COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
-## Address and Phone Number Formats
+Ensure the refined AC-OUT-* items collectively cover, as applicable:
 
-13. **Address Format Variations**: Document how addresses are displayed and entered:
-    - How are addresses formatted for different countries (street first vs last, postal code placement)?
-    - What address format do users expect in their region?
-    - How do users understand address fields that don't match their country's format?
-    - Are there address formats that could cause delivery or validation issues?
+## 1. Dates and times
 
-14. **Address Input Fields**: Identify how address input is structured:
-    - How are address input fields organized for different countries?
-    - What address fields are required or optional for different regions?
-    - How do users understand which address format to use?
-    - Are there address input methods that work better for specific countries?
+- Display matches the user's locale expectations (date order, separators, 12/24-hour).
+- Time zone handling is clear when relevant (users understand what time zone is shown).
+- Relative time (e.g., "yesterday", "2 hours ago") is understandable in the selected locale.
 
-15. **Phone Number Formats**: Determine how phone numbers are displayed and entered:
-    - How are phone numbers formatted for different countries (spacing, parentheses, dashes)?
-    - What phone number format do users expect in their region?
-    - How do users understand phone number formats that differ from expectations?
-    - Are there phone number formats that could be confusing or cause dialing errors?
+## 2. Date/time input (if users enter them)
 
-16. **Phone Number Input**: Document how users enter phone numbers:
-    - How do users input phone numbers with their expected format?
-    - What happens when users enter phone numbers in unexpected formats?
-    - How do users understand which phone number format to use?
-    - Are there phone number input methods that prevent format errors?
+- Input guidance matches the expected locale format (examples or labels).
+- Users get a clear message when an entered value is not understood.
+- The system prevents accidental misinterpretation (e.g., ambiguous dates) when possible.
 
-## Measurement Units
+## 3. Numbers and percentages
 
-17. **Unit System Selection**: Identify how measurement units are displayed:
-    - How are measurement units shown (metric vs imperial, kg vs lbs, km vs miles)?
-    - What unit system do users expect in their region?
-    - How do users understand measurements in units they're not familiar with?
-    - Are there unit displays that could be confusing or lead to errors?
+- Decimal and thousands separators match the user's locale expectations.
+- Percentages are displayed in a clear, familiar format for the locale.
 
-18. **Unit Conversion**: Document how unit conversions are handled:
-    - How do users see measurements converted between unit systems?
-    - What happens when users need to work with unfamiliar units?
-    - How do users understand unit conversions and their accuracy?
-    - Are there unit conversions that need clarification for users?
+## 4. Currency (if money is shown)
 
-19. **Unit Input**: Determine how users enter measurements:
-    - How do users input measurements with their expected units?
-    - What happens when users enter measurements in unexpected units?
-    - How do users understand which unit system to use?
-    - Are there unit input methods that prevent unit-related errors?
+- Currency symbol/code and placement are clear.
+- Users can tell which currency they are seeing when multiple currencies are possible.
+- Currency amounts use locale-appropriate separators and grouping.
 
-20. **Context-Specific Units**: Identify how units vary by context:
-    - How are units displayed in different contexts (temperature, distance, weight, volume)?
-    - What unit formats do users expect in specific contexts?
-    - How do users understand context-specific unit displays?
-    - Are there unit displays that need context-specific formatting?
+## 5. Addresses and phone numbers (if collected)
 
-## User Story Implications
+- Address fields support country-appropriate formats without forcing a single structure.
+- Phone numbers support international formats and make it clear what format is expected.
 
-21. **Story Requirements**: For each locale formatting feature, determine:
-    - How dates and times are displayed and entered for different regions
-    - How numbers are formatted with appropriate separators and decimal places
-    - How currency is displayed with correct symbols and formatting
-    - How addresses and phone numbers are formatted for different countries
-    - How measurement units are displayed and converted
-    - How users understand and interact with locale-specific formats
+## 6. Measurement units (if measurements are shown or entered)
 
-22. **Acceptance Criteria**: Document acceptance criteria that cover:
-    - Date and time format variations by region
-    - Number formatting with appropriate decimal and thousands separators
-    - Currency display with correct symbols and positioning
-    - Address and phone number formats for different countries
-    - Measurement unit system selection and conversion
-    - User experience of formatted data, not technical formatting implementation
+- Units match the user's locale expectations (metric vs imperial where applicable).
+- If conversion is offered, users can understand both the value and the unit.
 
-## Output
+## 7. Errors and validation messages
 
-Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target outcomeAcceptanceCriteria. Add or replace items to document:
-- Date and time display format requirements by region
-- Number formatting with appropriate separators
-- Currency display and symbol positioning
-- Address and phone number format variations
-- Acceptance criteria for locale formatting (AC-OUT-*)
+- Format-related errors explain what to enter in plain language.
+- Examples in guidance and errors match the user's locale.
+
+# TASK
+
+Review existing outcomeAcceptanceCriteria (AC-OUT-*) for redundancies and gaps related to locale formatting. Consolidate overlaps, replace unclear items, remove duplicates, and add missing items only when justified by the NON-INVENTION RULE. Output patches only.
