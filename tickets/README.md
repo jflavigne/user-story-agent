@@ -117,7 +117,24 @@ Create a User Story Writer agent system with dual implementations:
 
 **Code Quality Progress: 4/4 tickets complete (100%)**
 
-**Overall:** Core 27 + Enterprise 0 + Vision 4 + Pass 2 (7) + Code Quality 4 = **42 completed tickets** across active phases.
+---
+
+## Pass 0 & Iteration Infrastructure (USA-78 to USA-83)
+
+| Ticket | Title | Status |
+|--------|-------|--------|
+| [USA-78](./complete/USA-78-pass0-story-planning-and-work-context.md) | Pass 0: Story Planning and Work Context | ✅ Done |
+| [USA-79](./complete/USA-79-iteration-prompt-loader.md) | Iteration Prompt Loader (Markdown + Frontmatter) | ✅ Done |
+| [USA-80](./USA-80.md) | Improve Error Messages from Iteration Prompt Loader | Ready |
+| [USA-81](./USA-81.md) | Validate outputFormat in Iteration Prompt Frontmatter | Ready |
+| [USA-82](./USA-82.md) | Add Error Handling to Test Setup | Ready |
+| [USA-83](./USA-83.md) | Add --list-iterations CLI Command | Ready |
+
+**Pass 0 & Iteration Infrastructure Progress: 2/6 tickets complete (33%)**
+
+---
+
+**Overall:** Core 27 + Enterprise 0 + Vision 4 + Pass 2 (7) + Code Quality 4 + Pass 0/Iteration 2 = **44 completed tickets** across active phases.
 
 ---
 
