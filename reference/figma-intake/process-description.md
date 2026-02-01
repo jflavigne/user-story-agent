@@ -1,38 +1,62 @@
+# Figma Intake Process
 
-## 0) Inputs the system can use
+## Inputs the system can use
 
-- **Human inputs:** brief text, pasted tables (like your atomic inventory), constraints, priorities.
+- **Human inputs:** brief text, pasted tables (like your atomic inventory), constraints, priorities, draft stories, "do/don't" lists.
 - **Visual inputs:**
-  - Board overview (tiny, for map/coverage only)
+  - Board/Page overview (tiny, for map/coverage only)
   - Frame-level screenshots (read labels + structure)
   - Component close-ups (states, microcopy, affordances)
-  - Layers/panel exports (names, variants, constraints, component instances)
-  - Flow / prototype path screens (transitions, entry points)
+  - Variant/state strips (default/hover/focus/disabled/error/loading)
+  - Layers/inspector exports (names, variants, constraints, component instances)
+  - Prototype/flow path screens (transitions, entry points)
   - Annotations (designer notes, redlines)
 - **Docs:** component library, architecture notes, existing story drafts.
 
-Rule of thumb: Overview = find targets. Close-ups = extract truth. Layers = disambiguate.
+> Rule of thumb: Overview = find targets. Close-ups = extract truth. Layers = disambiguate.
+
+---
+
+## Vision Constraints Policy (cloud models)
+
+**Why this matters:** giant boards become unreadable + expensive + sometimes rejected.
+
+- **Hard limits to respect**
+  - Keep total request payload under provider limits (example: Claude docs cite 32 MB per request and reject images above 8000×8000).
+  - Cost/latency scales with pixels
+  - Prefer cropping over downscaling. Downscaling makes text illegible; cropping preserves evidence.
+- **Legibility rule (non-negotiable)**
+  - Never use an image where key UI text is unreadable at 100% zoom for decisions that depend on labels, states, or field types.
+- **Sizing targets (practical defaults)**
+  - Close-ups: ~1200–1600 px on the long side (best "readable + efficient" zone for most UIs).
+  - Screen/frame shots: ~1600–2400 px long side if you need both layout + readable labels.
+  - Overviews: small on purpose; treat as a map, not evidence.
+- **Detail control (if available)**
+  - Use low detail for overviews/map shots; high detail only for close-ups where microcopy/state matters.
 
 ---
 
 ## 1) Intake (human context capture)
 
 - **Vision:** ❌ none by default
-- **Uses:** user brief, constraints, pasted tables, links list
-- **Output:** Context Pack (goals, constraints, unknowns)
+- **Uses:** user brief, constraints, pasted tables, links list, existing stories (if provided)
+- **Output:** updated Context Pack (goals, constraints, assumptions, unknowns, "definition of done")
 
 ---
 
-## 2) Asset Discovery (link triage)
+## 2) Asset Discovery (link triage + shot planning)
 
-- **Vision:** ✅ light (optional if the link is visual)
-- **Goal:** decide what to screenshot and at what zoom
-- **Asset strategy:**
-  - If it's Figma: prefer frame list + page map (not the whole board image).
-  - If it's docs: no vision; just parse text.
-- **Output:** Asset Index: pages/frames/components available + "shot list" candidates
+- **Vision:** ✅ light (optional)
+- **Goal:** decide what visual evidence is needed, at what zoom, and in what order
+- **Asset strategy**
+  - If Figma: prefer page/frame list + targeted frame exports, not "whole board" exports.
+  - If docs: no vision; parse text.
+- **New output:** Asset Index + Shot Plan
+- **What to capture:** (overview vs frames vs close-ups vs variants vs layers)
+- **Intended purpose per shot:** (map vs evidence)
+- **"Legibility check" requirement per shot:** (labels/states must be readable where relevant)
 
-Decision it makes here: "Do I need overview shots, or can I jump straight to frames?"
+> Decision it makes here: "Do I need overview shots for navigation, or can I jump straight to frames + close-ups?"
 
 ---
 
@@ -40,26 +64,26 @@ Decision it makes here: "Do I need overview shots, or can I jump straight to fra
 
 - **Vision:** ✅ yes, structured
 - **Goal:** enumerate components/screens/states without interpretation
-- **Asset strategy (progressive zoom):**
-  1. Board/Page overview (ONLY to locate regions + count screens)
-  2. Frame-level captures (each key screen, readable labels)
-  3. Component close-ups (only for ambiguous items: icons, toggles, chips, field types)
-  4. Optional: layers export when names/variants matter (e.g., "FilterSheet", "CardNews")
+- **Asset strategy (progressive zoom)**
+  1. Page overview (ONLY to locate regions + count screens)
+  2. Frame-level captures (each key screen; labels must be readable if used as evidence)
+  3. Close-ups (only for ambiguous items: icons, toggles, chips, field types, microcopy)
+  4. Optional layers/inspector when names/variants/instances matter ("FilterSheet", "CardNews", etc.)
 - **Output:** Component list + raw mentions + containment ("X contains Y")
 
-Rule: never extract copy/state from a board overview. Overview is a map, not evidence.
+> Rule: never extract copy/state from a board overview. Overview is a map, not evidence.
 
 ---
 
 ## 4) Pass 0B — Behavior & Flow Sketch (story signals)
 
-- **Vision:** ✅ yes, but targeted
-- **Goal:** infer intents/flows based on UI structure
-- **Asset strategy:**
-  - Use frame-level screens for layout + affordances.
-  - Pull prototype/flow frames if available (start nodes, overlays, transitions).
-  - Use close-ups for triggers (e.g., "Apply filters", "Clear", "Show more +").
-  - Use layers only if the UI implies something but you need proof (e.g., is that a link or button?)
+- **Vision:** ✅ yes, targeted
+- **Goal:** infer intents/flows based on UI structure + affordances
+- **Asset strategy**
+  - Frame-level screens for layout + affordances.
+  - Prototype/flow frames if available (entry points, overlays, transitions).
+  - Close-ups for triggers ("Apply", "Clear", "Show more +").
+  - Layers only if you need proof (is that a link or a button? is it a select or a combobox?)
 - **Output:** candidate intents + events + rough flow map
 
 ---
@@ -67,10 +91,10 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 ## 5) Pass 0C — Canonicalization & Vocabulary
 
 - **Vision:** ⚠️ optional
-- **Goal:** naming consistency
-- **Asset strategy:**
-  - Prefer layers/panel names (component instance names, variant names).
-  - Vision only if names are visible in the UI (labels, headings).
+- **Goal:** naming consistency across outputs
+- **Asset strategy**
+  - Prefer layers/inspector names (component instance names, variant names).
+  - Vision only if names are visibly present in UI labels/headings.
 - **Output:** canonical names map + vocabulary map
 
 ---
@@ -78,7 +102,7 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 ## 6) Dependency Graph (atomic design build order)
 
 - **Vision:** ❌ not required (mostly structural reasoning)
-- **Uses:** your atomic inventory table + containment from Pass 0A
+- **Uses:** atomic inventory table + containment from Pass 0A + canonical names from Pass 0C
 - **Asset strategy:** none unless containment is unclear → then request a frame-level proof
 - **Output:** dependency edges + build order + parallel clusters
 
@@ -88,7 +112,7 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 
 - **Vision:** ⚠️ minimal
 - **Goal:** determine which specialist passes are needed later
-- **Asset strategy:** mostly uses the component list; only consult images if a component's nature is unclear (e.g., is it a "form" or just "static content"?)
+- **Asset strategy:** mostly uses the component list; consult images only if a component's nature is unclear (form vs static content, interactive vs decorative)
 - **Output:** entity → advisors list
 
 ---
@@ -104,15 +128,15 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 
 - **Vision:** ⚠️ selective
 - **Goal:** identify what a React dev needs: props, state, events, composition slots, data needs, states
-- **Asset strategy:**
-  - Mostly from canonical components + flows.
+- **Asset strategy**
+  - Mostly from canonical components + flow map.
   - Use close-ups when:
-    - you need exact labels of actions ("Apply", "Reset", "Back")
-    - you need to confirm field types (select vs combobox vs input)
-    - you need to see empty/loading/error visuals
-  - Use layers when:
-    - variants exist (Default/Hover/Disabled)
-    - component instances matter (shared components)
+    - exact action labels matter ("Apply", "Reset", "Back")
+    - field type must be confirmed (select vs combobox vs input)
+    - empty/loading/error visuals appear (or are implied)
+  - Use layers/inspector when:
+    - variants exist (Default/Hover/Disabled/Error/Loading)
+    - component instances matter (shared components, nested instances)
 - **Output:** Dev Requirements Pack per story
 
 ---
@@ -120,13 +144,13 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 ## 10) Advisor Augmentation Passes (AC/UVB)
 
 - **Vision:** ✅ yes, per advisor and only what they need
-- **Asset strategy by advisor type:**
-  - Interactive-elements / validation: close-ups of inputs/buttons + any error states
-  - Responsive-web: multiple breakpoint frames (mobile/tablet/desktop)
-  - Responsive-native: platform-specific frames + permission modals if shown
-  - Performance/loading: any skeleton/spinner/loading variants
-  - Security/privacy: login/consent screens, sensitive flows, form submission patterns
-  - Locale/language: language switcher + date/currency displays (if present)
+- **Asset strategy by advisor type**
+  - **Interactive-elements / validation:** close-ups of inputs/buttons + error/success states
+  - **Responsive-web:** matched frames across breakpoints (mobile/tablet/desktop)
+  - **Responsive-native:** platform-specific frames + permission modals if shown
+  - **Performance/loading:** skeleton/spinner/loading variants + long operation flows if shown
+  - **Security/privacy:** login/consent screens, sensitive flows, form submission patterns
+  - **Locale/language:** language switcher + date/currency displays (if present)
 - **Output:** patches in allowed paths
 
 ---
@@ -134,7 +158,7 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 ## 11) Consolidation & De-duplication
 
 - **Vision:** ❌ none
-- **Output:** merged coherent story + unified acceptance criteria
+- **Output:** merged coherent stories + unified acceptance criteria
 
 ---
 
@@ -147,33 +171,34 @@ Rule: never extract copy/state from a board overview. Overview is a map, not evi
 
 ## How the agent decides "which visual asset to use"
 
-Use a simple ladder:
+Use a simple ladder (and never skip legibility):
 
 1. **Map shot (overview)**  
-   Use when you need: navigation of the file, coverage, counting screens.  
-   Never use for: labels, field types, states.
+   Use for: navigation of file, coverage, counting screens.  
+   Never for: labels, field types, states.
 
 2. **Frame shot (screen-level)**  
-   Use when you need: structure, grouping, primary/secondary actions, layout sections.
+   Use for: structure, grouping, primary/secondary actions, layout sections.
 
 3. **Component close-up**  
-   Use when you need: exact control type, icon meaning, microcopy, state indicators.
+   Use for: exact control type, icon meaning, microcopy, state indicators.
 
-4. **Variant/state sheet**  
-   Use when you need: hover/focus/disabled/error/loading confirmation.
+4. **Variant/state strip**  
+   Use for: hover/focus/disabled/error/loading confirmation.
 
 5. **Layers/Inspector export**  
-   Use when you need: canonical names, variants, component instance identity, constraints.
+   Use for: canonical names, variants, component instance identity, constraints.
 
 ---
 
-## A practical "Shot List" template the agent can generate (no implementation, just process)
+## A practical "Shot List" template the agent can generate (process-only)
 
 For each Figma page/frame:
 
-- **Overview:** 1 image per page for map
-- **Screens:** 1 per key frame
+- **Overview:** 1 image per page for map (low detail)
+- **Screens:** 1 per key frame (readable labels if used as evidence)
 - **Close-ups:** only for ambiguous/critical components (inputs, filters, modals, nav triggers)
-- **Variants:** only if shown
-- **Layers evidence:** only when naming/variants are required for canonicalization
+- **Variants:** only if states are shown or required for build
+- **Layers evidence:** only when naming/variants/instances are required for canonicalization
 
+> Quality gate per shot: "Can I read what I'm about to claim?" If not, recrop/zoom and replace the asset.
