@@ -252,6 +252,59 @@ function parseSectionsFromFileData(fileData: FigmaDocument): FigmaComponent[] {
 }
 
 /**
+ * Section with optional description for story planning (USA-78).
+ * Parsed from Figma document SECTION nodes; description from first direct TEXT child.
+ */
+export interface FigmaSectionForPlanning {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/**
+ * Parses SECTION nodes from a Figma document with name and optional description.
+ * Description is taken from the first direct child of type TEXT (characters).
+ * Used by story planner to derive planned stories in bottom-up order.
+ *
+ * @param fileData - Figma file API response (document)
+ * @returns Array of sections with id, name, and optional description
+ */
+export function parseSectionsWithDescriptions(fileData: FigmaDocument): FigmaSectionForPlanning[] {
+  const result: FigmaSectionForPlanning[] = [];
+
+  function traverseNode(node: FigmaNode): void {
+    if (!node) return;
+
+    if (node.type === 'SECTION') {
+      let description: string | undefined;
+      const children = Array.isArray(node.children) ? node.children : [];
+      const textBlocks = children
+        .filter((c) => c.type === 'TEXT')
+        .map((c) => (c as FigmaNode & { characters?: string }).characters)
+        .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+        .map((s) => s.trim());
+      if (textBlocks.length > 0) {
+        description = textBlocks.reduce((a, b) => (a.length >= b.length ? a : b));
+      }
+      result.push({
+        id: node.id,
+        name: node.name ?? '',
+        description,
+      });
+    }
+
+    if (Array.isArray(node.children)) {
+      for (const child of node.children) {
+        traverseNode(child);
+      }
+    }
+  }
+
+  traverseNode(fileData.document);
+  return result;
+}
+
+/**
  * Downloads a screenshot from Figma using the images API
  */
 export async function downloadFigmaScreenshot(

@@ -70,13 +70,17 @@ export function buildStoryInterconnectionPrompt(
   allStories: StoryForInterconnection[],
   systemContext: SystemDiscoveryContext
 ): string {
+  const workContext =
+    (systemContext.workContextSummary?.trim().length ?? 0) > 0
+      ? `## What we're building\n\n${systemContext.workContextSummary}\n\n`
+      : '';
   return `You are analyzing a user story to extract interconnection metadata.
 
 ## Story to Analyze
 
 ${story}
 
-## System Context
+${workContext}## System Context
 
 ${formatSystemContext(systemContext)}
 

@@ -293,6 +293,21 @@ export interface SystemDiscoveryMentions {
 }
 
 /**
+ * Planned story seed from Pass 0 (e.g. from Figma sections).
+ * USA-78: story planning and work context.
+ */
+export interface PlannedStory {
+  /** One-line seed for Pass 1 (e.g. "User sees loading spinner while filter results update") */
+  seed: string;
+  /** 1-based recommended order (bottom-up: atoms first, then molecules, then organisms) */
+  order: number;
+  /** Optional component/section ID or canonical name this story is about */
+  componentRef?: string;
+  /** Optional level for ordering: 'atom' | 'molecule' | 'organism' | 'screen' */
+  level?: string;
+}
+
+/**
  * System discovery context passed to judge and rewriter
  */
 export interface SystemDiscoveryContext {
@@ -302,6 +317,10 @@ export interface SystemDiscoveryContext {
   productVocabulary: Record<string, string>;  // technical → product
   timestamp: string;
   referenceDocuments?: string[];
+  /** Ordered story seeds derived from discovery (when Figma/sections used). USA-78. */
+  plannedStories?: PlannedStory[];
+  /** Short narrative: what we're building, main components, story order (for all passes). USA-78. */
+  workContextSummary?: string;
 }
 
 /**

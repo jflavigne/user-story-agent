@@ -279,5 +279,7 @@ export interface SystemWorkflowResult {
     fixesRejected?: number;
     /** Number of stories for which title generation failed (kept as "Untitled") */
     titleGenerationFailures?: number;
+    /** USA-78: When empty stories were passed and Pass 0 did not produce a plan */
+    planMessage?: string;
   };
 }

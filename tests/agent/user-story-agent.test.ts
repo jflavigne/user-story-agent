@@ -1876,19 +1876,29 @@ describe('UserStoryAgent', () => {
       expect(result.metadata.passesCompleted.length).toBe(4);
     });
 
-    it('should handle empty stories gracefully', async () => {
+    it('should handle empty stories gracefully (USA-78: run Pass 0, return early when no plannedStories)', async () => {
+      mockSendMessage.mockResolvedValueOnce(
+        systemDiscoveryResponse({
+          mentions: { components: [], stateModels: [], events: [] },
+          canonicalNames: {},
+          evidence: {},
+          vocabulary: {},
+        })
+      );
+
       const agent = new UserStoryAgent(validConfig);
       const result = await agent.runSystemWorkflow([]);
 
       expect(result.systemContext).toBeDefined();
       expect(result.stories).toEqual([]);
       expect(result.consistencyReport).toEqual({ issues: [], fixes: [] });
-      expect(result.metadata.passesCompleted).toEqual([]);
+      expect(result.metadata.passesCompleted).toEqual(['Pass 0 (discovery)']);
       expect(result.metadata.refinementRounds).toBe(0);
       expect(result.metadata.fixesApplied).toBe(0);
       expect(result.metadata.fixesFlaggedForReview).toBe(0);
       expect(result.metadata.titleGenerationFailures).toBe(0);
-      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(result.metadata.planMessage).toContain('Pass 0 did not produce story plan');
+      expect(mockSendMessage).toHaveBeenCalledTimes(1);
       expect(mockJudgeGlobalConsistency).not.toHaveBeenCalled();
     });
 

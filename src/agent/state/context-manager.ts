@@ -80,6 +80,13 @@ export class ContextManager {
       parts.push(''); // Empty line
     }
 
+    // USA-78: Work context summary (what we're building) when available
+    if (systemContext?.workContextSummary) {
+      parts.push('**What we\'re building:**');
+      parts.push(systemContext.workContextSummary);
+      parts.push(''); // Empty line
+    }
+
     // System context section (human-readable, after product context)
     if (systemContext) {
       parts.push('**System Context:**');

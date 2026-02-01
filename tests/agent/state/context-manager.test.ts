@@ -194,6 +194,34 @@ describe('ContextManager', () => {
       expect(prompt).toContain('fld → field');
     });
 
+    it('includes workContextSummary when present (USA-78)', () => {
+      const systemContext: SystemDiscoveryContext = {
+        timestamp: '2025-01-30T12:00:00Z',
+        componentGraph: {
+          components: {},
+          compositionEdges: [],
+          coordinationEdges: [],
+          dataFlows: [],
+        },
+        sharedContracts: {
+          stateModels: [],
+          eventRegistry: [],
+          standardStates: [],
+          dataFlows: [],
+        },
+        componentRoles: [],
+        productVocabulary: {},
+        workContextSummary: '**TestApp.** We are writing user stories for: FilterBar, FilterSheet. Stories are ordered bottom-up: SpinnerLoading → FilterItem → FilterBar.',
+      };
+      const state: StoryState = { ...basicState, productContext };
+      const prompt = manager.buildContextPrompt(state, {}, systemContext);
+
+      expect(prompt).toContain("**What we're building:**");
+      expect(prompt).toContain('Stories are ordered bottom-up');
+      expect(prompt).toContain('FilterBar');
+      expect(prompt).toContain('**System Context:**');
+    });
+
     it('works without systemContext (optional)', () => {
       const state: StoryState = { ...basicState, productContext };
       const prompt = manager.buildContextPrompt(state);

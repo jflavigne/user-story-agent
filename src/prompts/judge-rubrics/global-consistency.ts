@@ -25,13 +25,17 @@ export function buildGlobalConsistencyPrompt(
   stories: StoryWithInterconnections[],
   systemContext: SystemDiscoveryContext
 ): string {
+  const workContext =
+    (systemContext.workContextSummary?.trim().length ?? 0) > 0
+      ? `## What we're building\n\n${systemContext.workContextSummary}\n\n`
+      : '';
   return `You are checking global consistency across a batch of user stories.
 
 ## Stories with Interconnections
 
 ${formatStoriesWithInterconnections(stories)}
 
-## System Context
+${workContext}## System Context
 
 ${formatSystemContextForJudge(systemContext)}
 

@@ -36,9 +36,15 @@ import {
   extractFigmaInfo,
   autoDetectFigmaComponents,
   createComponentContext,
+  parseSectionsWithDescriptions,
   type FigmaComponent,
   type FigmaDocument,
 } from '../utils/figma-utils.js';
+import {
+  planStoriesFromFigmaSections,
+  buildWorkContextSummary,
+  buildWorkContextSummaryFromSystemContext,
+} from './story-planner.js';
 import { STORY_INTERCONNECTION_PROMPT } from '../prompts/iterations/story-interconnection.js';
 import type { StoryForInterconnection } from '../prompts/iterations/story-interconnection.js';
 import { IDRegistry, mintStableId, type EntityType } from './id-registry.js';
@@ -258,8 +264,12 @@ export class UserStoryAgent extends EventEmitter {
   ): Promise<SystemDiscoveryContext> {
     const contextParts: string[] = [];
     contextParts.push('## Stories to analyze\n');
-    for (let i = 0; i < stories.length; i++) {
-      contextParts.push(`### Story ${i + 1}\n${stories[i]}\n`);
+    const storiesToAnalyze =
+      stories.length > 0
+        ? stories
+        : ['Analyze the attached design and identify all components and screens that deserve a user story.'];
+    for (let i = 0; i < storiesToAnalyze.length; i++) {
+      contextParts.push(`### Story ${i + 1}\n${storiesToAnalyze[i]}\n`);
     }
     if (referenceDocuments && referenceDocuments.length > 0) {
       contextParts.push('## Reference documents\n');
@@ -270,6 +280,7 @@ export class UserStoryAgent extends EventEmitter {
 
     const imageBlocks: ImageBlockParam[] = [];
     const figmaComponents: FigmaComponent[] = [];
+    let figmaFileKeyForPlanning: string | undefined;
 
     // Auto-detect Figma components if mockup images contain Figma URLs
     if (this.config.mockupImages && this.config.mockupImages.length > 0) {
@@ -279,6 +290,7 @@ export class UserStoryAgent extends EventEmitter {
         const figmaInfo = extractFigmaInfo(figmaUrl);
 
         if (figmaInfo.isValid && process.env.FIGMA_ACCESS_TOKEN) {
+          if (!figmaFileKeyForPlanning) figmaFileKeyForPlanning = figmaInfo.fileKey;
           logger.info(`[Pass 0] Auto-detecting Figma components from ${figmaInfo.fileKey}`);
           try {
             const result = await autoDetectFigmaComponents(
@@ -428,13 +440,57 @@ export class UserStoryAgent extends EventEmitter {
     const componentRoles: ComponentRole[] = [];
     const productVocabulary = { ...parsed.vocabulary };
 
+    let plannedStories: SystemDiscoveryContext['plannedStories'];
+    let workContextSummary: string | undefined;
+
+    // USA-78: Story planning from Figma document when available
+    if (figmaFileKeyForPlanning && process.env.FIGMA_ACCESS_TOKEN) {
+      try {
+        const response = await fetch(
+          `https://api.figma.com/v1/files/${figmaFileKeyForPlanning}`,
+          { headers: { 'X-Figma-Token': process.env.FIGMA_ACCESS_TOKEN } }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.document) {
+            const sections = parseSectionsWithDescriptions(data as FigmaDocument);
+            if (sections.length > 0) {
+              plannedStories = planStoriesFromFigmaSections(sections);
+              workContextSummary = buildWorkContextSummary(
+                this.config.productContext ?? null,
+                plannedStories,
+                Object.values(components).map((c) => c.productName)
+              );
+              logger.info(`[Pass 0] Planned ${plannedStories.length} stories (bottom-up order)`);
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn(`[Pass 0] Story planning from Figma document failed: ${error}`);
+      }
+    }
+
+    const timestamp = new Date().toISOString();
+    if (!workContextSummary && this.config.productContext) {
+      workContextSummary = buildWorkContextSummaryFromSystemContext(this.config.productContext, {
+        componentGraph,
+        sharedContracts,
+        componentRoles,
+        productVocabulary,
+        timestamp,
+        referenceDocuments: referenceDocuments?.length ? referenceDocuments : undefined,
+      });
+    }
+
     return {
       componentGraph,
       sharedContracts,
       componentRoles,
       productVocabulary,
-      timestamp: new Date().toISOString(),
+      timestamp,
       referenceDocuments: referenceDocuments?.length ? referenceDocuments : undefined,
+      plannedStories,
+      workContextSummary,
     };
   }
 
@@ -1348,29 +1404,13 @@ export class UserStoryAgent extends EventEmitter {
     referenceDocuments?: string[]
   ): Promise<SystemWorkflowResult> {
     const passesCompleted: string[] = [];
-
-    if (!stories.length) {
-      logger.warn('runSystemWorkflow: empty stories array, returning minimal result');
-      const emptyContext = this.buildEmptySystemContext();
-      return {
-        systemContext: emptyContext,
-        stories: [],
-        consistencyReport: { issues: [], fixes: [] },
-        metadata: {
-          passesCompleted: [],
-          refinementRounds: 0,
-          fixesApplied: 0,
-          fixesFlaggedForReview: 0,
-          titleGenerationFailures: 0,
-        },
-      };
-    }
+    const inputStories = stories.length > 0 ? stories : ['Analyze the attached design and identify all components and screens that deserve a user story.'];
 
     // Pass 0: System Discovery
     logger.info('runSystemWorkflow: Pass 0 (system discovery)');
     let systemContext: SystemDiscoveryContext;
     try {
-      systemContext = await this.runPass0Discovery(stories, referenceDocuments);
+      systemContext = await this.runPass0Discovery(inputStories, referenceDocuments);
       passesCompleted.push('Pass 0 (discovery)');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1378,10 +1418,42 @@ export class UserStoryAgent extends EventEmitter {
       throw error;
     }
 
+    // USA-78: When caller passed empty stories, use plannedStories from Pass 0 or return early
+    let storiesToRun: string[];
+    if (stories.length === 0) {
+      const planned = systemContext.plannedStories;
+      if (planned && planned.length > 0) {
+        storiesToRun = planned
+          .sort((a, b) => a.order - b.order)
+          .map((p) => p.seed);
+        logger.info(`runSystemWorkflow: using ${storiesToRun.length} planned stories from Pass 0`);
+      } else {
+        logger.warn(
+          'runSystemWorkflow: Pass 0 did not produce story plan; provide story seeds or ensure Figma design is available'
+        );
+        return {
+          systemContext,
+          stories: [],
+          consistencyReport: { issues: [], fixes: [] },
+          metadata: {
+            passesCompleted,
+            refinementRounds: 0,
+            fixesApplied: 0,
+            fixesFlaggedForReview: 0,
+            titleGenerationFailures: 0,
+            planMessage:
+              'Pass 0 did not produce story plan; provide story seeds or ensure Figma design is available',
+          },
+        };
+      }
+    } else {
+      storiesToRun = stories;
+    }
+
     // Pass 1: Story Generation with Refinement
     logger.info('runSystemWorkflow: Pass 1 (generation with refinement)');
     const { results: pass1Results, finalContext, refinementRounds } = await this.runPass1WithRefinement(
-      stories,
+      storiesToRun,
       systemContext
     );
     passesCompleted.push('Pass 1 (generation with refinement)');
