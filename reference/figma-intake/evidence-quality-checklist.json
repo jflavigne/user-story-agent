@@ -1,0 +1,14 @@
+{
+  "evidenceQualityChecklist": [
+    "Every in-scope component has at least one primary frame asset (A-###) that clearly shows the component in context.",
+    "Each asset has a corresponding INDEX.md entry with: assetId, canonicalComponent, type, source (Figma URL), whatItConfirms, and confidence.",
+    "All story claims that depend on visuals cite at least one assetId in an \"Evidence Notes\" (or equivalent) section.",
+    "Text labels and key UI affordances (buttons, inputs, toggles, links) are readable in the primary frame; if not, a closeup asset exists and is cited.",
+    "If the component includes overlays (modal/sheet/drawer/dropdown), an \"overlay-open\" asset exists and is cited for behaviors/states that require it.",
+    "When multiple variants/states are relevant (default/hover/focus/disabled/error/loading), evidence includes either a variant-set asset or separate assets; otherwise the story marks the state as Unknown rather than inventing it.",
+    "Canonical component naming is consistent across INDEX.md, filenames, and stories; ambiguous naming is resolved with a layers snapshot or explicitly marked as Inferred.",
+    "No duplicate assets for the same purpose: if a newer version exists, it is stored as v2 and the reason/date is noted; stories reference the intended version.",
+    "All sources point to the exact node or file location in Figma (node links preferred); broken/denied sources are logged with the failure class and fallback evidence is explicitly labeled.",
+    "Security hygiene holds: no tokens/credentials are stored or echoed; evidence does not include unnecessary private comments or personal data."
+  ]
+}
