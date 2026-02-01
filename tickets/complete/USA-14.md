@@ -18,6 +18,8 @@ Extend UserStoryAgent with unified workflow mode.
 - [ ] Implement `runConsolidation()` - applies post-processing prompt
 - [ ] Workflow mode runs consolidation as final step
 
+## Status: COMPLETE (2026-01-31)
+
 ## Files
 
 - `src/agent/user-story-agent.ts`

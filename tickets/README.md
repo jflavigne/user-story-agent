@@ -77,14 +77,47 @@ Create a User Story Writer agent system with dual implementations:
 
 | Ticket | Title | Priority | Status | Dependencies |
 |--------|-------|----------|--------|--------------|
-| [USA-59](./USA-59-vision-support-system-discovery.md) | Add Vision Support to System Discovery (Pass 0) | P1 | Ready | USA-30 |
-| [USA-60](./USA-60-vision-support-critical-iterations.md) | Add Vision Support to Critical Iterations | P1 | Ready | USA-59 |
-| [USA-61](./USA-61-vision-support-registry-metadata.md) | Add Vision Support Metadata to Iteration Registry | P2 | Ready | USA-60 |
-| [USA-62](./USA-62-extract-shared-overspec-patterns.md) | Extract Shared Over-Specification Patterns | P2 | Ready | USA-60 |
-| [USA-63](./USA-63-download-figma-screenshot.md) | Figma Auto-Detection & Security Fixes | P1 | ✅ Done | USA-60 |
+| [USA-59](./complete/USA-59-vision-support-system-discovery.md) | Add Vision Support to System Discovery (Pass 0) | P1 | ✅ Done | USA-30 |
+| [USA-60](./complete/USA-60-vision-support-critical-iterations.md) | Add Vision Support to Critical Iterations | P1 | ✅ Done | USA-59 |
+| [USA-61](./complete/USA-61-vision-support-registry-metadata.md) | Add Vision Support Metadata to Iteration Registry | P2 | ✅ Done | USA-60 |
+| [USA-62](./complete/USA-62-extract-shared-overspec-patterns.md) | Extract Shared Over-Specification Patterns | P2 | Ready | USA-60 |
+| [USA-63](./complete/USA-63-download-figma-screenshot.md) | Figma Auto-Detection & Security Fixes | P1 | ✅ Done | USA-60 |
 | [USA-64](./USA-64-figma-magic-number.md) | Extract Figma Magic Number to Constant | P3 | Ready | USA-63 |
 
-**Vision Support Progress: 1/6 tickets complete (17%)**
+**Vision Support Progress: 4/6 tickets complete (67%)**
+
+---
+
+## Pass 2 - Story Interconnection (USA-49 to USA-57)
+
+| Ticket | Title | Status |
+|--------|-------|--------|
+| [USA-49](./complete/USA-49.md) | Implement runPass2Interconnection() | ✅ Done |
+| [USA-50](./complete/USA-50.md) | Create Global Consistency Judge Prompt | ✅ Done |
+| [USA-51](./complete/USA-51.md) | Implement judgeGlobalConsistency() | ✅ Done |
+| [USA-52](./USA-52.md) | Auto-Apply Consistency Fixes | Ready |
+| [USA-53](./complete/USA-53.md) | Add 'system-workflow' Mode | ✅ Done |
+| [USA-54](./complete/USA-54.md) | End-to-End Integration Tests | ✅ Done |
+| [USA-55](./complete/USA-55.md) | Performance Benchmarking | ✅ Done |
+| [USA-56](./complete/USA-56.md) | Tune Judge Thresholds | ✅ Done |
+| [USA-57](./USA-57.md) | Model Version Pinning Strategy | Ready |
+
+**Pass 2 Progress: 7/9 tickets complete (78%)**
+
+---
+
+## Code Quality & Technical Debt (USA-71 to USA-74)
+
+| Ticket | Title | Status |
+|--------|-------|--------|
+| [USA-71](./complete/USA-71.md) | Add Concurrent Safety Comment to generateTitle | ✅ Done |
+| [USA-72](./complete/USA-72.md) | Track Title Generation Failures in System Workflow Metadata | ✅ Done |
+| [USA-73](./complete/USA-73.md) | Add Token Usage Logging to Title Generation | ✅ Done |
+| [USA-74](./complete/USA-74.md) | Document Error Codes in Central Registry | ✅ Done |
+
+**Code Quality Progress: 4/4 tickets complete (100%)**
+
+**Overall:** Core 27 + Enterprise 0 + Vision 4 + Pass 2 (7) + Code Quality 4 = **42 completed tickets** across active phases.
 
 ---
 

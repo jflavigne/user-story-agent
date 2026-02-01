@@ -1,6 +1,6 @@
 # USA-64: Extract Figma Magic Number to Constant
 
-**Status**: Open
+**Status**: Open (scale=2 still hardcoded in figma-utils.ts:244)
 **Priority**: P3 (Nice-to-have)
 **Type**: Code Quality
 **Effort**: Trivial (5 min)

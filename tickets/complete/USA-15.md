@@ -17,6 +17,8 @@ Extend UserStoryAgent with interactive selection mode.
 - [ ] Run consolidation after selected iterations
 - [ ] Support multi-select (user can choose multiple aspects)
 
+## Status: COMPLETE (2026-01-31)
+
 ## Files
 
 - `src/agent/user-story-agent.ts`

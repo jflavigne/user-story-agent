@@ -71,6 +71,8 @@ Convert iteration prompts to Anthropic's Agent Skills open standard for portabil
 - `src/shared/iteration-registry.ts` - Use skill loader
 - `src/cli.ts` - Add --list-skills command
 
+## Status: COMPLETE (2026-01-31)
+
 ## Technical Notes
 
 ### SKILL.md Format

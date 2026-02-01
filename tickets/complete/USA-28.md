@@ -39,6 +39,8 @@ Add streaming support for iteration outputs to improve UX for long-running itera
 - `src/cli.ts` - Add --stream flag and streaming output handler
 - `src/agent/user-story-agent.ts` - Wire up streaming events
 
+## Status: COMPLETE (2026-01-31)
+
 ## Technical Notes
 
 ### Event Types

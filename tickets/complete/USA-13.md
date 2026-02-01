@@ -18,6 +18,8 @@ Implement the UserStoryAgent class with individual iteration mode.
 - [ ] Individual mode applies iterations in specified order
 - [ ] Returns enhanced user story
 
+## Status: COMPLETE (2026-01-31)
+
 ## Files
 
 - `src/agent/user-story-agent.ts`

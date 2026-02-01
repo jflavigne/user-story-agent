@@ -32,3 +32,5 @@ Create individual skill files for each iteration prompt.
 - `.claude/commands/user-story/user-roles.md`
 - `.claude/commands/user-story/interactive-elements.md`
 - `.claude/commands/user-story/consolidate.md`
+
+## Status: COMPLETE (2026-01-31)

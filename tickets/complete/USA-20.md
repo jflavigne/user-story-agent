@@ -18,6 +18,8 @@ Create script to generate Claude Code skills from TypeScript prompt definitions.
 - [ ] Add to `npm run generate-skills` script
 - [ ] Script is idempotent (can re-run safely)
 
+## Status: COMPLETE (2026-01-31)
+
 ## Files
 
-- `scripts/generate-skills.ts`
+- `src/skills/generate.ts`

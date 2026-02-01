@@ -17,6 +17,8 @@ Create central registry that maps all iteration prompts for programmatic access.
 - [ ] Implement `getApplicableIterations(productType)` helper function
 - [ ] All 12 iterations registered with correct metadata
 
+## Status: COMPLETE (2026-01-31)
+
 ## Files
 
 - `src/shared/iteration-registry.ts`
