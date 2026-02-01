@@ -9,6 +9,15 @@ import { calculateComponentConfidence, MIN_CONFIDENCE_THRESHOLD } from './figma-
 import { prepareImageForClaude } from './image-utils.js';
 import { logger } from './logger.js';
 
+/**
+ * Image scale factor for Figma screenshots.
+ * 2x provides retina resolution for high-quality screenshots without excessive file size.
+ */
+const FIGMA_IMAGE_SCALE = 2;
+
+/** Figma node IDs follow pattern: digits, colons, hyphens (e.g., "123:456" or "1-2") */
+const NODE_ID_PATTERN = /^[\d:-]+$/;
+
 /** Figma document node structure (API response shape) */
 export interface FigmaNode {
   id: string;
@@ -107,8 +116,8 @@ export async function fetchFigmaComponents(
   }
 
   const componentsData = (await componentsResponse.json()) as {
-    meta: {
-      components: Array<{
+    meta?: {
+      components?: Array<{
         key: string;
         name: string;
         description: string;
@@ -117,8 +126,14 @@ export async function fetchFigmaComponents(
     };
   };
 
+  if (!Array.isArray(componentsData?.meta?.components)) {
+    throw new Error('Figma components API returned unexpected response shape');
+  }
+
   // Add all components with confidence scoring
-  for (const comp of componentsData.meta.components) {
+  // Type assertion safe here: we validated the array above
+  const validatedComponents = componentsData.meta.components!;
+  for (const comp of validatedComponents) {
     const { confidence, signals } = calculateComponentConfidence({
       isApiComponent: true,
       name: comp.name,
@@ -138,8 +153,8 @@ export async function fetchFigmaComponents(
 
   // Also fetch component sets (variants)
   let setsData: {
-    meta: {
-      component_sets: Array<{
+    meta?: {
+      component_sets?: Array<{
         key: string;
         name: string;
         description: string;
@@ -159,8 +174,8 @@ export async function fetchFigmaComponents(
 
   if (setsResponse?.ok) {
     setsData = (await setsResponse.json()) as {
-      meta: {
-        component_sets: Array<{
+      meta?: {
+        component_sets?: Array<{
           key: string;
           name: string;
           description: string;
@@ -168,10 +183,13 @@ export async function fetchFigmaComponents(
         }>;
       };
     };
-  }
+    if (!Array.isArray(setsData?.meta?.component_sets)) {
+      throw new Error('Figma component_sets API returned unexpected response shape');
+    }
 
-  if (setsData?.meta?.component_sets) {
-    for (const set of setsData.meta.component_sets) {
+    // Type assertion safe here: we validated the array above
+    const validatedComponentSets = setsData.meta.component_sets!;
+    for (const set of validatedComponentSets) {
       const { confidence, signals } = calculateComponentConfidence({
         isApiComponentSet: true,
         name: set.name,
@@ -241,7 +259,11 @@ export async function downloadFigmaScreenshot(
   nodeId: string,
   accessToken: string
 ): Promise<Buffer> {
-  const url = `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=2`;
+  if (!NODE_ID_PATTERN.test(nodeId)) {
+    throw new Error(`Invalid Figma node ID format: ${nodeId}`);
+  }
+
+  const url = `https://api.figma.com/v1/images/${fileKey}?ids=${encodeURIComponent(nodeId)}&format=png&scale=${FIGMA_IMAGE_SCALE}`;
 
   const response = await fetch(url, {
     headers: { 'X-Figma-Token': accessToken },
@@ -279,9 +301,19 @@ export async function downloadFigmaScreenshot(
 
   const contentLength = imageResponse.headers.get('content-length');
   const MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
-  if (contentLength && parseInt(contentLength, 10) > MAX_IMAGE_SIZE) {
+
+  if (!contentLength) {
+    throw new Error('Image response missing Content-Length header');
+  }
+
+  const size = parseInt(contentLength, 10);
+  if (Number.isNaN(size)) {
+    throw new Error('Image response has invalid Content-Length header');
+  }
+
+  if (size > MAX_IMAGE_SIZE) {
     throw new Error(
-      `Image too large: ${contentLength} bytes (max ${MAX_IMAGE_SIZE})`
+      `Image too large: ${size} bytes (max ${MAX_IMAGE_SIZE})`
     );
   }
 
