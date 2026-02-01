@@ -48,6 +48,20 @@ vi.mock('../../src/agent/story-rewriter.js', () => ({
   })),
 }));
 
+// Mock TitleGenerator: extract title from markdown # heading when present; otherwise throw so agent leaves story unchanged (no overwrite with "Generated Title")
+const mockTitleGenerate = vi.fn().mockImplementation(async (markdown: string) => {
+  const match = markdown.match(/^#\s+(.+)$/m);
+  if (match) {
+    return { title: match[1].trim(), reasoning: undefined };
+  }
+  throw new Error('No title in markdown');
+});
+vi.mock('../../src/agent/title-generator.js', () => ({
+  TitleGenerator: vi.fn().mockImplementation(() => ({
+    generate: mockTitleGenerate,
+  })),
+}));
+
 /** Minimal JudgeRubric for tests (overallScore 0-5) */
 function minimalJudgeRubric(overallScore: 0 | 1 | 2 | 3 | 4 | 5): JudgeRubric {
   return {
@@ -776,7 +790,8 @@ describe('UserStoryAgent', () => {
         onIterationSelection: mockCallback,
       };
       const agent = new UserStoryAgent(config);
-      const initialStory = 'As a user, I want to login';
+      // Use a story with a title so generateTitle no-ops and no API calls are made
+      const initialStory = '# Login\n\nAs a user, I want to login';
 
       const result = await agent.processUserStory(initialStory);
 
@@ -1856,6 +1871,7 @@ describe('UserStoryAgent', () => {
         refinementRounds: expect.any(Number),
         fixesApplied: expect.any(Number),
         fixesFlaggedForReview: expect.any(Number),
+        titleGenerationFailures: expect.any(Number),
       });
       expect(result.metadata.passesCompleted.length).toBe(4);
     });
@@ -1871,6 +1887,7 @@ describe('UserStoryAgent', () => {
       expect(result.metadata.refinementRounds).toBe(0);
       expect(result.metadata.fixesApplied).toBe(0);
       expect(result.metadata.fixesFlaggedForReview).toBe(0);
+      expect(result.metadata.titleGenerationFailures).toBe(0);
       expect(mockSendMessage).not.toHaveBeenCalled();
       expect(mockJudgeGlobalConsistency).not.toHaveBeenCalled();
     });

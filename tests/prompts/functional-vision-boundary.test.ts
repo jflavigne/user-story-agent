@@ -8,13 +8,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { INTERACTIVE_ELEMENTS_PROMPT } from '../../../src/prompts/iterations/interactive-elements.js';
-import { RESPONSIVE_WEB_PROMPT } from '../../../src/prompts/iterations/responsive-web.js';
-import { ACCESSIBILITY_PROMPT } from '../../../src/prompts/iterations/accessibility.js';
-import { VALIDATION_PROMPT } from '../../../src/prompts/iterations/validation.js';
-import { PERFORMANCE_PROMPT } from '../../../src/prompts/iterations/performance.js';
-import { ANALYTICS_PROMPT } from '../../../src/prompts/iterations/analytics.js';
-import { hasOverSpecification } from '../../../src/shared/overspecification-patterns.js';
+import { INTERACTIVE_ELEMENTS_PROMPT } from '../../src/prompts/iterations/interactive-elements.js';
+import { RESPONSIVE_WEB_PROMPT } from '../../src/prompts/iterations/responsive-web.js';
+import { ACCESSIBILITY_PROMPT } from '../../src/prompts/iterations/accessibility.js';
+import { VALIDATION_PROMPT } from '../../src/prompts/iterations/validation.js';
+import { PERFORMANCE_PROMPT } from '../../src/prompts/iterations/performance.js';
+import { ANALYTICS_PROMPT } from '../../src/prompts/iterations/analytics.js';
+import { hasOverSpecification } from '../../src/shared/overspecification-patterns.js';
 
 const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = [
   { id: 'interactive-elements', prompt: INTERACTIVE_ELEMENTS_PROMPT },

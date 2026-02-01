@@ -370,3 +370,14 @@ export const JudgeRubricSchema = z.object({
   needsSystemContextUpdate: z.boolean(),
   confidenceByRelationship: z.record(z.string(), z.number().min(0).max(1)),
 });
+
+// ---------------------------------------------------------------------------
+// Title generation (LLM output)
+// ---------------------------------------------------------------------------
+
+export const TitleResultSchema = z.object({
+  title: z.string().min(1).max(80), // ~10 words × 7 chars + buffer
+  reasoning: z.string().optional(),
+});
+
+export type TitleResult = z.infer<typeof TitleResultSchema>;

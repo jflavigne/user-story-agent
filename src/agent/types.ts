@@ -24,7 +24,8 @@ export type OperationType =
   | 'rewrite'
   | 'interconnection'
   | 'globalJudge'
-  | 'evaluator';
+  | 'evaluator'
+  | 'titleGeneration';
 
 /** Per-operation model overrides; each field is optional and falls back to default */
 export interface ModelConfig {
@@ -36,6 +37,7 @@ export interface ModelConfig {
   interconnection?: string;
   globalJudge?: string;
   evaluator?: string;
+  titleGeneration?: string;
 }
 
 /** Quality presets: balanced (cost/quality), premium (best quality), fast (speed) */
@@ -56,6 +58,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, ModelConfig> = {
     interconnection: SONNET_4_5,
     globalJudge: OPUS_4_5,
     evaluator: HAIKU_4_5,
+    titleGeneration: HAIKU_4_5,
   },
   premium: {
     default: OPUS_4_5,
@@ -66,6 +69,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, ModelConfig> = {
     interconnection: OPUS_4_5,
     globalJudge: OPUS_4_5,
     evaluator: OPUS_4_5,
+    titleGeneration: HAIKU_4_5,
   },
   fast: {
     discovery: SONNET_4_5,
@@ -75,6 +79,7 @@ export const QUALITY_PRESETS: Record<QualityPreset, ModelConfig> = {
     interconnection: SONNET_4_5,
     globalJudge: SONNET_4_5,
     evaluator: HAIKU_4_5,
+    titleGeneration: HAIKU_4_5,
   },
 };
 
@@ -272,5 +277,7 @@ export interface SystemWorkflowResult {
     fixesFlaggedForReview: number;
     /** Number of high-confidence fixes that were attempted but rejected by patch application */
     fixesRejected?: number;
+    /** Number of stories for which title generation failed (kept as "Untitled") */
+    titleGenerationFailures?: number;
   };
 }

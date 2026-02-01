@@ -15,14 +15,18 @@ export type {
 } from './types.js';
 
 /**
- * Error types
+ * Error types and error code registry
  */
 export {
   AgentError,
   APIError,
   ValidationError,
   TimeoutError,
+  ERROR_CODES,
+  ERROR_CODE_DESCRIPTIONS,
 } from './errors.js';
+
+export type { ErrorCode } from './errors.js';
 
 /**
  * Iteration registry exports

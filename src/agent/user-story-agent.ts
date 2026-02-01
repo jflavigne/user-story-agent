@@ -66,6 +66,7 @@ import type { ImageBlockParam, TextBlockParam } from '@anthropic-ai/sdk/resource
 import { PatchOrchestrator } from './patch-orchestrator.js';
 import { StoryJudge } from './story-judge.js';
 import { StoryRewriter } from './story-rewriter.js';
+import { TitleGenerator } from './title-generator.js';
 import { mergeNewRelationships as mergeRelationships } from './relationship-merger.js';
 import { DEFAULT_MODEL } from './config.js';
 
@@ -587,6 +588,9 @@ export class UserStoryAgent extends EventEmitter {
         state.currentStory = renderer.toMarkdown(state.storyStructure);
       }
 
+      // Generate title when structure exists and title is still "Untitled"
+      state = await this.generateTitle(state);
+
       // Pass 1c: Judge and potentially rewrite (with optional system context)
       state = await this.judgeAndRewrite(state, systemContext);
 
@@ -799,6 +803,36 @@ export class UserStoryAgent extends EventEmitter {
       return updatedState;
     }
     // If consolidation failed, return state as-is
+    return state;
+  }
+
+  /**
+   * Generates a title for the story when structure exists and title is "Untitled".
+   * Does not fail the workflow on error; logs success or failure.
+   *
+   * Safe for concurrent calls: each story has independent structure object.
+   *
+   * @param state - Current story state
+   * @returns Promise resolving to state (possibly with updated title and re-rendered markdown)
+   */
+  private async generateTitle(state: StoryState): Promise<StoryState> {
+    if (!state.storyStructure) {
+      return state;
+    }
+    if (state.storyStructure.title !== 'Untitled') {
+      return state;
+    }
+    const titleGenerator = new TitleGenerator(this.claudeClient, this.resolveModel.bind(this));
+    try {
+      const result = await titleGenerator.generate(state.currentStory);
+      state.storyStructure.title = result.title;
+      const renderer = new StoryRenderer();
+      state.currentStory = renderer.toMarkdown(state.storyStructure);
+      logger.info(`Title generated: "${result.title}"`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn(`Title generation failed (workflow continues): ${message}`);
+    }
     return state;
   }
 
@@ -1327,6 +1361,7 @@ export class UserStoryAgent extends EventEmitter {
           refinementRounds: 0,
           fixesApplied: 0,
           fixesFlaggedForReview: 0,
+          titleGenerationFailures: 0,
         },
       };
     }
@@ -1425,6 +1460,31 @@ export class UserStoryAgent extends EventEmitter {
       });
     }
 
+    // Generate titles for stories that have structure but title "Untitled"
+    const titleGenerator = new TitleGenerator(this.claudeClient, this.resolveModel.bind(this));
+    const renderer = new StoryRenderer();
+    let titleGenerationFailures = 0;
+    finalStories = await Promise.all(
+      finalStories.map(async (story) => {
+        const structure = story.structure;
+        if (!structure || structure.title !== 'Untitled') {
+          return story;
+        }
+        try {
+          const result = await titleGenerator.generate(story.content);
+          structure.title = result.title;
+          const markdown = renderer.toMarkdown(structure);
+          logger.info(`runSystemWorkflow: title generated for ${story.id}: "${result.title}"`);
+          return { ...story, content: markdown, structure };
+        } catch (error) {
+          titleGenerationFailures++;
+          const message = error instanceof Error ? error.message : String(error);
+          logger.warn(`runSystemWorkflow: title generation failed for ${story.id} (continuing): ${message}`);
+          return story;
+        }
+      })
+    );
+
     return {
       systemContext: finalContext,
       stories: finalStories,
@@ -1435,6 +1495,7 @@ export class UserStoryAgent extends EventEmitter {
         fixesApplied,
         fixesFlaggedForReview,
         fixesRejected,
+        titleGenerationFailures,
       },
     };
   }

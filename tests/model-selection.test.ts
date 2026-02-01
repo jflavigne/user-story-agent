@@ -4,20 +4,17 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  QUALITY_PRESETS,
-  mergeConfigWithDefaults,
-  UserStoryAgent,
-  createAgent,
-} from '../../src/index.js';
-import type { ModelConfig, QualityPreset, UserStoryAgentConfig } from '../../src/index.js';
-import { ClaudeClient } from '../../src/agent/claude-client.js';
-import { StoryJudge } from '../../src/agent/story-judge.js';
-import { StoryRewriter } from '../../src/agent/story-rewriter.js';
-import { Evaluator } from '../../src/agent/evaluator.js';
-import { UNIFIED_STORY_JUDGE_RUBRIC } from '../../src/prompts/judge-rubrics/unified-story-judge.js';
-import { SECTION_SEPARATION_REWRITER_PROMPT } from '../../src/prompts/rewriter/section-separation.js';
-import { EVALUATOR_SYSTEM_PROMPT } from '../../src/prompts/evaluator-prompt.js';
+import { QUALITY_PRESETS } from '../src/agent/types.js';
+import type { ModelConfig, QualityPreset, UserStoryAgentConfig } from '../src/agent/types.js';
+import { mergeConfigWithDefaults } from '../src/agent/config.js';
+import { UserStoryAgent, createAgent } from '../src/agent/user-story-agent.js';
+import { ClaudeClient } from '../src/agent/claude-client.js';
+import { StoryJudge } from '../src/agent/story-judge.js';
+import { StoryRewriter } from '../src/agent/story-rewriter.js';
+import { Evaluator } from '../src/agent/evaluator.js';
+import { UNIFIED_STORY_JUDGE_RUBRIC } from '../src/prompts/judge-rubrics/unified-story-judge.js';
+import { SECTION_SEPARATION_REWRITER_PROMPT } from '../src/prompts/rewriter/section-separation.js';
+import { EVALUATOR_SYSTEM_PROMPT } from '../src/prompts/evaluator-prompt.js';
 
 describe('QUALITY_PRESETS', () => {
   it('defines balanced, premium, and fast presets', () => {
@@ -42,6 +39,7 @@ describe('QUALITY_PRESETS', () => {
 
   it('premium preset uses opus for all operations', () => {
     const opus = 'claude-opus-4-20250514';
+    const haiku = 'claude-3-5-haiku-20241022';
     const p = QUALITY_PRESETS.premium;
     expect(p.default).toBe(opus);
     expect(p.discovery).toBe(opus);
@@ -51,9 +49,10 @@ describe('QUALITY_PRESETS', () => {
     expect(p.interconnection).toBe(opus);
     expect(p.globalJudge).toBe(opus);
     expect(p.evaluator).toBe(opus);
+    expect(p.titleGeneration).toBe(haiku);
   });
 
-  it('fast preset uses sonnet for discovery/judge/rewrite/interconnection/globalJudge and haiku for iteration/evaluator', () => {
+  it('fast preset uses sonnet for discovery/judge/rewrite/interconnection/globalJudge and haiku for iteration/evaluator/titleGeneration', () => {
     const sonnet = 'claude-sonnet-4-20250514';
     const haiku = 'claude-3-5-haiku-20241022';
     const f = QUALITY_PRESETS.fast;
@@ -64,6 +63,7 @@ describe('QUALITY_PRESETS', () => {
     expect(f.globalJudge).toBe(sonnet);
     expect(f.iteration).toBe(haiku);
     expect(f.evaluator).toBe(haiku);
+    expect(f.titleGeneration).toBe(haiku);
   });
 });
 
@@ -117,7 +117,7 @@ describe('UserStoryAgent model config normalization and resolution', () => {
     };
     const agent = createAgent(config);
     // Resolve model via agent's public behavior: create a Judge with the same config and call resolveModel
-    const judge = new (StoryJudge as unknown as typeof import('../../src/agent/story-judge.js').StoryJudge)(
+    const judge = new (StoryJudge as unknown as typeof import('../src/agent/story-judge.js').StoryJudge)(
       mockClient,
       (agent as unknown as { resolveModel: (op: string) => string | undefined }).resolveModel
     );
@@ -135,7 +135,7 @@ describe('UserStoryAgent model config normalization and resolution', () => {
       claudeClient: mockClient,
     };
     const agent = new UserStoryAgent(config);
-    const resolve = (agent as unknown as { resolveModel: (op: string) => string | undefined }).resolveModel;
+    const resolve = (agent as unknown as { resolveModel: (op: string) => string | undefined }).resolveModel.bind(agent);
     expect(resolve('discovery')).toBe(QUALITY_PRESETS.balanced.discovery);
     expect(resolve('iteration')).toBe(QUALITY_PRESETS.balanced.iteration);
     expect(resolve('judge')).toBe(QUALITY_PRESETS.balanced.judge);
@@ -143,6 +143,7 @@ describe('UserStoryAgent model config normalization and resolution', () => {
     expect(resolve('interconnection')).toBe(QUALITY_PRESETS.balanced.interconnection);
     expect(resolve('globalJudge')).toBe(QUALITY_PRESETS.balanced.globalJudge);
     expect(resolve('evaluator')).toBe(QUALITY_PRESETS.balanced.evaluator);
+    expect(resolve('titleGeneration')).toBe(QUALITY_PRESETS.balanced.titleGeneration);
   });
 
   it('resolveModel falls back to default for ModelConfig when operation not set', () => {
@@ -155,7 +156,7 @@ describe('UserStoryAgent model config normalization and resolution', () => {
       claudeClient: mockClient,
     };
     const agent = new UserStoryAgent(config);
-    const resolve = (agent as unknown as { resolveModel: (op: string) => string | undefined }).resolveModel;
+    const resolve = (agent as unknown as { resolveModel: (op: string) => string | undefined }).resolveModel.bind(agent);
     expect(resolve('judge')).toBe('claude-judge');
     expect(resolve('discovery')).toBe('claude-default');
     expect(resolve('iteration')).toBe('claude-default');
