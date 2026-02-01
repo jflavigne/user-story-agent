@@ -1,23 +1,17 @@
-/**
- * Performance Requirements iteration prompt module
- * 
- * This prompt guides analysis of user-perceived performance requirements
- * and how users experience load times, response times, and feedback during waits.
- */
+---
+id: performance
+name: Performance Requirements
+description: Identifies user-perceived performance requirements including load times, response times, and loading feedback
+category: quality
+order: 5
+applicableWhen: When the mockup shows loading states, actions that may take time, or performance-critical interactions
+applicableTo: all
+allowedPaths: systemAcceptanceCriteria, implementationNotes.performanceNotes, implementationNotes.loadingStates
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying performance requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Initial page load times and perceived performance
- * - Action response times and user expectations
- * - Loading indicators and progress feedback
- * - Timeout handling and error recovery
- * - Balance between technical metrics and user experience
- */
-export const PERFORMANCE_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - systemAcceptanceCriteria (AC-SYS-* items)
 - implementationNotes.performanceNotes
@@ -229,19 +223,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Response time expectations for different actions
 - Timeout and error recovery mechanisms
 - Acceptance criteria for performance (AC-SYS-*)
-- Performance and loading notes in implementationNotes`;
-
-/**
- * Metadata for the performance requirements iteration
- */
-export const PERFORMANCE_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'performance',
-  name: 'Performance Requirements',
-  description: 'Identifies user-perceived performance requirements including load times, response times, and loading feedback',
-  prompt: PERFORMANCE_PROMPT,
-  category: 'quality',
-  applicableWhen: 'When the mockup shows loading states, actions that may take time, or performance-critical interactions',
-  order: 5,
-  tokenEstimate: 1561, // ~6243 chars / 4
-  supportsVision: true,
-};
+- Performance and loading notes in implementationNotes

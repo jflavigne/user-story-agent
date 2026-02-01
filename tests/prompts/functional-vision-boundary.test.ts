@@ -8,22 +8,25 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { INTERACTIVE_ELEMENTS_PROMPT } from '../../src/prompts/iterations/interactive-elements.js';
-import { RESPONSIVE_WEB_PROMPT } from '../../src/prompts/iterations/responsive-web.js';
-import { ACCESSIBILITY_PROMPT } from '../../src/prompts/iterations/accessibility.js';
-import { VALIDATION_PROMPT } from '../../src/prompts/iterations/validation.js';
-import { PERFORMANCE_PROMPT } from '../../src/prompts/iterations/performance.js';
-import { ANALYTICS_PROMPT } from '../../src/prompts/iterations/analytics.js';
+import { getIterationById } from '../../src/shared/iteration-registry.js';
 import { hasOverSpecification } from '../../src/shared/overspecification-patterns.js';
 
-const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = [
-  { id: 'interactive-elements', prompt: INTERACTIVE_ELEMENTS_PROMPT },
-  { id: 'responsive-web', prompt: RESPONSIVE_WEB_PROMPT },
-  { id: 'accessibility', prompt: ACCESSIBILITY_PROMPT },
-  { id: 'validation', prompt: VALIDATION_PROMPT },
-  { id: 'performance', prompt: PERFORMANCE_PROMPT },
-  { id: 'analytics', prompt: ANALYTICS_PROMPT },
+const VISION_ITERATION_IDS = [
+  'interactive-elements',
+  'responsive-web',
+  'accessibility',
+  'validation',
+  'performance',
+  'analytics',
 ];
+
+const VISION_ITERATION_PROMPTS: Array<{ id: string; prompt: string }> = VISION_ITERATION_IDS.map((id) => {
+  const iteration = getIterationById(id);
+  if (!iteration) {
+    throw new Error(`Iteration ${id} not found in registry`);
+  }
+  return { id, prompt: iteration.prompt };
+});
 
 describe('functional vision boundary', () => {
   describe('iteration prompts include functional guidance sections', () => {
@@ -42,16 +45,19 @@ describe('functional vision boundary', () => {
 
   describe('iteration prompts include iteration-specific guidance', () => {
     it('interactive-elements includes button hierarchy without color values', () => {
-      expect(INTERACTIVE_ELEMENTS_PROMPT).toMatch(/primary.*action|secondary.*action/i);
-      expect(INTERACTIVE_ELEMENTS_PROMPT).toMatch(/DO NOT specify exact colors/i);
+      const prompt = getIterationById('interactive-elements')?.prompt ?? '';
+      expect(prompt).toMatch(/primary.*action|secondary.*action/i);
+      expect(prompt).toMatch(/DO NOT specify exact colors/i);
     });
     it('validation includes error mechanisms without styling specs', () => {
-      expect(VALIDATION_PROMPT).toMatch(/error.*feedback|validation.*feedback/i);
-      expect(VALIDATION_PROMPT).toMatch(/DO NOT specify.*border.*color|error.*message/i);
+      const prompt = getIterationById('validation')?.prompt ?? '';
+      expect(prompt).toMatch(/error.*feedback|validation.*feedback/i);
+      expect(prompt).toMatch(/DO NOT specify.*border.*color|error.*message/i);
     });
     it('accessibility includes contrast requirements functionally', () => {
-      expect(ACCESSIBILITY_PROMPT).toMatch(/contrast|readability|focus indicator/i);
-      expect(ACCESSIBILITY_PROMPT).toMatch(/DO NOT specify.*ratio|hex/i);
+      const prompt = getIterationById('accessibility')?.prompt ?? '';
+      expect(prompt).toMatch(/contrast|readability|focus indicator/i);
+      expect(prompt).toMatch(/DO NOT specify.*ratio|hex/i);
     });
   });
 

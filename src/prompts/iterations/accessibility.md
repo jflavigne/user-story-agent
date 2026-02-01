@@ -1,24 +1,17 @@
-/**
- * Accessibility Requirements iteration prompt module
- * 
- * This prompt guides analysis of WCAG compliance and accessibility requirements
- * from a user perspective.
- */
+---
+id: accessibility
+name: Accessibility Requirements
+description: Identifies WCAG compliance and accessibility requirements for inclusive design
+category: quality
+order: 4
+applicableWhen: For all mockups to ensure inclusive design
+applicableTo: all
+allowedPaths: outcomeAcceptanceCriteria, systemAcceptanceCriteria
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying WCAG compliance and accessibility requirements.
- * 
- * This prompt guides analysis of (from user's perspective):
- * - Keyboard navigation (tab order, focus management, keyboard shortcuts)
- * - Screen reader compatibility (alt text, ARIA labels, semantic structure)
- * - Form accessibility (labels, error announcements, required field indicators)
- * - State change announcements (loading, success, error notifications)
- * - Color contrast and visual accessibility
- * - Focus indicators
- */
-export const ACCESSIBILITY_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - outcomeAcceptanceCriteria (AC-OUT-* items)
 - systemAcceptanceCriteria (AC-SYS-* items)
@@ -250,19 +243,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Screen reader compatibility needs
 - Form accessibility and state change announcements
 - Visual accessibility considerations
-- Acceptance criteria for accessibility (AC-OUT-*, AC-SYS-*)`;
-
-/**
- * Metadata for the accessibility requirements iteration
- */
-export const ACCESSIBILITY_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'accessibility',
-  name: 'Accessibility Requirements',
-  description: 'Identifies WCAG compliance and accessibility requirements for inclusive design',
-  prompt: ACCESSIBILITY_PROMPT,
-  category: 'quality',
-  applicableWhen: 'For all mockups to ensure inclusive design',
-  order: 4,
-  tokenEstimate: 1872, // ~7487 chars / 4
-  supportsVision: true,
-};
+- Acceptance criteria for accessibility (AC-OUT-*, AC-SYS-*)

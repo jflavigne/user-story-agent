@@ -19,6 +19,7 @@ import {
   WORKFLOW_ORDER,
   getIterationById,
   loadSkills,
+  initializeIterationPrompts,
 } from './index.js';
 import type {
   UserStoryAgentConfig,
@@ -542,6 +543,10 @@ async function main(): Promise<void> {
     await listSkills();
     process.exit(0);
   }
+
+  // Load iteration prompts from markdown (required before validation and createAgent)
+  const promptsDir = path.join(process.cwd(), 'src', 'prompts', 'iterations');
+  await initializeIterationPrompts(promptsDir);
 
   // Validate arguments
   const validationError = validateArgs(args);

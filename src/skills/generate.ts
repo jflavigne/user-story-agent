@@ -7,7 +7,7 @@
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getAllIterations } from '../shared/iteration-registry.js';
+import { getAllIterations, initializeIterationPrompts } from '../shared/iteration-registry.js';
 import type { IterationRegistryEntry } from '../shared/iteration-registry.js';
 
 /**
@@ -208,9 +208,11 @@ ${additionalNotes}
 /**
  * Main function to generate all skill files
  */
-function main(): void {
+async function main(): Promise<void> {
   console.log('Generating skill files...');
 
+  const iterationsDir = join(process.cwd(), 'src', 'prompts', 'iterations');
+  await initializeIterationPrompts(iterationsDir);
   const iterations = getAllIterations();
   const outputDir = join(process.cwd(), '.claude', 'commands', 'user-story');
 
@@ -241,4 +243,7 @@ function main(): void {
 }
 
 // Run the script
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

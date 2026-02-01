@@ -19,7 +19,7 @@ import { buildStoryInterconnectionPrompt } from '../prompts/iterations/story-int
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
 import { ContextManager } from './state/context-manager.js';
-import { ITERATION_REGISTRY, getIterationById, getApplicableIterations, getAllIterations, PRODUCT_TYPES, WORKFLOW_ORDER, type ProductType } from '../shared/iteration-registry.js';
+import { getIterationById, getApplicableIterations, getAllIterations, PRODUCT_TYPES, WORKFLOW_ORDER, type ProductType } from '../shared/iteration-registry.js';
 import { SYSTEM_PROMPT } from '../prompts/system.js';
 import { POST_PROCESSING_PROMPT, POST_PROCESSING_PROMPT_METADATA } from '../prompts/index.js';
 import { createInitialState } from './state/story-state.js';
@@ -186,7 +186,7 @@ export class UserStoryAgent extends EventEmitter {
         const iteration = getIterationById(iterationId);
         if (!iteration) {
           throw new Error(
-            `Invalid iteration ID: ${iterationId}. Available iterations: ${Object.keys(ITERATION_REGISTRY).join(', ')}`
+            `Invalid iteration ID: ${iterationId}. Available iterations: ${getAllIterations().map((i) => i.id).join(', ')}`
           );
         }
       }

@@ -1,22 +1,17 @@
-/**
- * Interactive Elements iteration prompt module
- * 
- * This prompt guides documentation of interactive UI elements and their states.
- */
+---
+id: interactive-elements
+name: Interactive Elements
+description: Documents buttons, inputs, links, icons and their interaction states
+category: elements
+order: 2
+applicableWhen: When the mockup contains interactive UI components
+applicableTo: all
+allowedPaths: userVisibleBehavior, outcomeAcceptanceCriteria
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for documenting interactive UI elements and their states.
- * 
- * This prompt guides documentation of:
- * - Buttons (primary, secondary, icon buttons)
- * - Inputs (text, password, email, textarea, select, checkbox, radio)
- * - Links (navigation, inline, external)
- * - Icons (actionable vs decorative)
- * - States for each: default, hover, focus, active, disabled, error
- */
-export const INTERACTIVE_ELEMENTS_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - userVisibleBehavior (UVB-* items)
 - outcomeAcceptanceCriteria (AC-OUT-* items)
@@ -212,19 +207,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Each element's purpose and behavior
 - Interaction states with visual details
 - Accessibility and validation requirements
-- Acceptance criteria for interactions (AC-OUT-* in outcomeAcceptanceCriteria)`;
-
-/**
- * Metadata for the interactive elements iteration
- */
-export const INTERACTIVE_ELEMENTS_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'interactive-elements',
-  name: 'Interactive Elements',
-  description: 'Documents buttons, inputs, links, icons and their interaction states',
-  prompt: INTERACTIVE_ELEMENTS_PROMPT,
-  category: 'elements',
-  applicableWhen: 'When the mockup contains interactive UI components',
-  order: 2,
-  tokenEstimate: 1150, // prompt length / 4 (PATH SCOPE + OUTPUT FORMAT + body)
-  supportsVision: true,
-};
+- Acceptance criteria for interactions (AC-OUT-* in outcomeAcceptanceCriteria)

@@ -1,80 +1,77 @@
 /**
  * Unit tests for iteration-registry.ts
+ *
+ * Iterations are loaded from markdown prompts via initializeIterationPrompts();
+ * tests call it in beforeEach so cache is populated.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'path';
 import {
-  ITERATION_REGISTRY,
   WORKFLOW_ORDER,
   getIterationsByCategory,
   getApplicableIterations,
   getIterationById,
   getAllIterations,
   getVisionCapableIterations,
+  getIterations,
+  initializeIterationPrompts,
 } from '../../src/shared/iteration-registry.js';
 
+const ITERATIONS_DIR = path.join(process.cwd(), 'src', 'prompts', 'iterations');
+
 describe('iteration-registry', () => {
-  describe('Registry structure', () => {
-    it('ITERATION_REGISTRY contains exactly 12 iterations', () => {
-      const registryKeys = Object.keys(ITERATION_REGISTRY);
-      expect(registryKeys).toHaveLength(12);
+  beforeEach(async () => {
+    await initializeIterationPrompts(ITERATIONS_DIR);
+  });
+
+  describe('Cache resolution after loadIterationsFromPrompts', () => {
+    it('getAllIterations() returns 12 entries in WORKFLOW_ORDER order', () => {
+      const iterations = getAllIterations();
+      expect(iterations).toHaveLength(12);
+      expect(iterations.map((i) => i.id)).toEqual([...WORKFLOW_ORDER]);
     });
 
-    it('WORKFLOW_ORDER contains exactly 12 IDs', () => {
-      expect(WORKFLOW_ORDER).toHaveLength(12);
+    it('getIterations() returns same as getAllIterations when cache set', () => {
+      const all = getAllIterations();
+      const fromGet = getIterations();
+      expect(fromGet).toHaveLength(all.length);
+      expect(fromGet.map((i) => i.id)).toEqual(all.map((i) => i.id));
     });
 
-    it('WORKFLOW_ORDER matches registry keys', () => {
-      const registryKeys = Object.keys(ITERATION_REGISTRY);
-      const workflowOrderSet = new Set(WORKFLOW_ORDER);
-      const registryKeysSet = new Set(registryKeys);
-
-      expect(workflowOrderSet.size).toBe(registryKeysSet.size);
-      expect(workflowOrderSet.size).toBe(12);
-
-      // Check that all workflow order IDs exist in registry
-      for (const id of WORKFLOW_ORDER) {
-        expect(registryKeys).toContain(id);
-      }
-
-      // Check that all registry keys are in workflow order
-      for (const key of registryKeys) {
-        expect(WORKFLOW_ORDER).toContain(key);
-      }
+    it('getIterationById returns entry with prompt and allowedPaths from file or fallback', () => {
+      const iteration = getIterationById('user-roles');
+      expect(iteration).toBeDefined();
+      expect(iteration?.id).toBe('user-roles');
+      expect(iteration?.name).toBe('User Roles Analysis');
+      expect(iteration?.prompt).toBeDefined();
+      expect(iteration?.prompt.length).toBeGreaterThan(0);
+      expect(iteration?.allowedPaths).toBeDefined();
+      expect(Array.isArray(iteration?.allowedPaths)).toBe(true);
+      expect(iteration?.tokenEstimate).toBeGreaterThan(0);
     });
 
-    it('All iterations in registry have required fields', () => {
-      for (const [id, iteration] of Object.entries(ITERATION_REGISTRY)) {
-        expect(iteration).toBeDefined();
-        expect(iteration.id).toBe(id);
+    it('getIterationById("invalid-id") returns undefined', () => {
+      const iteration = getIterationById('invalid-id');
+      expect(iteration).toBeUndefined();
+    });
+
+    it('all iterations have required fields', () => {
+      const iterations = getAllIterations();
+      for (const iteration of iterations) {
+        expect(iteration.id).toBeDefined();
         expect(iteration.name).toBeDefined();
-        expect(typeof iteration.name).toBe('string');
-        expect(iteration.name.length).toBeGreaterThan(0);
         expect(iteration.description).toBeDefined();
-        expect(typeof iteration.description).toBe('string');
-        expect(iteration.description.length).toBeGreaterThan(0);
         expect(iteration.prompt).toBeDefined();
-        expect(typeof iteration.prompt).toBe('string');
         expect(iteration.prompt.length).toBeGreaterThan(0);
         expect(iteration.category).toBeDefined();
-        expect(typeof iteration.category).toBe('string');
         expect(iteration.order).toBeDefined();
-        expect(typeof iteration.order).toBe('number');
-        expect(iteration.applicableTo).toBeDefined();
         expect(
           iteration.applicableTo === 'all' || Array.isArray(iteration.applicableTo)
         ).toBe(true);
-        expect(iteration.tokenEstimate).toBeDefined();
-        expect(typeof iteration.tokenEstimate).toBe('number');
         expect(iteration.tokenEstimate).toBeGreaterThan(0);
-      }
-    });
-
-    it('All iterations have allowedPaths and outputFormat defined (USA-36)', () => {
-      for (const [id, iteration] of Object.entries(ITERATION_REGISTRY)) {
         expect(iteration.allowedPaths).toBeDefined();
         expect(Array.isArray(iteration.allowedPaths)).toBe(true);
-        expect(iteration.allowedPaths!.length).toBeGreaterThan(0);
         expect(iteration.outputFormat).toBe('patches');
       }
     });
@@ -112,14 +109,14 @@ describe('iteration-registry', () => {
   });
 
   describe('getApplicableIterations', () => {
-    it("getApplicableIterations('web') excludes responsive-native, includes all others (11 iterations)", () => {
+    it("getApplicableIterations('web') excludes responsive-native, includes 11 iterations", () => {
       const iterations = getApplicableIterations('web');
       expect(iterations).toHaveLength(11);
       expect(iterations.map((i) => i.id)).not.toContain('responsive-native');
       expect(iterations.map((i) => i.id)).toContain('responsive-web');
     });
 
-    it("getApplicableIterations('mobile-native') excludes responsive-web, includes all others (11 iterations)", () => {
+    it("getApplicableIterations('mobile-native') excludes responsive-web, includes 11 iterations", () => {
       const iterations = getApplicableIterations('mobile-native');
       expect(iterations).toHaveLength(11);
       expect(iterations.map((i) => i.id)).not.toContain('responsive-web');
@@ -133,7 +130,7 @@ describe('iteration-registry', () => {
       expect(iterations.map((i) => i.id)).not.toContain('responsive-native');
     });
 
-    it("getApplicableIterations('desktop') excludes responsive-native, includes all others (11 iterations)", () => {
+    it("getApplicableIterations('desktop') excludes responsive-native, includes 11 iterations", () => {
       const iterations = getApplicableIterations('desktop');
       expect(iterations).toHaveLength(11);
       expect(iterations.map((i) => i.id)).not.toContain('responsive-native');
@@ -142,17 +139,12 @@ describe('iteration-registry', () => {
   });
 
   describe('getIterationById', () => {
-    it("getIterationById('user-roles') returns correct iteration with id='user-roles'", () => {
+    it("getIterationById('user-roles') returns correct iteration", () => {
       const iteration = getIterationById('user-roles');
       expect(iteration).toBeDefined();
       expect(iteration?.id).toBe('user-roles');
       expect(iteration?.name).toBeDefined();
       expect(iteration?.category).toBe('roles');
-    });
-
-    it("getIterationById('invalid-id') returns undefined", () => {
-      const iteration = getIterationById('invalid-id');
-      expect(iteration).toBeUndefined();
     });
   });
 
@@ -164,12 +156,10 @@ describe('iteration-registry', () => {
     });
   });
 
-  describe('getVisionCapableIterations (USA-61)', () => {
+  describe('getVisionCapableIterations', () => {
     it('Returns exactly 6 iterations with supportsVision=true', () => {
       const visionIterations = getVisionCapableIterations();
       expect(visionIterations).toHaveLength(6);
-
-      // Verify all returned iterations have supportsVision=true
       for (const iteration of visionIterations) {
         expect(iteration.supportsVision).toBe(true);
       }
@@ -178,7 +168,6 @@ describe('iteration-registry', () => {
     it('Returns the correct 6 vision-capable iterations in workflow order', () => {
       const visionIterations = getVisionCapableIterations();
       const visionIds = visionIterations.map((i) => i.id);
-
       expect(visionIds).toEqual([
         'interactive-elements',
         'validation',
@@ -187,35 +176,6 @@ describe('iteration-registry', () => {
         'responsive-web',
         'analytics',
       ]);
-    });
-
-    it('Non-vision iterations do not have supportsVision=true', () => {
-      const nonVisionIds = [
-        'user-roles',
-        'security',
-        'responsive-native',
-        'language-support',
-        'locale-formatting',
-        'cultural-appropriateness',
-      ];
-
-      for (const id of nonVisionIds) {
-        const iteration = ITERATION_REGISTRY[id];
-        expect(iteration.supportsVision).not.toBe(true);
-      }
-    });
-
-    it('supportsVision field is optional (undefined is acceptable)', () => {
-      // Verify that iterations without supportsVision have it as undefined or false
-      const allIterations = getAllIterations();
-      const visionIterationIds = getVisionCapableIterations().map((i) => i.id);
-
-      for (const iteration of allIterations) {
-        if (!visionIterationIds.includes(iteration.id)) {
-          // Non-vision iterations should have undefined or false
-          expect(iteration.supportsVision === undefined || iteration.supportsVision === false).toBe(true);
-        }
-      }
     });
   });
 });

@@ -1,24 +1,17 @@
-/**
- * Validation Rules iteration prompt module
- * 
- * This prompt guides analysis of form field validation rules and user feedback
- * requirements from a user perspective.
- */
+---
+id: validation
+name: Validation Rules
+description: Identifies form field validation rules and user feedback requirements
+category: validation
+order: 3
+applicableWhen: When the mockup contains forms or input fields
+applicableTo: all
+allowedPaths: outcomeAcceptanceCriteria, systemAcceptanceCriteria
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying form field validation rules and user feedback requirements.
- * 
- * This prompt guides analysis of (from user's perspective):
- * - Email format validation and feedback
- * - Password requirements and strength indicators
- * - Required field handling
- * - Error states and error message presentation
- * - Real-time vs submit-time validation feedback
- * - Field format constraints (phone, date, etc.)
- */
-export const VALIDATION_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - outcomeAcceptanceCriteria (AC-OUT-* items)
 - systemAcceptanceCriteria (AC-SYS-* items)
@@ -218,19 +211,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Form fields and validation requirements
 - Validation timing and user experience
 - Error messages and visual indicators
-- Acceptance criteria for validation (AC-OUT-*, AC-SYS-*)`;
-
-/**
- * Metadata for the validation rules iteration
- */
-export const VALIDATION_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'validation',
-  name: 'Validation Rules',
-  description: 'Identifies form field validation rules and user feedback requirements',
-  prompt: VALIDATION_PROMPT,
-  category: 'validation',
-  applicableWhen: 'When the mockup contains forms or input fields',
-  order: 3,
-  tokenEstimate: 1338, // ~5350 chars / 4
-  supportsVision: true,
-};
+- Acceptance criteria for validation (AC-OUT-*, AC-SYS-*)

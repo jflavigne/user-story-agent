@@ -1,25 +1,16 @@
-/**
- * Security Requirements iteration prompt module
- * 
- * This prompt guides analysis of security requirements from a user trust
- * and data protection experience perspective.
- */
+---
+id: security
+name: Security Requirements
+description: Identifies security requirements from a user trust and data protection experience perspective
+category: quality
+order: 6
+applicableWhen: When the mockup shows authentication, authorization, data collection, or privacy-related features
+applicableTo: all
+allowedPaths: systemAcceptanceCriteria, implementationNotes.securityNotes
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying security requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Data handling transparency and user trust
- * - Authentication UX and login experience
- * - Authorization feedback and permission indicators
- * - Secure transmission indicators
- * - Privacy controls and user data management
- * 
- * Focus on what users see and experience, not implementation details.
- */
-export const SECURITY_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - systemAcceptanceCriteria (AC-SYS-* items)
 - implementationNotes.securityNotes
@@ -187,18 +178,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Data handling and privacy communication
 - Security indicators and trust-building elements
 - Acceptance criteria for security (AC-SYS-*)
-- Security notes in implementationNotes`;
-
-/**
- * Metadata for the security requirements iteration
- */
-export const SECURITY_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'security',
-  name: 'Security Requirements',
-  description: 'Identifies security requirements from a user trust and data protection experience perspective',
-  prompt: SECURITY_PROMPT,
-  category: 'quality',
-  applicableWhen: 'When the mockup shows authentication, authorization, data collection, or privacy-related features',
-  order: 6,
-  tokenEstimate: 1704, // ~6815 chars / 4
-};
+- Security notes in implementationNotes

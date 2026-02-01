@@ -1,22 +1,16 @@
-/**
- * User Roles iteration prompt module
- * 
- * This prompt guides analysis of distinct user roles and their interactions
- * with mockups and designs.
- */
+---
+id: user-roles
+name: User Roles Analysis
+description: Identifies distinct user roles and their interactions with the interface
+category: roles
+order: 1
+applicableWhen: When the mockup shows features that may vary by user type
+applicableTo: all
+allowedPaths: story.asA, story.iWant, story.soThat, outcomeAcceptanceCriteria
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying distinct user roles and their interactions with mockups.
- * 
- * This prompt guides analysis of:
- * - Identifying distinct user roles (visitor, registered user, admin, etc.)
- * - Understanding each role's goals and motivations
- * - Mapping role-specific interactions with UI elements
- * - Considering role-based access and permissions
- */
-export const USER_ROLES_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - story.asA
 - story.iWant
@@ -100,18 +94,4 @@ Analyze the mockup or design to identify distinct user roles and their specific 
 Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must target story.asA, story.iWant, story.soThat, or outcomeAcceptanceCriteria. Add or replace items to document:
 - Identified user roles (story.asA, story.iWant, story.soThat)
 - Role-specific acceptance criteria (AC-OUT-* in outcomeAcceptanceCriteria)
-- Role-based features and permissions`;
-
-/**
- * Metadata for the user roles iteration
- */
-export const USER_ROLES_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'user-roles',
-  name: 'User Roles Analysis',
-  description: 'Identifies distinct user roles and their interactions with the interface',
-  prompt: USER_ROLES_PROMPT,
-  category: 'roles',
-  applicableWhen: 'When the mockup shows features that may vary by user type',
-  order: 1,
-  tokenEstimate: 585, // ~2340 chars / 4
-};
+- Role-based features and permissions

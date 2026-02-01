@@ -34,11 +34,16 @@ export type { ErrorCode } from './errors.js';
 export {
   PRODUCT_TYPES,
   WORKFLOW_ORDER,
-  ITERATION_REGISTRY,
   getIterationsByCategory,
   getApplicableIterations,
   getIterationById,
   getAllIterations,
+  getIterations,
+  loadIterationsFromPrompts,
+  initializeIterationPrompts,
+  promptToRegistryEntry,
+  loadIterationsFromSkills,
+  initializeSkillsCache,
 } from './iteration-registry.js';
 
 export type {
@@ -46,6 +51,12 @@ export type {
   IterationId,
   IterationRegistryEntry,
 } from './iteration-registry.js';
+
+/**
+ * Iteration prompt loader (markdown + frontmatter)
+ */
+export { loadIterationPrompts, loadIterationPrompt } from './prompt-loader.js';
+export type { LoadedIterationPrompt, IterationPromptMetadata } from './prompt-loader.js';
 
 /**
  * Over-specification pattern detection

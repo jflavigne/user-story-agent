@@ -1,26 +1,17 @@
-/**
- * Analytics iteration prompt module
- * 
- * This prompt guides analysis of analytics requirements from a user experience perspective,
- * focusing on how users interact with features and how their behavior patterns can be understood
- * to improve the product experience.
- */
+---
+id: analytics
+name: Analytics
+description: Identifies analytics requirements focusing on user behavior patterns and experience insights
+category: analytics
+order: 12
+applicableWhen: When analyzing an application that needs to understand user behavior patterns and engagement metrics
+applicableTo: all
+allowedPaths: systemAcceptanceCriteria, implementationNotes.telemetryNotes
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying analytics requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - User interaction tracking (clicks, submissions, navigation)
- * - Duration and timing metrics (time on task, completion times)
- * - Frequency analysis (repeat actions, visit patterns)
- * - User journey mapping (paths through application, drop-off points)
- * - Engagement metrics (feature usage, content consumption)
- * 
- * Focus on USER EXPERIENCE behaviors, not technical analytics implementation details.
- */
-export const ANALYTICS_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - systemAcceptanceCriteria (AC-SYS-* items)
 - implementationNotes.telemetryNotes
@@ -287,19 +278,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Frequency analysis and usage patterns
 - User journey mapping and drop-off points
 - Acceptance criteria for analytics (AC-SYS-*)
-- Telemetry notes in implementationNotes`;
-
-/**
- * Metadata for the analytics iteration
- */
-export const ANALYTICS_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'analytics',
-  name: 'Analytics',
-  description: 'Identifies analytics requirements focusing on user behavior patterns and experience insights',
-  prompt: ANALYTICS_PROMPT,
-  category: 'analytics',
-  applicableWhen: 'When analyzing an application that needs to understand user behavior patterns and engagement metrics',
-  order: 12,
-  tokenEstimate: 2601, // ~10405 chars / 4
-  supportsVision: true,
-};
+- Telemetry notes in implementationNotes

@@ -96,6 +96,46 @@ No additional required options. User selects iterations at runtime.
 | `--debug` | Set log level to `debug` |
 | `--quiet` | Set log level to `error` |
 
+## Iteration Prompts (Markdown)
+
+Workflow iteration prompts (user-roles, validation, accessibility, etc.) are loaded from **markdown files with YAML frontmatter** in `src/prompts/iterations/`. This is separate from the skill loader (which loads Anthropic Agent Skills from SKILL.md).
+
+### Initialization
+
+The CLI and any programmatic use must call **`initializeIterationPrompts(promptsDir)`** at startup before creating the agent. The CLI does this automatically with default path `src/prompts/iterations`. If the directory is missing or contains no valid `.md` files, startup fails with a clear error.
+
+```typescript
+import { initializeIterationPrompts, createAgent } from 'user-story-agent';
+import path from 'path';
+
+await initializeIterationPrompts(path.join(process.cwd(), 'src', 'prompts', 'iterations'));
+const agent = createAgent(config);
+```
+
+### Frontmatter Schema
+
+Each iteration `.md` file must have frontmatter with these fields:
+
+| Field            | Type    | Required | Notes |
+|------------------|---------|----------|--------|
+| `id`             | string  | yes      | Unique iteration id (e.g. `user-roles`, `validation`) |
+| `name`           | string  | yes      | Human-readable name |
+| `description`    | string  | yes      | What the iteration does |
+| `category`       | string  | yes      | One of: `roles`, `elements`, `validation`, `quality`, `responsive`, `i18n`, `analytics`, `post-processing` |
+| `order`          | number  | yes      | Processing order (lower first) |
+| `applicableWhen` | string  | no       | When this iteration applies |
+| `applicableTo`   | string  | no       | `all` or comma-separated: `web`, `mobile-native`, `mobile-web`, `desktop`, `api` |
+| `allowedPaths`   | string  | no       | Comma-separated patch paths (e.g. `story.asA, outcomeAcceptanceCriteria`). If omitted, registry fallback is used |
+| `outputFormat`   | string  | no       | `patches` (default) |
+| `supportsVision` | boolean | no       | Whether iteration supports image input |
+
+Body = prompt text (markdown), trimmed.
+
+### Coexistence
+
+- **story-interconnection** and **system-discovery** remain in TypeScript (builder logic / system-prompt usage).
+- **loadIterationsFromSkills(skillsDir)** remains for backward compatibility and populates the same cache.
+
 ## Programmatic Configuration
 
 ### UserStoryAgentConfig

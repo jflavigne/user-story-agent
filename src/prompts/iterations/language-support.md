@@ -1,25 +1,16 @@
-/**
- * Language Support iteration prompt module
- * 
- * This prompt guides analysis of language support requirements for internationalization
- * from a user experience perspective, focusing on how users interact with multi-language interfaces.
- */
+---
+id: language-support
+name: Language Support
+description: Identifies language support requirements focusing on user experience of multi-language interfaces
+category: i18n
+order: 9
+applicableWhen: When analyzing an application that needs to support multiple languages or international users
+applicableTo: all
+allowedPaths: outcomeAcceptanceCriteria
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying language support requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Language selection and switching mechanisms
- * - Right-to-left (RTL) text display and interaction
- * - Character encoding and special characters
- * - Language-specific content (translations, localized images)
- * - Fallback behavior when translations are missing
- * 
- * Focus on USER EXPERIENCE behaviors, not technical implementation details.
- */
-export const LANGUAGE_SUPPORT_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - outcomeAcceptanceCriteria (AC-OUT-* items)
 
@@ -206,18 +197,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Character encoding and special character handling
 - Language-specific content adaptation
 - Fallback behavior when translations are missing
-- Acceptance criteria for language support (AC-OUT-*)`;
-
-/**
- * Metadata for the language support iteration
- */
-export const LANGUAGE_SUPPORT_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'language-support',
-  name: 'Language Support',
-  description: 'Identifies language support requirements focusing on user experience of multi-language interfaces',
-  prompt: LANGUAGE_SUPPORT_PROMPT,
-  category: 'i18n',
-  applicableWhen: 'When analyzing an application that needs to support multiple languages or international users',
-  order: 9,
-  tokenEstimate: 2354, // ~9416 chars / 4
-};
+- Acceptance criteria for language support (AC-OUT-*)

@@ -134,26 +134,32 @@ export interface UIMappingItem {
 }
 
 /**
+ * Valid patch paths for section-scoped advisors (runtime list for validation)
+ */
+export const PATCH_PATHS = [
+  'story.asA',
+  'story.iWant',
+  'story.soThat',
+  'userVisibleBehavior',
+  'outcomeAcceptanceCriteria',
+  'systemAcceptanceCriteria',
+  'implementationNotes.stateOwnership',
+  'implementationNotes.dataFlow',
+  'implementationNotes.apiContracts',
+  'implementationNotes.loadingStates',
+  'implementationNotes.performanceNotes',
+  'implementationNotes.securityNotes',
+  'implementationNotes.telemetryNotes',
+  'uiMapping',
+  'openQuestions',
+  'edgeCases',
+  'nonGoals',
+] as const;
+
+/**
  * Valid patch paths for section-scoped advisors
  */
-export type PatchPath =
-  | 'story.asA'
-  | 'story.iWant'
-  | 'story.soThat'
-  | 'userVisibleBehavior'
-  | 'outcomeAcceptanceCriteria'
-  | 'systemAcceptanceCriteria'
-  | 'implementationNotes.stateOwnership'
-  | 'implementationNotes.dataFlow'
-  | 'implementationNotes.apiContracts'
-  | 'implementationNotes.loadingStates'
-  | 'implementationNotes.performanceNotes'
-  | 'implementationNotes.securityNotes'
-  | 'implementationNotes.telemetryNotes'
-  | 'uiMapping'
-  | 'openQuestions'
-  | 'edgeCases'
-  | 'nonGoals';
+export type PatchPath = (typeof PATCH_PATHS)[number];
 
 /**
  * Single patch from an advisor (mechanical section scope)

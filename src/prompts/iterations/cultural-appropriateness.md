@@ -1,25 +1,16 @@
-/**
- * Cultural Appropriateness iteration prompt module
- * 
- * This prompt guides analysis of cultural sensitivity requirements for internationalization
- * from a user experience perspective, focusing on how cultural context affects user understanding.
- */
+---
+id: cultural-appropriateness
+name: Cultural Appropriateness
+description: Identifies cultural sensitivity requirements focusing on user experience of culturally appropriate interfaces
+category: i18n
+order: 11
+applicableWhen: When analyzing an application that will be used by users from diverse cultural backgrounds
+applicableTo: all
+allowedPaths: outcomeAcceptanceCriteria
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying cultural appropriateness requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Color meanings across cultures
- * - Icons and symbols interpretation
- * - Cultural sensitivity in imagery
- * - Name and title conventions
- * - Cultural assumptions in workflows
- * 
- * Focus on USER EXPERIENCE behaviors, not technical implementation details.
- */
-export const CULTURAL_APPROPRIATENESS_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - outcomeAcceptanceCriteria (AC-OUT-* items)
 
@@ -204,18 +195,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Icon and symbol interpretation across cultures
 - Cultural sensitivity requirements for imagery
 - Name and title convention adaptations
-- Acceptance criteria for cultural appropriateness (AC-OUT-*)`;
-
-/**
- * Metadata for the cultural appropriateness iteration
- */
-export const CULTURAL_APPROPRIATENESS_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'cultural-appropriateness',
-  name: 'Cultural Appropriateness',
-  description: 'Identifies cultural sensitivity requirements focusing on user experience of culturally appropriate interfaces',
-  prompt: CULTURAL_APPROPRIATENESS_PROMPT,
-  category: 'i18n',
-  applicableWhen: 'When analyzing an application that will be used by users from diverse cultural backgrounds',
-  order: 11,
-  tokenEstimate: 2397, // ~9589 chars / 4
-};
+- Acceptance criteria for cultural appropriateness (AC-OUT-*)

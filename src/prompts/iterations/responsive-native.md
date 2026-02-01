@@ -1,25 +1,16 @@
-/**
- * Responsive Native Requirements iteration prompt module
- * 
- * This prompt guides analysis of responsive design requirements for native mobile
- * applications from a device-specific functional behavior perspective.
- */
+---
+id: responsive-native
+name: Responsive Native Requirements
+description: Identifies responsive design requirements for native mobile applications focusing on device-specific functional behaviors
+category: responsive
+order: 8
+applicableWhen: When analyzing a native mobile application (iOS or Android)
+applicableTo: mobile-native
+allowedPaths: userVisibleBehavior, systemAcceptanceCriteria
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying responsive native app requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Device capabilities and feature availability
- * - Platform conventions (iOS vs Android)
- * - Offline functionality and data synchronization
- * - Push notifications and background behavior
- * - Device orientation handling
- * 
- * Focus on FUNCTIONAL behaviors users experience on native mobile devices.
- */
-export const RESPONSIVE_NATIVE_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - userVisibleBehavior (UVB-* items)
 - systemAcceptanceCriteria (AC-SYS-* items)
@@ -230,18 +221,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Platform-specific conventions and behaviors (iOS vs Android)
 - Offline functionality and data synchronization
 - Push notification setup and background behavior
-- Acceptance criteria for responsive native (UVB-*, AC-SYS-*)`;
-
-/**
- * Metadata for the responsive native requirements iteration
- */
-export const RESPONSIVE_NATIVE_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'responsive-native',
-  name: 'Responsive Native Requirements',
-  description: 'Identifies responsive design requirements for native mobile applications focusing on device-specific functional behaviors',
-  prompt: RESPONSIVE_NATIVE_PROMPT,
-  category: 'responsive',
-  applicableWhen: 'When analyzing a native mobile application (iOS or Android)',
-  order: 8,
-  tokenEstimate: 2432, // ~9728 chars / 4
-};
+- Acceptance criteria for responsive native (UVB-*, AC-SYS-*)

@@ -1,25 +1,16 @@
-/**
- * Locale Formatting iteration prompt module
- * 
- * This prompt guides analysis of locale-specific formatting requirements for internationalization
- * from a user experience perspective, focusing on how users see and interact with formatted data.
- */
+---
+id: locale-formatting
+name: Locale Formatting
+description: Identifies locale-specific formatting requirements focusing on user experience of formatted data
+category: i18n
+order: 10
+applicableWhen: When analyzing an application that needs to display dates, numbers, currency, addresses, or measurements for international users
+applicableTo: all
+allowedPaths: outcomeAcceptanceCriteria
+outputFormat: patches
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying locale formatting requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Date and time display formats
- * - Number formatting (decimals, thousands separators)
- * - Currency display and symbols
- * - Address and phone number formats
- * - Measurement units (metric vs imperial)
- * 
- * Focus on USER EXPERIENCE behaviors, not technical implementation details.
- */
-export const LOCALE_FORMATTING_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - outcomeAcceptanceCriteria (AC-OUT-* items)
 
@@ -204,18 +195,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Number formatting with appropriate separators
 - Currency display and symbol positioning
 - Address and phone number format variations
-- Acceptance criteria for locale formatting (AC-OUT-*)`;
-
-/**
- * Metadata for the locale formatting iteration
- */
-export const LOCALE_FORMATTING_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'locale-formatting',
-  name: 'Locale Formatting',
-  description: 'Identifies locale-specific formatting requirements focusing on user experience of formatted data',
-  prompt: LOCALE_FORMATTING_PROMPT,
-  category: 'i18n',
-  applicableWhen: 'When analyzing an application that needs to display dates, numbers, currency, addresses, or measurements for international users',
-  order: 10,
-  tokenEstimate: 2188, // ~8750 chars / 4
-};
+- Acceptance criteria for locale formatting (AC-OUT-*)

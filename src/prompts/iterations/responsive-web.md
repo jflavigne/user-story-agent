@@ -1,25 +1,17 @@
-/**
- * Responsive Web Requirements iteration prompt module
- * 
- * This prompt guides analysis of responsive design requirements for web applications
- * from a functional behavior perspective across different screen sizes and devices.
- */
+---
+id: responsive-web
+name: Responsive Web Requirements
+description: Identifies responsive design requirements for web applications focusing on functional behaviors across breakpoints
+category: responsive
+order: 7
+applicableWhen: When analyzing a web application or website that needs to work across different screen sizes
+applicableTo: web, mobile-web, desktop
+allowedPaths: userVisibleBehavior, systemAcceptanceCriteria
+outputFormat: patches
+supportsVision: true
+---
 
-import type { IterationDefinition } from '../../shared/types.js';
-
-/**
- * Prompt for identifying responsive web requirements from a user experience perspective.
- * 
- * This prompt guides analysis of:
- * - Navigation behavior changes across breakpoints
- * - Touch vs click interaction differences
- * - Content reflow and layout behavior
- * - Feature availability by device type
- * - Input method differences (keyboard, touch, mouse)
- * 
- * Focus on FUNCTIONAL behaviors users experience, not visual appearance.
- */
-export const RESPONSIVE_WEB_PROMPT = `# PATH SCOPE
+# PATH SCOPE
 This iteration is allowed to modify only these sections:
 - userVisibleBehavior (UVB-* items)
 - systemAcceptanceCriteria (AC-SYS-* items)
@@ -270,19 +262,4 @@ Return AdvisorOutput only: a JSON object with a "patches" array. Each patch must
 - Touch vs. click interaction differences
 - Content reflow and layout behavior
 - Feature availability by device type
-- Acceptance criteria for responsive web (UVB-*, AC-SYS-*)`;
-
-/**
- * Metadata for the responsive web requirements iteration
- */
-export const RESPONSIVE_WEB_METADATA: IterationDefinition & { tokenEstimate: number } = {
-  id: 'responsive-web',
-  name: 'Responsive Web Requirements',
-  description: 'Identifies responsive design requirements for web applications focusing on functional behaviors across breakpoints',
-  prompt: RESPONSIVE_WEB_PROMPT,
-  category: 'responsive',
-  applicableWhen: 'When analyzing a web application or website that needs to work across different screen sizes',
-  order: 7,
-  tokenEstimate: 2267, // ~9067 chars / 4
-  supportsVision: true,
-};
+- Acceptance criteria for responsive web (UVB-*, AC-SYS-*)

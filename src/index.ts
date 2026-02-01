@@ -30,7 +30,18 @@ export type {
 // Re-export shared types
 export type { ProductContext, IterationCategory, AgentMode } from './shared/types.js';
 export type { IterationId, ProductType } from './shared/iteration-registry.js';
-export { PRODUCT_TYPES, WORKFLOW_ORDER, getAllIterations, getApplicableIterations, getIterationById, loadIterationsFromSkills, initializeSkillsCache } from './shared/iteration-registry.js';
+export {
+  PRODUCT_TYPES,
+  WORKFLOW_ORDER,
+  getAllIterations,
+  getApplicableIterations,
+  getIterationById,
+  getIterations,
+  loadIterationsFromPrompts,
+  initializeIterationPrompts,
+  loadIterationsFromSkills,
+  initializeSkillsCache,
+} from './shared/iteration-registry.js';
 
 // Re-export skill loader
 export { loadSkills, loadSkill } from './shared/skill-loader.js';
