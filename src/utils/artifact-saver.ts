@@ -89,6 +89,7 @@ export class ArtifactSaver {
       path.join(this.runDir, 'discovery'),
       path.join(this.runDir, 'assets', 'components'),
       path.join(this.runDir, 'stories'),
+      path.join(this.runDir, 'api-calls'),
       path.join(this.runDir, 'interconnections'),
       path.join(this.runDir, 'consistency'),
       path.join(this.runDir, 'final'),
@@ -199,6 +200,98 @@ export class ArtifactSaver {
     const rel = path.join('stories', this.sanitizeId(storyId), 'judge.json');
     const res = await this.saveJSON(path.join(this.runDir, rel), rubric);
     if (res.path) this.addArtifact('story', 'json', res.path, res.sizeBytes ?? 0, storyId);
+    if (res.error) this.saveErrors.push(res.error);
+  }
+
+  /**
+   * Save story artifacts incrementally during processing.
+   * Called after each story completes, before refinement.
+   */
+  async saveStoryIncremental(
+    storyId: string,
+    round: number,
+    result: {
+      iterationResults?: IterationResult[];
+      structure?: StoryStructure;
+      enhancedStory?: string;
+      judgeResults?: { pass1c?: JudgeRubric };
+    }
+  ): Promise<void> {
+    const roundDir = path.join(this.runDir, 'stories', this.sanitizeId(storyId), `round-${round}`);
+    try {
+      await fs.mkdir(roundDir, { recursive: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.saveErrors.push(`mkdir ${roundDir}: ${msg}`);
+      return; // Don't attempt to write files if directory creation failed
+    }
+
+    if (result.iterationResults?.length) {
+      const res = await this.saveJSON(path.join(roundDir, 'iterations.json'), result.iterationResults);
+      if (res.error) this.saveErrors.push(res.error);
+    }
+    if (result.structure) {
+      const res = await this.saveJSON(path.join(roundDir, 'structure.json'), result.structure);
+      if (res.error) this.saveErrors.push(res.error);
+    }
+    if (result.enhancedStory) {
+      const res = await this.saveFile(path.join(roundDir, 'story.md'), result.enhancedStory);
+      if (res.error) this.saveErrors.push(res.error);
+    }
+    if (result.judgeResults?.pass1c) {
+      const res = await this.saveJSON(path.join(roundDir, 'judge.json'), result.judgeResults.pass1c);
+      if (res.error) this.saveErrors.push(res.error);
+    }
+  }
+
+  /**
+   * Save API request metadata for debugging and cost tracking.
+   */
+  async saveAPIRequest(
+    requestId: string,
+    data: {
+      model: string;
+      systemPromptLength?: number;
+      userMessageLength?: number;
+      timestamp: string;
+    }
+  ): Promise<void> {
+    const apiDir = path.join(this.runDir, 'api-calls');
+    try {
+      await fs.mkdir(apiDir, { recursive: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.saveErrors.push(`mkdir ${apiDir}: ${msg}`);
+      return;
+    }
+    const safeId = this.sanitizeId(requestId);
+    const res = await this.saveJSON(path.join(apiDir, `req-${safeId}.json`), data);
+    if (res.error) this.saveErrors.push(res.error);
+  }
+
+  /**
+   * Save API response metadata for debugging and cost tracking.
+   */
+  async saveAPIResponse(
+    requestId: string,
+    data: {
+      model: string;
+      inputTokens?: number;
+      outputTokens?: number;
+      contentLength?: number;
+      timestamp: string;
+    }
+  ): Promise<void> {
+    const apiDir = path.join(this.runDir, 'api-calls');
+    try {
+      await fs.mkdir(apiDir, { recursive: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.saveErrors.push(`mkdir ${apiDir}: ${msg}`);
+      return;
+    }
+    const safeId = this.sanitizeId(requestId);
+    const res = await this.saveJSON(path.join(apiDir, `resp-${safeId}.json`), data);
     if (res.error) this.saveErrors.push(res.error);
   }
 

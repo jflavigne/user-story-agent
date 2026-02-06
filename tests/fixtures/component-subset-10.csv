@@ -1,0 +1,11 @@
+ID,Component name,Family group,Level,Dependency,Description,Figma link (Structural / not final UI),Status
+ATOM-100,Button,Action & Control,Atom,—,Primary action trigger for interactions.,n/a,✔️
+ATOM-110,ButtonIcon,Action & Control,Atom,Button,Icon-only button variant for compact spaces.,n/a,✔️
+ATOM-310,SpinnerLoading,Feedback,Atom,—,Visual loading indicator for async operations.,n/a,✔️
+MOL-100,SearchField,Input,Molecule,Button,Search input with button trigger.,n/a,✔️
+MOL-110,FilterChip,Action & Control,Molecule,ButtonIcon,Toggleable filter selection chip.,n/a,✔️
+MOL-120,LoadingCard,Feedback,Molecule,SpinnerLoading,Card component with loading state overlay.,n/a,✔️
+ORG-100,FilterSheet,Navigation,Organism,FilterChip,Modal sheet for filter selections.,n/a,✔️
+ORG-110,SearchResults,Display,Organism,"SearchField,LoadingCard",Grid display of search results with loading.,n/a,✔️
+ORG-120,Header,Navigation,Organism,"Button,SearchField",Page header with navigation and search.,n/a,✔️
+ORG-130,Dashboard,Layout,Organism,"Header,FilterSheet,SearchResults",Main dashboard layout composing all elements.,n/a,✔️

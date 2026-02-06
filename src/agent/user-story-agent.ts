@@ -1361,9 +1361,15 @@ export class UserStoryAgent extends EventEmitter {
       const results: AgentResult[] = [];
       const allNewRelationships: Relationship[] = [];
 
-      for (const story of stories) {
+      for (let i = 0; i < stories.length; i++) {
+        const story = stories[i];
         const result = await this.processUserStory(story, { systemContext: currentContext });
         results.push(result);
+
+        if (this.artifactSaver) {
+          const storyId = this.extractTitle(result.enhancedStory) || `story-${i + 1}`;
+          await this.artifactSaver.saveStoryIncremental(storyId, roundNumber, result);
+        }
 
         const relationships = result.judgeResults?.pass1c?.newRelationships ?? [];
         allNewRelationships.push(...relationships);
@@ -1407,9 +1413,15 @@ export class UserStoryAgent extends EventEmitter {
 
     // Run final Pass 1 with converged context
     const finalResults: AgentResult[] = [];
-    for (const story of stories) {
+    for (let i = 0; i < stories.length; i++) {
+      const story = stories[i];
       const result = await this.processUserStory(story, { systemContext: currentContext });
       finalResults.push(result);
+
+      if (this.artifactSaver) {
+        const storyId = this.extractTitle(result.enhancedStory) || `story-${i + 1}`;
+        await this.artifactSaver.saveStoryIncremental(storyId, roundNumber, result);
+      }
     }
 
     return { results: finalResults, finalContext: currentContext, refinementRounds: MAX_ROUNDS };

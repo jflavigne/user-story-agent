@@ -38,7 +38,7 @@ import { logger, initializeLogger } from './utils/logger.js';
  * CLI argument definitions
  */
 interface CliArgs {
-  mode?: 'individual' | 'workflow' | 'interactive';
+  mode?: 'individual' | 'workflow' | 'interactive' | 'system-workflow';
   iterations?: string;
   productType?: string;
   input?: string;
@@ -79,7 +79,7 @@ User Story Agent v${VERSION}
 Usage: npm run agent -- [options]
 
 Options:
-  --mode <mode>           Agent mode: individual, workflow, or interactive (required)
+  --mode <mode>           Agent mode: individual, workflow, interactive, or system-workflow (required)
   --iterations <ids>      Comma-separated iteration IDs (required for individual mode)
   --product-type <type>   Product type (required for workflow mode)
                           Values: ${PRODUCT_TYPES.join(', ')}
@@ -498,16 +498,16 @@ function validateArgs(args: CliArgs): string | null {
     return 'Missing required argument: --mode';
   }
 
-  if (!['individual', 'workflow', 'interactive'].includes(args.mode)) {
-    return `Invalid mode: ${args.mode}. Must be one of: individual, workflow, interactive`;
+  if (!['individual', 'workflow', 'interactive', 'system-workflow'].includes(args.mode)) {
+    return `Invalid mode: ${args.mode}. Must be one of: individual, workflow, interactive, system-workflow`;
   }
 
   if (args.mode === 'individual' && !args.iterations) {
     return 'Individual mode requires --iterations argument';
   }
 
-  if (args.mode === 'workflow' && !args.productType) {
-    return 'Workflow mode requires --product-type argument';
+  if ((args.mode === 'workflow' || args.mode === 'system-workflow') && !args.productType) {
+    return `${args.mode} mode requires --product-type argument`;
   }
 
   if (args.productType && !PRODUCT_TYPES.includes(args.productType as ProductType)) {
@@ -612,10 +612,10 @@ async function main(): Promise<void> {
       partialConfig.iterations = args.iterations.split(',').map((s) => s.trim()) as IterationId[];
     }
 
-    // Add product context for workflow mode
-    if (args.mode === 'workflow' && args.productType) {
+    // Add product context for workflow and system-workflow modes
+    if ((args.mode === 'workflow' || args.mode === 'system-workflow') && args.productType) {
       partialConfig.productContext = {
-        productName: 'CLI Product',
+        productName: args.project ?? 'CLI Product',
         productType: args.productType,
         clientInfo: 'CLI User',
         targetAudience: 'End Users',
@@ -689,42 +689,77 @@ async function main(): Promise<void> {
       });
     }
 
-    const result = await agent.processUserStory(story);
+    // System-workflow mode: run full pipeline with artifact saving
+    if (args.mode === 'system-workflow') {
+      // Parse story seeds from input (one per line, or CSV rows)
+      const storySeeds = story.includes(',') && story.includes('\n')
+        ? story.split('\n').filter(line => line.trim() && !line.startsWith('ID,'))  // CSV: skip header, use rows as seeds
+        : story.split('\n').filter(line => line.trim());  // Plain text: one seed per line
 
-    if (result.success) {
-      await writeOutput(result.enhancedStory, args.output);
-      logger.info(`Processed ${result.appliedIterations.length} iterations`);
-      
-      // Show verification results if enabled
-      if (args.verify) {
-        const verifiedIterations = result.iterationResults.filter((r) => r.verification);
-        const passedCount = verifiedIterations.filter((r) => r.verification?.passed).length;
-        const failedCount = verifiedIterations.length - passedCount;
-        
-        if (verifiedIterations.length > 0) {
-          logger.info(`Verification: ${passedCount} passed, ${failedCount} failed`);
-          
-          // Log details for failed verifications
-          for (const iterResult of verifiedIterations) {
-            if (iterResult.verification && !iterResult.verification.passed) {
-              logger.warn(
-                `  ${iterResult.iterationId}: ${iterResult.verification.reasoning} ` +
-                  `(score: ${iterResult.verification.score.toFixed(2)})`
-              );
+      logger.info(`Running system-workflow with ${storySeeds.length} story seeds`);
+
+      const systemResult = await agent.runSystemWorkflow(storySeeds);
+
+      // Output all stories
+      const allContent = systemResult.stories.map(s => s.content).join('\n\n---\n\n');
+      await writeOutput(allContent, args.output);
+
+      logger.info(`Generated ${systemResult.stories.length} stories`);
+      logger.info(`Passes completed: ${systemResult.metadata.passesCompleted.join(', ')}`);
+
+      if (systemResult.metadata.fixesApplied > 0) {
+        logger.info(`Fixes applied: ${systemResult.metadata.fixesApplied}`);
+      }
+      if (systemResult.metadata.fixesFlaggedForReview > 0) {
+        logger.warn(`Fixes flagged for review: ${systemResult.metadata.fixesFlaggedForReview}`);
+      }
+
+      logger.endSession();
+
+      if (!args.output) {
+        console.error(`\n--- System Workflow Summary ---`);
+        console.error(`Stories: ${systemResult.stories.length}`);
+        console.error(`Passes: ${systemResult.metadata.passesCompleted.join(' → ')}`);
+      }
+    } else {
+      // Standard modes: individual, workflow, interactive
+      const result = await agent.processUserStory(story);
+
+      if (result.success) {
+        await writeOutput(result.enhancedStory, args.output);
+        logger.info(`Processed ${result.appliedIterations.length} iterations`);
+
+        // Show verification results if enabled
+        if (args.verify) {
+          const verifiedIterations = result.iterationResults.filter((r) => r.verification);
+          const passedCount = verifiedIterations.filter((r) => r.verification?.passed).length;
+          const failedCount = verifiedIterations.length - passedCount;
+
+          if (verifiedIterations.length > 0) {
+            logger.info(`Verification: ${passedCount} passed, ${failedCount} failed`);
+
+            // Log details for failed verifications
+            for (const iterResult of verifiedIterations) {
+              if (iterResult.verification && !iterResult.verification.passed) {
+                logger.warn(
+                  `  ${iterResult.iterationId}: ${iterResult.verification.reasoning} ` +
+                    `(score: ${iterResult.verification.score.toFixed(2)})`
+                );
+              }
             }
           }
         }
+
+        logger.endSession();
+        if (!args.output) {
+          console.error(`\n--- Processing Summary ---`);
+          console.error(result.summary);
+        }
+      } else {
+        logger.error(result.summary);
+        logger.endSession();
+        process.exit(1);
       }
-      
-      logger.endSession();
-      if (!args.output) {
-        console.error(`\n--- Processing Summary ---`);
-        console.error(result.summary);
-      }
-    } else {
-      logger.error(result.summary);
-      logger.endSession();
-      process.exit(1);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error occurred';

@@ -55,6 +55,7 @@ export function mergeConfigWithDefaults(
     streaming: partial.streaming,
     verify: partial.verify,
     claudeClient: partial.claudeClient,
+    artifactConfig: partial.artifactConfig,
   };
 
   return merged;
