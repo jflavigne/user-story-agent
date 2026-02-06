@@ -338,7 +338,13 @@ export async function downloadFigmaScreenshot(
     if (url.protocol !== 'https:') {
       throw new Error('Image URL must use HTTPS');
     }
-    if (!url.hostname.includes('figma.com')) {
+
+    // Allow Figma domains and Figma's S3 buckets
+    const isValidHostname =
+      url.hostname.includes('figma.com') ||
+      /^figma-[a-z0-9-]+\.s3\.[a-z0-9-]+\.amazonaws\.com$/.test(url.hostname);
+
+    if (!isValidHostname) {
       throw new Error(`Unexpected image hostname: ${url.hostname}`);
     }
   } catch (err) {
@@ -466,7 +472,8 @@ export async function autoDetectFigmaComponents(
     );
   }
 
-  // Download individual component screenshots
+  // Download individual component screenshots with rate limiting
+  const DELAY_MS = 250; // 250ms delay between requests to avoid rate limits
   for (const component of components) {
     logger.info(`[Figma] Downloading ${component.type}: ${component.name}`);
     try {
@@ -476,8 +483,17 @@ export async function autoDetectFigmaComponents(
         mediaType: 'image/png',
       });
       images.push(image);
+
+      // Rate limiting: wait before next request
+      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
     } catch (error) {
       logger.warn(`[Figma] Failed to download ${component.name}: ${String(error)}`);
+
+      // If rate limited, wait longer before continuing
+      if (error instanceof Error && error.message.includes('429')) {
+        logger.warn('[Figma] Rate limited - waiting 2 seconds before retry');
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
   }
 

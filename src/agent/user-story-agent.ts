@@ -451,7 +451,7 @@ export class UserStoryAgent extends EventEmitter {
           { headers: { 'X-Figma-Token': process.env.FIGMA_ACCESS_TOKEN } }
         );
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as any;
           if (data?.document) {
             const sections = parseSectionsWithDescriptions(data as FigmaDocument);
             if (sections.length > 0) {
@@ -1556,6 +1556,12 @@ export class UserStoryAgent extends EventEmitter {
         }
       })
     );
+
+    // DEBUG: Log final stories structure
+    logger.info(`runSystemWorkflow: Returning ${finalStories.length} stories`);
+    finalStories.forEach((s, i) => {
+      logger.info(`  Story ${i}: id=${s.id}, hasContent=${!!s.content}, contentLength=${s.content?.length || 0}`);
+    });
 
     return {
       systemContext: finalContext,
