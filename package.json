@@ -19,12 +19,15 @@
     "test": "vitest",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "test:vision": "vitest run tests/unit tests/contract tests/integration",
-    "test:vision:live": "RUN_LIVE_VISION_TESTS=1 vitest run tests/live"
+    "test:vision:live": "RUN_LIVE_VISION_TESTS=1 vitest run tests/live",
+    "figma-intake": "tsx src/cli/figma-intake.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "sharp": "^0.33.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "commander": "^11.1.0",
+    "proper-lockfile": "^4.1.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -34,7 +37,8 @@
     "eslint": "^8.0.0",
     "tsx": "^4.0.0",
     "typescript": "~5.7.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "@types/proper-lockfile": "^4.1.4"
   },
   "engines": {
     "node": ">=20.0.0"

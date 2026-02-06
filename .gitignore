@@ -30,5 +30,18 @@ coverage/
 *.tmp
 temp-*.txt
 
+# Pipeline / Figma (generated and local artifacts)
+.figma-cache/
+figma-temp/
+logs/
+*.jsonl
+stories/contract-enforcement-run/
+stories/full-component-run/
+stories/test-run/
+stories/vision-test/
+stories/pipeline-result.json
+stories/*/pipeline-result.json
+**/.checkpoints/
+
 # Misc
 *.zip
