@@ -100,6 +100,10 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 Write acceptance criteria as user-observable outcomes:
 
+- **Use first-person voice** ("I see", "I can", "I click") in all user-facing content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I entered an invalid email **When** I submit the form **Then** I see an error message next to the email field
 - Use plain language.
 - Avoid implementation details (no frameworks, file formats, translation pipelines).
 - Avoid exhaustive lists of languages; focus on behavior.

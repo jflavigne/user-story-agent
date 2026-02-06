@@ -80,7 +80,11 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 ## WRITING RULES (FUNCTIONAL, USER-CENTRIC)
 
-Write requirements as user-observable outcomes and system guarantees:
+Write requirements as user-observable outcomes and system guarantees (AC-SYS are technical; keep third-person / system perspective):
+
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** the user is not authenticated **When** they access a protected resource **Then** they are redirected to login and see a clear message
 - Use plain language.
 - Avoid implementation details (encryption algorithms, headers, vendor services).
 - Avoid "security theater" requirements (badges) unless the story/mockup includes them.

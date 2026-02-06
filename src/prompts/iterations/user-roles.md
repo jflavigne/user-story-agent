@@ -90,6 +90,10 @@ Use images to clarify roles and role-specific outcomes; do not override explicit
 
 # WRITING RULES (PLAIN, USER-CENTRIC)
 
+- **Use first-person voice** ("I see", "I can", "I click") in all user-facing content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I entered an invalid email **When** I submit the form **Then** I see an error message next to the email field
 - Keep roles human-readable (e.g., "signed-in customer", "admin", "content editor").
 - Avoid internal org jargon and system terms ("RBAC", "ACL") in AC-OUT text.
 - If multiple roles exist, prefer:

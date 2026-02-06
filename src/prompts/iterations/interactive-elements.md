@@ -94,6 +94,10 @@ Use images to add or clarify behaviors; do not override explicit written require
 
 Write items as user-observable outcomes:
 
+- **Use first-person voice** ("I see", "I can", "I click") in all user-facing content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I entered an invalid email **When** I submit the form **Then** I see an error message next to the email field
 - Use plain language.
 - Avoid exact colors, pixel sizes, font specs, border/shadow specs, or animation timings.
 - Describe relative importance (primary vs secondary), what happens, and what feedback appears.
@@ -101,10 +105,10 @@ Write items as user-observable outcomes:
 
 Examples of good phrasing:
 
-- **UVB:** "Primary action is visually distinct from secondary actions."
-- **UVB:** "When an action is unavailable, it appears disabled and cannot be activated."
-- **AC-OUT:** "Users can reach and use all interactive controls with keyboard and pointer."
-- **AC-OUT:** "When an input is invalid, the user sees a clear message explaining what to fix."
+- **UVB:** "I can easily distinguish the primary action from secondary actions."
+- **UVB:** "When an action is unavailable, I see it disabled and cannot activate it."
+- **AC-OUT:** "I can reach and use all interactive controls with keyboard and pointer."
+- **AC-OUT:** "**Given** I entered invalid data **When** I submit **Then** I see a clear message explaining what to fix."
 
 ## INTERACTIVE ELEMENT COVERAGE CHECKLIST
 

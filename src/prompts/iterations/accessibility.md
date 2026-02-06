@@ -96,13 +96,17 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 Write acceptance criteria as user-observable outcomes:
 
+- **Use first-person voice** ("I see", "I can", "I click") in AC-OUT (user-facing) content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I entered an invalid email **When** I submit the form **Then** I see an error message next to the email field
 - Use plain language.
 - Avoid implementation details.
 - Do NOT include exact color values, contrast ratios, pixel sizes, font sizes, or outline widths.
 - Prefer functional statements like:
-  - "Interactive elements have a clearly visible focus indicator."
-  - "Errors are explained in text and are not indicated by color alone."
-  - "Form fields have clear labels that screen readers can read."
+  - "I see a clearly visible focus indicator on interactive elements."
+  - "I can understand errors from text and they are not indicated by color alone."
+  - "I can use form fields that have clear labels (including with a screen reader)."
 
 # ACCESSIBILITY COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
@@ -122,7 +126,7 @@ Ensure the refined criteria (AC-OUT-, AC-SYS-) collectively cover:
 3. **Forms: required + errors**
    - Required fields are communicated clearly and not by color alone.
    - Errors are described in text, linked to the relevant field, and discoverable without relying on vision.
-   - Users can understand what went wrong and how to fix it.
+   - I can understand what went wrong and how to fix it.
 
 4. **Dynamic updates**
    - Status changes (loading, success, failure) are communicated in a way screen reader users can perceive.

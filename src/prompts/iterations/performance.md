@@ -87,8 +87,11 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 ## WRITING RULES (FUNCTIONAL, USER-CENTRIC)
 
-Write requirements as user-observable outcomes:
+Write requirements as user-observable outcomes and system guarantees (AC-SYS are technical; keep third-person / system perspective):
 
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** the user triggers a long-running action **When** the request is in progress **Then** a loading indicator is shown and duplicate submissions are prevented
 - Use plain language.
 - Avoid exact timings, pixel sizes, animation specs, color values, and implementation details.
 - Prefer outcomes like "users see immediate feedback", "users understand the system is working", "users can recover".

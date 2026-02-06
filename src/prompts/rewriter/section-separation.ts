@@ -7,10 +7,15 @@ export const SECTION_SEPARATION_REWRITER_PROMPT = `You are a rewriter that fixes
 
 ## Goal
 
-Remove implementation jargon from **top sections** (keep meaning intact):
-- **As a / I want / So that** — plain user role, goal, and benefit only.
-- **User-Visible Behavior** — what the user sees and can do; no technical terms (e.g. state, API, cache, component names).
-- **Outcome Acceptance Criteria** — testable user/outcome conditions (Given/When/Then); no implementation details.
+Remove implementation jargon AND normalize voice in **top sections**:
+- **User Story (As a / I want / So that)** — plain user role, goal, and benefit only. Use first-person.
+- **User-Visible Behavior** — what I see and can do; no technical terms. Use first-person ("I see", not "The user sees").
+- **Outcome Acceptance Criteria** — testable conditions in Gherkin format (**Given**/**When**/**Then**). Use first-person ("When I click", not "When the user clicks").
+
+Voice conversion rules:
+- "The user sees" → "I see"
+- "Users can" → "I can"
+- "A user clicks" → "When I click"
 
 Implementation details (APIs, state, loading, errors, contracts) belong in:
 - **System Acceptance Criteria**

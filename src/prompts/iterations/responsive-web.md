@@ -90,48 +90,52 @@ Use images to add or clarify behaviors; do not override explicit written require
 
 Write items as user-observable outcomes:
 
+- **Use first-person voice** ("I see", "I can", "I click") in all user-facing content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I am on a mobile device **When** I view the page **Then** I see a responsive layout
 - Use plain language.
 - Avoid pixel breakpoints, exact dimensions, font specs, color values, animation timings, and implementation details.
 - Keep UVB items behavior-focused; keep AC-SYS items test-focused.
-- Prefer outcomes like "users can still complete the task on mobile", "navigation remains reachable", "content remains readable".
+- Prefer outcomes like "I can still complete the task on mobile", "I can reach navigation", "I can still read the content".
 
 # RESPONSIVE WEB COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
 Ensure the combined UVB-* and AC-SYS-* cover, as applicable:
 
 1. **Layout and content reflow**
-   - Content remains readable and usable on narrow, medium, and wide viewports.
-   - Reading order and grouping remain logical when content stacks.
-   - Important actions remain visible or easily discoverable on small screens.
+   - I can still read and use the content on narrow, medium, and wide viewports.
+   - I see reading order and grouping stay logical when content stacks.
+   - I can see or easily find important actions on small screens.
 
 2. **Navigation across viewports**
-   - Users can access primary navigation on all viewports (collapsed menu when needed).
-   - Users can tell where they are in the site/app (current section/page).
-   - Navigation state behaves predictably when moving between layouts (no "lost menu" or broken state).
+   - I can access primary navigation on all viewports (collapsed menu when needed).
+   - I can tell where I am in the site/app (current section/page).
+   - I see navigation state behave predictably when moving between layouts (no "lost menu" or broken state).
 
 3. **Touch and pointer inputs**
-   - Controls are easy to activate on touch devices.
-   - Hover-only interactions have a usable alternative on touch (no hidden-required hover actions).
-   - Click/tap feedback is clear (users know the action was registered).
+   - I can activate controls easily on touch devices.
+   - I have a usable alternative for hover-only interactions on touch (no hidden-required hover actions).
+   - I see clear click/tap feedback so I know the action was registered.
 
 4. **Forms on different viewports** (if forms exist)
-   - Fields, labels, and errors remain usable on mobile and desktop.
-   - Virtual keyboard does not block critical controls without a way to proceed.
+   - I can use fields, labels, and errors on mobile and desktop.
+   - I can still reach critical controls when the virtual keyboard is open (or I see a way to proceed).
 
 5. **Tables and dense data** (if present)
-   - Wide data remains accessible on small screens (scroll, stacking, or alternative presentation).
-   - Users can still understand key values without losing context.
+   - I can access wide data on small screens (scroll, stacking, or alternative presentation).
+   - I can still understand key values without losing context.
 
 6. **Media and interactive components** (if present)
-   - Images/video/carousels scale appropriately without blocking content or controls.
-   - Interaction patterns remain usable on mobile (swipe where appropriate, buttons still accessible).
+   - I see images/video/carousels scale without blocking content or controls.
+   - I can use interaction patterns on mobile (swipe where appropriate, buttons still accessible).
 
 7. **Resize and orientation changes** (if relevant)
-   - Resizing or rotating does not lose user progress or break the current task.
-   - Content remains stable and usable after layout changes.
+   - Resizing or rotating does not lose my progress or break my current task.
+   - I see content stay stable and usable after layout changes.
 
 8. **Performance and perceived responsiveness** (only if relevant to the story)
-   - Users receive clear feedback during loading or long operations on all viewports.
+   - I receive clear feedback during loading or long operations on all viewports.
 
 # TASK
 

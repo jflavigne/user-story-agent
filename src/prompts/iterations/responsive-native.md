@@ -89,46 +89,50 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 Write items as user-observable outcomes:
 
+- **Use first-person voice** ("I see", "I can", "I click") in all user-facing content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I am on a mobile device **When** I open the menu **Then** I can reach primary navigation
 - Use plain language.
 - Avoid implementation details (OS APIs, libraries, device models).
 - Avoid exhaustive feature lists: only cover what the story/mockup implies.
 - Keep UVB items behavior-focused; keep AC-SYS items test-focused.
-- Distinguish "what users see/do" from "what the system guarantees."
+- Distinguish "what I see/do" from "what the system guarantees."
 
 # RESPONSIVE NATIVE COVERAGE CHECKLIST (USE TO DRIVE PATCHES)
 
 Ensure the combined UVB-* and AC-SYS-* cover, as applicable:
 
 1. **Permissions and fallbacks** (only if capabilities are used)
-   - Users understand why a permission is needed.
-   - If denied/unavailable, users get a clear alternative (manual input, limited mode) or a clear next step.
-   - Users can retry or change the permission later without being blocked unexpectedly.
+   - I understand why a permission is needed.
+   - If denied/unavailable, I get a clear alternative (manual input, limited mode) or a clear next step.
+   - I can retry or change the permission later without being blocked unexpectedly.
 
 2. **Platform conventions** (iOS vs Android)
-   - Navigation and back behavior matches platform expectations.
-   - Common gestures behave as users expect (where applicable).
-   - Platform differences do not change outcomes (users can still complete the task).
+   - I see navigation and back behavior match platform expectations.
+   - Common gestures behave as I expect (where applicable).
+   - I can still complete the task despite platform differences.
 
 3. **Touch interactions**
-   - Primary actions are easy to trigger on touch.
-   - Long-running actions show clear in-progress feedback.
-   - Accidental double-taps don't cause duplicate actions.
+   - I can trigger primary actions easily on touch.
+   - I see clear in-progress feedback for long-running actions.
+   - Accidental double-taps don't cause duplicate actions for me.
 
 4. **Offline and sync** (only if relevant)
-   - Users can tell when they are offline or on a poor connection.
-   - Actions taken offline are handled predictably (queued, saved locally, or blocked with explanation).
-   - Users see when content is syncing and when it's done; conflicts are handled clearly if they can occur.
+   - I can tell when I am offline or on a poor connection.
+   - I see my offline actions handled predictably (queued, saved locally, or blocked with explanation).
+   - I see when content is syncing and when it's done; I see conflicts handled clearly if they can occur.
 
 5. **Background and resume behavior** (only if relevant)
-   - If a task continues in the background, users can tell what's happening and what to do next.
-   - Returning to the app restores users to a sensible state without losing work.
+   - If a task continues in the background, I can tell what's happening and what to do next.
+   - When I return to the app, I am restored to a sensible state without losing work.
 
 6. **Screen sizes and orientation** (only if relevant)
-   - The experience remains usable on common phone sizes; tablet behavior is defined if tablets are in scope.
-   - Rotation does not break the flow or lose user progress where supported.
+   - I can use the experience on common phone sizes; tablet behavior is defined if tablets are in scope.
+   - Rotation does not break my flow or lose my progress where supported.
 
 7. **Accessibility on mobile** (only at outcome level, if in scope)
-   - Works with screen readers and system text size settings where required by the story.
+   - I can use the app with screen readers and system text size settings where required by the story.
 
 # TASK
 

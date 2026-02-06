@@ -88,6 +88,10 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 Write requirements as user-observable outcomes and system guarantees:
 
+- **Use first-person voice** ("I see", "I can", "I click") in AC-OUT (user-facing) content.
+- **Use Gherkin format** for acceptance criteria:
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** I entered an invalid email **When** I submit the form **Then** I see an error message next to the email field
 - Use plain language and actionable error messaging.
 - Avoid implementation details (regex patterns, libraries, internal validation services).
 - Avoid exact styling specs (colors, pixels, animation timings).
@@ -99,19 +103,19 @@ Ensure the combined AC-OUT-* and AC-SYS-* cover, as applicable:
 
 1. **Required vs optional**
    - Required fields are clearly identified before submission.
-   - Users can submit only when required information is provided, or they are clearly guided to fix omissions.
+   - I can submit only when required information is provided, or I am clearly guided to fix omissions.
 
 2. **Timing of feedback**
-   - Users receive feedback at the right moment (as they type, when leaving a field, or on submit) based on what the UI/story implies.
-   - Users are not blocked unexpectedly without an explanation.
+   - I receive feedback at the right moment (as I type, when leaving a field, or on submit) based on what the UI/story implies.
+   - I am not blocked unexpectedly without an explanation.
 
 3. **Error messages and placement**
    - Errors explain what went wrong and how to fix it.
    - Errors are clearly associated with the relevant field(s).
-   - If multiple errors can occur, users can find them efficiently (inline + optional summary where appropriate).
+   - If multiple errors can occur, I can find them efficiently (inline + optional summary where appropriate).
 
 4. **Success/valid states** (only if the UI/story uses them)
-   - Users can tell when an entry is accepted.
+   - I can tell when an entry is accepted.
    - The overall form state is clear (ready to submit vs needs fixes).
 
 5. **Format constraints** (only when relevant fields exist)
@@ -123,8 +127,8 @@ Ensure the combined AC-OUT-* and AC-SYS-* cover, as applicable:
    - Duplicate submissions are prevented while validation/submission is in progress (if applicable).
 
 7. **Accessibility of validation feedback** (outcome level)
-   - Users can understand validation feedback without relying on color alone.
-   - Users can reach and understand errors using keyboard and assistive tech where required.
+   - I can understand validation feedback without relying on color alone.
+   - I can reach and understand errors using keyboard and assistive tech where required.
 
 ## TASK
 

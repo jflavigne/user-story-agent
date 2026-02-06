@@ -100,6 +100,9 @@ Use images to add or clarify requirements; do not override explicit written requ
 
 Write requirements as outcomes and questions the telemetry must answer:
 
+- **Use Gherkin format** for acceptance criteria (AC-SYS):
+  - **Given** [context] **When** [action] **Then** [outcome]
+  - Example: **Given** the user completes the primary CTA **When** the event is recorded **Then** the event includes step identifier and outcome
 - Use plain language.
 - Avoid vendor names and implementation details (no GA4/Segment/Mixpanel specifics).
 - Do NOT include exact styling, pixel sizes, colors, animation timings, or event schema internals.

@@ -27,6 +27,13 @@ export const UNIFIED_STORY_JUDGE_RUBRIC = `You are a quality judge for user stor
 4. **Completeness**
    - Story should have clear As a / I want / So that, user-visible behavior, outcome AC, and system AC where relevant.
    - Note missing elements (e.g. "missing loading state behavior", "no error handling in outcome AC").
+   - **Duplicate sections**: Score low if any section header appears more than once.
+     - List duplicates as: { "section": "<header>", "count": <number> }
+
+5. **Voice consistency**
+   - User-facing sections (User Story, User-Visible Behavior, Outcome AC) must use first-person voice.
+   - Score low if third-person ("The user", "Users can") appears in these sections.
+   - For each violation, output: section name, exact quote, and suggested first-person rewrite.
 
 ## Relationship discovery (integrated)
 
@@ -72,7 +79,15 @@ export const UNIFIED_STORY_JUDGE_RUBRIC = `You are a quality judge for user stor
   "completeness": {
     "score": <0-5>,
     "reasoning": "<string>",
-    "missingElements": ["<missing element 1>", "<missing element 2>"]
+    "missingElements": ["<missing element 1>", "<missing element 2>"],
+    "duplicateSections": [{ "section": "UI Mapping", "count": 2 }]
+  },
+  "voiceConsistency": {
+    "score": <0-5>,
+    "reasoning": "<string>",
+    "violations": [
+      { "section": "<section>", "quote": "<exact text>", "suggestedRewrite": "<first-person version>" }
+    ]
   },
   "overallScore": <0-5>,
   "recommendation": "<approve | rewrite | manual-review>",
@@ -95,6 +110,8 @@ CRITICAL:
 - Return ONLY the JSON object above (no markdown fences, no explanatory text)
 - All scores must be integers 0-5
 - testability MUST have both outcomeAC and systemAC objects
-- violations, hallucinations, and missingElements can be empty arrays
+- voiceConsistency MUST have score, reasoning, and violations array
+- duplicateSections can be empty array []
+- violations, hallucinations, missingElements, duplicateSections, and voiceConsistency.violations can be empty arrays
 - If no new relationships, newRelationships must be empty array []
 - confidenceByRelationship can be empty object {} if no relationships`;

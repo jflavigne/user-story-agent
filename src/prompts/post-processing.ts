@@ -32,6 +32,20 @@ export const POST_PROCESSING_PROMPT = `Assistant, please review the user story a
    - Alternative flows
    - Non-functional requirements (if applicable)
 
+9. **Voice Consistency**: Ensure first-person voice throughout user-facing sections:
+   - Convert "The user sees" → "I see"
+   - Convert "Users can click" → "I can click"
+   - Keep technical sections (System AC, Implementation Notes) in third person.
+
+10. **Section Structure**: Verify structural integrity:
+    - Remove any duplicate sections (especially UI Mapping)
+    - Ensure all required sections are present: User Story, User-Visible Behavior, Outcome AC, System AC, Implementation Notes, UI Mapping
+    - Normalize section headers to canonical form (e.g., "## User Story" not "## As a / I want / So that")
+
+11. **Acceptance Criteria Format**: Normalize all AC to Gherkin format:
+    - Convert bullet points to **Given**/**When**/**Then** structure
+    - Ensure bold keywords and consistent formatting
+
 After refining, present the updated user story with all sections completed, including priority if applicable.`;
 
 /**
@@ -40,5 +54,5 @@ After refining, present the updated user story with all sections completed, incl
 export const POST_PROCESSING_PROMPT_METADATA = {
   name: 'Post-Processing Prompt',
   description: 'Guidelines for consolidating, formatting, and refining user stories and acceptance criteria',
-  tokenEstimate: 620, // ~2481 chars / 4
+  tokenEstimate: Math.ceil(POST_PROCESSING_PROMPT.length / 4),
 };
