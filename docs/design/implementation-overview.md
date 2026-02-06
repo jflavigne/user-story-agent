@@ -5,6 +5,8 @@
 **Status:** Draft for Stakeholder Review
 **Audience:** Technical Leads, Project Managers, Business Stakeholders
 
+> **Status: Planned** – The current codebase is CLI/library only. This document describes a future API service (Express, PostgreSQL, Azure). The existing app has no Express or PostgreSQL dependencies.
+
 ---
 
 ## Executive Summary

@@ -5,6 +5,8 @@
 **Status:** Draft for Review
 **Audience:** Platform Engineers, Solution Architects, Technical Leadership
 
+> **Status: Planned** – The current codebase is CLI/library only. This document describes future platform infrastructure (Express, PostgreSQL, Azure). The existing app has no Express or PostgreSQL dependencies.
+
 ---
 
 ## Executive Summary

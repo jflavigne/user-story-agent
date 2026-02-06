@@ -474,7 +474,7 @@ export class UserStoryAgent extends EventEmitter {
           { headers: { 'X-Figma-Token': process.env.FIGMA_ACCESS_TOKEN } }
         );
         if (response.ok) {
-          const data = (await response.json()) as any;
+          const data = (await response.json()) as unknown;
           if (data?.document) {
             const sections = parseSectionsWithDescriptions(data as FigmaDocument);
             if (sections.length > 0) {

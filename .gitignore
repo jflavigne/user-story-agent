@@ -43,5 +43,13 @@ stories/pipeline-result.json
 stories/*/pipeline-result.json
 **/.checkpoints/
 
+# Benchmark output (generated; run scripts/benchmark.ts or scripts/real-benchmark.ts)
+benchmark-results/
+benchmark-results.md
+real-benchmark-results.json
+
+# Local / export artifacts (e.g. Figma "Private & Shared" folder)
+Private & Shared/
+
 # Misc
 *.zip

@@ -1,5 +1,7 @@
 # User Story Agent: Enterprise Deployment Plan
 
+> **Status: Planned** – The current codebase is CLI/library only. This document describes a future API service deployment (Express, PostgreSQL, Azure). The existing app has no Express or PostgreSQL dependencies.
+
 ## Overview
 
 Deploy the user-story-agent as an enterprise-ready HTTP API service with:

@@ -14,7 +14,7 @@
     "generate-skills": "tsx src/skills/generate.ts",
     "agent": "tsx src/cli.ts",
     "dev": "tsx watch src/agent/index.ts",
-    "lint": "eslint src/",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
