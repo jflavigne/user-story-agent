@@ -488,6 +488,28 @@ async function listSkills(): Promise<void> {
 }
 
 /**
+ * Derives a project name from input file path or generates a timestamp-based name.
+ *
+ * @param inputPath - Optional input file path
+ * @returns Project name derived from input or timestamp
+ */
+function deriveProjectName(inputPath?: string): string {
+  if (inputPath) {
+    // Extract filename without extension: "components.csv" -> "components"
+    const basename = inputPath.split('/').pop() || inputPath;
+    const nameWithoutExt = basename.replace(/\.[^.]+$/, '');
+    // Sanitize: replace non-alphanumeric with dashes
+    const sanitized = nameWithoutExt
+      .replace(/[^a-zA-Z0-9-_]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    if (sanitized) return sanitized;
+  }
+  // Fallback: timestamp-based name
+  return `run-${new Date().toISOString().slice(0, 10)}`;
+}
+
+/**
  * Validates CLI arguments and returns an error message if invalid
  *
  * @param args - Parsed CLI arguments
@@ -658,12 +680,14 @@ async function main(): Promise<void> {
       partialConfig.mockupImages = mockupImageInputs;
     }
 
-    if (args.saveArtifacts && args.project) {
-      partialConfig.artifactConfig = {
-        baseDir: args.saveArtifacts,
-        projectName: args.project,
-      };
-    }
+    // ALWAYS save artifacts - derive defaults if not provided
+    const artifactBaseDir = args.saveArtifacts || './artifacts';
+    const projectName = args.project || deriveProjectName(args.input);
+    partialConfig.artifactConfig = {
+      baseDir: artifactBaseDir,
+      projectName: projectName,
+    };
+    logger.info(`Artifacts will be saved to: ${artifactBaseDir}/projects/${projectName}/`);
 
     // Create and run agent
     const config = mergeConfigWithDefaults(partialConfig);
