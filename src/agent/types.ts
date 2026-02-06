@@ -3,6 +3,7 @@
  */
 
 import type { ImageInput } from '../utils/image-utils.js';
+import type { ArtifactConfig } from '../utils/artifact-types.js';
 import type { IterationId } from '../shared/iteration-registry.js';
 import type {
   ProductContext,
@@ -131,6 +132,8 @@ export interface UserStoryAgentConfig {
   claudeClient?: ClaudeClient;
   /** Optional mockup images for vision analysis (Pass 0 and vision-enabled iterations) */
   mockupImages?: ImageInput[];
+  /** Optional artifact configuration for persisting pipeline outputs */
+  artifactConfig?: ArtifactConfig;
 }
 
 /**

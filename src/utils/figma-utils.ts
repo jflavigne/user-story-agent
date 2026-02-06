@@ -389,13 +389,20 @@ export async function downloadFigmaScreenshot(
  * @param figmaUrl - Figma file URL or file key
  * @param accessToken - Figma access token from environment
  * @param getFileData - Optional function to fetch full file data for fallback detection
- * @returns Array of image blocks for each component + full page
+ * @returns Image blocks, components, and optional buffers for artifact persistence
  */
+export interface FigmaAutoDetectResult {
+  images: ImageBlockParam[];
+  components: FigmaComponent[];
+  /** Buffers keyed by "full-page" or component ID for artifact saving */
+  imageBuffers?: Map<string, Buffer>;
+}
+
 export async function autoDetectFigmaComponents(
   figmaUrl: string,
   accessToken: string,
   getFileData?: (fileKey: string) => Promise<FigmaDocument>
-): Promise<{ images: ImageBlockParam[]; components: FigmaComponent[] }> {
+): Promise<FigmaAutoDetectResult> {
   // Extract file info
   const fileInfo = extractFigmaInfo(figmaUrl);
   if (!fileInfo.isValid) {
@@ -456,6 +463,7 @@ export async function autoDetectFigmaComponents(
   }
 
   const images: ImageBlockParam[] = [];
+  const imageBuffers = new Map<string, Buffer>();
 
   // Download full page screenshot first (global context)
   logger.info('[Figma] Downloading full page screenshot...');
@@ -466,6 +474,7 @@ export async function autoDetectFigmaComponents(
       mediaType: 'image/png',
     });
     images.push(fullPageImage);
+    imageBuffers.set('full-page', fullPageBuffer);
   } catch (error) {
     logger.warn(
       `[Figma] Failed to download full page screenshot (fileKey=${fileInfo.fileKey}, nodeId=${nodeId}): ${String(error)}`
@@ -483,6 +492,7 @@ export async function autoDetectFigmaComponents(
         mediaType: 'image/png',
       });
       images.push(image);
+      imageBuffers.set(component.id, buffer);
 
       // Rate limiting: wait before next request
       await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
@@ -497,7 +507,7 @@ export async function autoDetectFigmaComponents(
     }
   }
 
-  return { images, components };
+  return { images, components, imageBuffers };
 }
 
 /**

@@ -63,6 +63,10 @@ interface CliArgs {
   verify?: boolean;
   listSkills?: boolean;
   mockupImages?: string;
+  /** Base directory for artifacts (requires --project) */
+  saveArtifacts?: string;
+  /** Project name for artifact organization (required with --save-artifacts) */
+  project?: string;
 }
 
 /**
@@ -97,6 +101,8 @@ Options:
   --verify                Enable verification of each iteration's output quality
   --mockup-images <paths> Comma-separated mockup image paths (PNG, JPG, WEBP, GIF)
                           Images are analyzed alongside text descriptions
+  --save-artifacts <dir>  Save pipeline artifacts to directory
+  --project <name>        Project name for artifact organization (required with --save-artifacts)
   --list-skills           List all available skills and exit
   --verbose               Enable info-level logging (default)
   --debug                 Enable debug-level logging (most verbose)
@@ -258,6 +264,16 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--list-skills':
         args.listSkills = true;
+        break;
+      case '--save-artifacts':
+        if (i + 1 < argv.length) {
+          args.saveArtifacts = argv[++i];
+        }
+        break;
+      case '--project':
+        if (i + 1 < argv.length) {
+          args.project = argv[++i];
+        }
         break;
     }
   }
@@ -556,6 +572,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  if (args.saveArtifacts && !args.project) {
+    console.error('Error: --project is required when using --save-artifacts');
+    process.exit(1);
+  }
+
   try {
     // Start session tracking
     logger.startSession();
@@ -635,6 +656,13 @@ async function main(): Promise<void> {
     }
     if (mockupImageInputs?.length) {
       partialConfig.mockupImages = mockupImageInputs;
+    }
+
+    if (args.saveArtifacts && args.project) {
+      partialConfig.artifactConfig = {
+        baseDir: args.saveArtifacts,
+        projectName: args.project,
+      };
     }
 
     // Create and run agent

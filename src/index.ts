@@ -48,3 +48,15 @@ export { loadSkills, loadSkill } from './shared/skill-loader.js';
 export type { SkillMetadata, LoadedSkill } from './shared/skill-loader.js';
 export { parseFrontmatter } from './shared/frontmatter.js';
 export type { FrontmatterResult } from './shared/frontmatter.js';
+
+// Re-export artifact saver
+export { ArtifactSaver } from './utils/artifact-saver.js';
+export type {
+  ArtifactConfig,
+  ProjectManifest,
+  RunManifest,
+  ArtifactEntry,
+  QualitySummary,
+  StoryRegistryEntry,
+  ComponentLibraryEntry,
+} from './utils/artifact-types.js';

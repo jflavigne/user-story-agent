@@ -75,6 +75,7 @@ import { StoryRewriter } from './story-rewriter.js';
 import { TitleGenerator } from './title-generator.js';
 import { mergeNewRelationships as mergeRelationships } from './relationship-merger.js';
 import { DEFAULT_MODEL } from './config.js';
+import { ArtifactSaver } from '../utils/artifact-saver.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -109,6 +110,8 @@ export class UserStoryAgent extends EventEmitter {
   private evaluator?: Evaluator;
   /** Whether streaming is enabled */
   public readonly streaming: boolean;
+  /** Optional artifact saver for persisting pipeline outputs */
+  private artifactSaver?: ArtifactSaver;
 
   /**
    * Creates a new UserStoryAgent instance
@@ -134,6 +137,11 @@ export class UserStoryAgent extends EventEmitter {
     // Create evaluator if verification is enabled
     if (config.verify === true) {
       this.evaluator = new Evaluator(this.claudeClient, this.resolveModel.bind(this));
+    }
+
+    // Create artifact saver if configured
+    if (config.artifactConfig) {
+      this.artifactSaver = new ArtifactSaver(config.artifactConfig);
     }
   }
 
@@ -316,6 +324,21 @@ export class UserStoryAgent extends EventEmitter {
             imageBlocks.push(...result.images);
             figmaComponents.push(...result.components);
             logger.info(`[Pass 0] Added ${result.images.length} images (1 full + ${result.components.length} components)`);
+
+            // Save Figma images if artifact saver configured
+            if (this.artifactSaver && result.imageBuffers) {
+              const fullPageBuffer = result.imageBuffers.get('full-page');
+              if (fullPageBuffer) {
+                await this.artifactSaver.saveFigmaFullPage(fullPageBuffer);
+              }
+              for (const comp of result.components) {
+                const buffer = result.imageBuffers.get(comp.id);
+                if (buffer) {
+                  await this.artifactSaver.saveComponentScreenshot(comp.id, comp.name, buffer);
+                }
+              }
+              await this.artifactSaver.saveComponentIndex(result.components);
+            }
           } catch (error) {
             logger.warn(`[Pass 0] Figma auto-detection failed: ${error}. Falling back to simple image load.`);
             // Fall back to loading as regular image
@@ -1406,6 +1429,9 @@ export class UserStoryAgent extends EventEmitter {
     const passesCompleted: string[] = [];
     const inputStories = stories.length > 0 ? stories : ['Analyze the attached design and identify all components and screens that deserve a user story.'];
 
+    // Initialize artifact saver if configured
+    await this.artifactSaver?.initialize();
+
     // Pass 0: System Discovery
     logger.info('runSystemWorkflow: Pass 0 (system discovery)');
     let systemContext: SystemDiscoveryContext;
@@ -1416,6 +1442,15 @@ export class UserStoryAgent extends EventEmitter {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`runSystemWorkflow: Pass 0 failed - ${message}`);
       throw error;
+    }
+
+    // Save Pass 0 artifacts
+    if (this.artifactSaver) {
+      await this.artifactSaver.saveSystemContext(systemContext);
+      await this.artifactSaver.saveComponentGraph(systemContext.componentGraph);
+      if (systemContext.plannedStories) {
+        await this.artifactSaver.savePlannedStories(systemContext.plannedStories);
+      }
     }
 
     // USA-78: When caller passed empty stories, use plannedStories from Pass 0 or return early
@@ -1458,6 +1493,24 @@ export class UserStoryAgent extends EventEmitter {
     );
     passesCompleted.push('Pass 1 (generation with refinement)');
 
+    // Save Pass 1 artifacts
+    if (this.artifactSaver) {
+      for (let idx = 0; idx < pass1Results.length; idx++) {
+        const r = pass1Results[idx];
+        const storyId = this.extractTitle(r.enhancedStory) || `story-${idx + 1}`;
+        if (r.iterationResults) {
+          await this.artifactSaver.saveStoryIterations(storyId, r.iterationResults);
+        }
+        if (r.structure) {
+          await this.artifactSaver.saveStoryStructure(storyId, r.structure);
+        }
+        if (r.judgeResults?.pass1c) {
+          await this.artifactSaver.saveStoryJudge(storyId, r.judgeResults.pass1c);
+        }
+        await this.artifactSaver.saveStoryMarkdown(storyId, r.enhancedStory);
+      }
+    }
+
     // Convert AgentResult[] to Pass2StoryInput[] (id from title or index)
     const pass2Input: Pass2StoryInput[] = pass1Results.map((r, i) => ({
       id: this.extractTitle(r.enhancedStory) || `story-${i + 1}`,
@@ -1468,6 +1521,12 @@ export class UserStoryAgent extends EventEmitter {
     logger.info('runSystemWorkflow: Pass 2 (interconnection)');
     const pass2Results = await this.runPass2Interconnection(pass2Input, finalContext);
     passesCompleted.push('Pass 2 (interconnection)');
+
+    // Save Pass 2 artifacts
+    if (this.artifactSaver) {
+      await this.artifactSaver.saveInterconnections(pass2Results);
+      await this.artifactSaver.saveRelationshipGraph(pass2Results.map(r => r.interconnections));
+    }
 
     // Build stories with interconnections for Pass 2b
     const storiesWithInterconnections = pass2Results.map((s) => ({
@@ -1486,6 +1545,11 @@ export class UserStoryAgent extends EventEmitter {
       this.resolveModel('globalJudge')
     );
     passesCompleted.push('Pass 2b (global consistency)');
+
+    // Save Pass 2b artifacts
+    if (this.artifactSaver) {
+      await this.artifactSaver.saveConsistencyReport(consistencyReport);
+    }
 
     // Build final stories array (id, content, structure?, interconnections, judgeResults, needsManualReview)
     let finalStories = pass2Results.map((s, i) => ({
@@ -1562,6 +1626,35 @@ export class UserStoryAgent extends EventEmitter {
     finalStories.forEach((s, i) => {
       logger.info(`  Story ${i}: id=${s.id}, hasContent=${!!s.content}, contentLength=${s.content?.length || 0}`);
     });
+
+    // Save final artifacts and finalize
+    if (this.artifactSaver) {
+      const qualitySummary = {
+        averageScore: finalStories.reduce((sum, s) => sum + (s.judgeResults?.pass1c?.overallScore ?? 0), 0) / Math.max(finalStories.length, 1),
+        storiesApproved: finalStories.filter(s => !s.needsManualReview).length,
+        storiesNeedingReview: finalStories.filter(s => s.needsManualReview).length,
+        fixesAutoApplied: fixesApplied,
+        fixesFlaggedForReview: fixesFlaggedForReview,
+        refinementRoundsUsed: refinementRounds,
+      };
+      await this.artifactSaver.saveQualitySummary(qualitySummary);
+      await this.artifactSaver.saveAllStoriesMarkdown(finalStories);
+      const resultForBundle: SystemWorkflowResult = {
+        systemContext: finalContext,
+        stories: finalStories,
+        consistencyReport,
+        metadata: {
+          passesCompleted,
+          refinementRounds,
+          fixesApplied,
+          fixesFlaggedForReview,
+          fixesRejected,
+          titleGenerationFailures,
+        },
+      };
+      await this.artifactSaver.saveFinalBundle(resultForBundle);
+      await this.artifactSaver.finalize();
+    }
 
     return {
       systemContext: finalContext,
