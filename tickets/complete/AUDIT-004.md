@@ -3,7 +3,7 @@
 **Epic:** CODE-QUALITY
 **Type:** Enhancement
 **Priority:** Low
-**Status:** Ready
+**Status:** Complete
 **Audit Date:** 2026-01-28
 **Commit:** 70cfba0f201f4ca7563955769e39edb04d13ad26
 **Category:** Correctness (Fail-Fast on Bad Input)
@@ -31,8 +31,8 @@ if (model && !KNOWN_MODELS.includes(model) && !model.startsWith('claude-')) {
 ```
 
 ## Acceptance Criteria
-- [ ] Invalid model name fails fast with clear error + suggested valid values
-- [ ] Test: invalid model name throws before API call
+- [x] Invalid model name fails fast with clear error + suggested valid values
+- [x] Test: invalid model name throws before API call
 
 ## Files
 - `src/agent/config.ts` - Add validation

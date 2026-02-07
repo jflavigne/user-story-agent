@@ -128,5 +128,25 @@ describe('Config Module', () => {
 
       expect(config.onIterationSelection).toBe(callback);
     });
+
+    it('should throw for invalid model name with clear error and suggested values', () => {
+      expect(() => mergeConfigWithDefaults({ model: 'invalid' })).toThrow(/Invalid model/);
+      expect(() => mergeConfigWithDefaults({ model: 'invalid' })).toThrow(/balanced, premium, fast/);
+    });
+
+    it('should accept valid known model ID', () => {
+      const config = mergeConfigWithDefaults({ model: 'claude-sonnet-4-20250514' });
+      expect(config.model).toBe('claude-sonnet-4-20250514');
+    });
+
+    it('should accept quality preset as model', () => {
+      const config = mergeConfigWithDefaults({ model: 'balanced' });
+      expect(config.model).toBe('balanced');
+    });
+
+    it('should accept custom model ID starting with claude-', () => {
+      const config = mergeConfigWithDefaults({ model: 'claude-future-99' });
+      expect(config.model).toBe('claude-future-99');
+    });
   });
 });

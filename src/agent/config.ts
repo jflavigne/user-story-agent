@@ -3,6 +3,7 @@
  */
 
 import type { UserStoryAgentConfig } from './types.js';
+import { isQualityPreset, validateModelId } from './types.js';
 
 /**
  * Default model to use for Claude API calls
@@ -72,6 +73,10 @@ export function mergeConfigWithDefaults(
     claudeClient: partial.claudeClient,
     artifactConfig: partial.artifactConfig,
   };
+
+  if (typeof merged.model === 'string' && !isQualityPreset(merged.model)) {
+    validateModelId(merged.model);
+  }
 
   return merged;
 }

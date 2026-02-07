@@ -84,6 +84,48 @@ export const QUALITY_PRESETS: Record<QualityPreset, ModelConfig> = {
   },
 };
 
+/** Preset names that are not sent as API model IDs */
+const PRESET_NAMES: readonly QualityPreset[] = ['balanced', 'premium', 'fast'];
+
+/**
+ * Returns the unique set of model IDs used in QUALITY_PRESETS.
+ * Single source of truth; no separate hardcoded list.
+ */
+export function getKnownModelIds(): string[] {
+  const ids = new Set<string>();
+  for (const preset of Object.values(QUALITY_PRESETS)) {
+    for (const value of Object.values(preset)) {
+      if (typeof value === 'string') {
+        ids.add(value);
+      }
+    }
+  }
+  return [...ids];
+}
+
+/**
+ * Validates a raw model ID string. Throws if the ID is not known and does not start with 'claude-'.
+ *
+ * @param id - Model ID to validate (e.g. from config or ModelConfig)
+ * @throws {Error} If the model ID is invalid
+ */
+export function validateModelId(id: string): void {
+  const known = getKnownModelIds();
+  if (known.includes(id) || id.startsWith('claude-')) {
+    return;
+  }
+  throw new Error(
+    `Invalid model: ${id}. Use a quality preset (balanced, premium, fast), a known model ID (${known.join(', ')}), or any ID starting with 'claude-'.`
+  );
+}
+
+/**
+ * Returns true if the string is a quality preset name (not a raw model ID).
+ */
+export function isQualityPreset(value: string): value is QualityPreset {
+  return PRESET_NAMES.includes(value as QualityPreset);
+}
+
 /**
  * Information about an available iteration for interactive selection
  */

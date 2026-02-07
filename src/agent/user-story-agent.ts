@@ -14,7 +14,7 @@ import type {
   ModelConfig,
   QualityPreset,
 } from './types.js';
-import { QUALITY_PRESETS } from './types.js';
+import { QUALITY_PRESETS, validateModelId } from './types.js';
 import { buildStoryInterconnectionPrompt } from '../prompts/iterations/story-interconnection.js';
 import type { IterationRegistryEntry, IterationId } from '../shared/iteration-registry.js';
 import type { StoryState, IterationResult } from './state/story-state.js';
@@ -167,9 +167,16 @@ export class UserStoryAgent extends EventEmitter {
       if (input === 'balanced' || input === 'premium' || input === 'fast') {
         return { ...QUALITY_PRESETS[input as QualityPreset] };
       }
+      validateModelId(input);
       return { default: input };
     }
-    return { ...(input as ModelConfig) };
+    const config = input as ModelConfig;
+    for (const value of Object.values(config)) {
+      if (typeof value === 'string' && value.length > 0) {
+        validateModelId(value);
+      }
+    }
+    return { ...config };
   }
 
   /**

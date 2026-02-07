@@ -224,6 +224,26 @@ describe('UserStoryAgent', () => {
         /Invalid iteration ID: invalid-id/
       );
     });
+
+    it('should throw for invalid model string before any API call', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        model: 'invalid-model',
+      };
+
+      expect(() => new UserStoryAgent(config)).toThrow(/Invalid model/);
+      expect(() => new UserStoryAgent(config)).toThrow(/invalid-model/);
+    });
+
+    it('should throw for invalid model in ModelConfig.default', () => {
+      const config: UserStoryAgentConfig = {
+        ...validConfig,
+        model: { default: 'garbage' },
+      };
+
+      expect(() => new UserStoryAgent(config)).toThrow(/Invalid model/);
+      expect(() => new UserStoryAgent(config)).toThrow(/garbage/);
+    });
   });
 
   describe('processUserStory', () => {

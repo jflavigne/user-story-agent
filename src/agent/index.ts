@@ -23,7 +23,7 @@ export type {
   ModelConfig,
   QualityPreset,
 } from './types.js';
-export { QUALITY_PRESETS } from './types.js';
+export { QUALITY_PRESETS, getKnownModelIds, validateModelId } from './types.js';
 
 // Claude client
 export { ClaudeClient } from './claude-client.js';
