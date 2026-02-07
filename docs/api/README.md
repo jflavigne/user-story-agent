@@ -184,6 +184,9 @@ interface UserStoryAgentConfig {
   /** Enable streaming (defaults to false) */
   streaming?: boolean;
 
+  /** Stream creation timeout in milliseconds (defaults to 60000). Used when streaming; throws TimeoutError on expiry. */
+  streamTimeout?: number;
+
   /** Enable output verification (defaults to false) */
   verify?: boolean;
 }

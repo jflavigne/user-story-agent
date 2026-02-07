@@ -251,6 +251,8 @@ When an iteration fails after retries:
 
 ## Streaming Architecture
 
+Streaming requests use a configurable stream-creation timeout (default 60s). If the stream does not establish within that time, the client throws `TimeoutError` and the agent does not hang.
+
 ```
 ClaudeClient.sendMessageStreaming()
     │

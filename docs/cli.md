@@ -43,6 +43,7 @@ npm run agent -- [options]
 | Option | Description |
 |--------|-------------|
 | `--stream` | Enable streaming output for real-time progress |
+| `--stream-timeout <ms>` | Stream creation timeout in milliseconds (default: 60000) |
 | `--verify` | Enable verification of each iteration's output quality |
 | `--no-strict-evaluation` | On evaluator crash, continue with degraded state (default: fail fast, CLI exits 1) |
 

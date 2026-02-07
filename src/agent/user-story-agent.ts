@@ -131,7 +131,12 @@ export class UserStoryAgent extends EventEmitter {
       DEFAULT_MODEL;
     this.claudeClient =
       config.claudeClient ??
-      new ClaudeClient(config.apiKey, defaultModelStr, config.maxRetries ?? 3);
+      new ClaudeClient(
+        config.apiKey,
+        defaultModelStr,
+        config.maxRetries ?? 3,
+        config.streamTimeout ?? 60_000
+      );
     this.contextManager = new ContextManager();
 
     // Create evaluator if verification is enabled

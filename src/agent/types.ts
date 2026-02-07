@@ -126,6 +126,8 @@ export interface UserStoryAgentConfig {
   maxRetries?: number;
   /** Whether to enable streaming output (defaults to false) */
   streaming?: boolean;
+  /** Stream creation timeout in milliseconds (defaults to 60000) */
+  streamTimeout?: number;
   /** Whether to verify each iteration's output (defaults to false) */
   verify?: boolean;
   /** When true (default), throw on evaluator crash; when false, return with evaluationFailed flag */

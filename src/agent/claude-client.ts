@@ -76,6 +76,7 @@ export class ClaudeClient {
   private client: Anthropic;
   private defaultModel: string;
   private maxRetries: number;
+  private streamTimeout: number;
 
   /**
    * Creates a new ClaudeClient instance
@@ -83,8 +84,14 @@ export class ClaudeClient {
    * @param apiKey - API key for Anthropic (defaults to ANTHROPIC_API_KEY env var)
    * @param defaultModel - Default model to use (defaults to claude-sonnet-4-20250514)
    * @param maxRetries - Maximum number of retry attempts (defaults to 3)
+   * @param streamTimeout - Stream creation timeout in ms (defaults to 60000)
    */
-  constructor(apiKey?: string, defaultModel: string = 'claude-sonnet-4-20250514', maxRetries: number = 3) {
+  constructor(
+    apiKey?: string,
+    defaultModel: string = 'claude-sonnet-4-20250514',
+    maxRetries: number = 3,
+    streamTimeout: number = 60_000
+  ) {
     const key = apiKey || process.env.ANTHROPIC_API_KEY;
     if (!key || key.trim().length === 0) {
       throw new Error(
@@ -95,6 +102,7 @@ export class ClaudeClient {
     this.client = new Anthropic({ apiKey: key, baseURL });
     this.defaultModel = defaultModel;
     this.maxRetries = maxRetries;
+    this.streamTimeout = streamTimeout;
   }
 
   /**
@@ -299,19 +307,27 @@ export class ClaudeClient {
     const startTime = Date.now();
     logger.debug(`Streaming API call starting (model: ${modelToUse}, maxTokens: ${maxTokens})`);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.streamTimeout);
+
     try {
       handler.start();
 
-      // Create streaming request
-      const stream = await this.client.messages.stream({
-        model: modelToUse,
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: typeof msg.content === 'string' ? msg.content : msg.content,
-        })),
-      });
+      // Create streaming request (timeout applies to stream creation)
+      const stream = await this.client.messages.stream(
+        {
+          model: modelToUse,
+          max_tokens: maxTokens,
+          system: systemPrompt,
+          messages: messages.map((msg) => ({
+            role: msg.role,
+            content: typeof msg.content === 'string' ? msg.content : msg.content,
+          })),
+        },
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
 
       // Process stream events
       for await (const event of stream) {
@@ -352,6 +368,18 @@ export class ClaudeClient {
         usage: { inputTokens, outputTokens },
       };
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new TimeoutError(
+          `Stream creation timed out after ${this.streamTimeout}ms`,
+          error
+        );
+        logger.error(
+          `Streaming API call failed after ${((Date.now() - startTime) / 1000).toFixed(2)}s: ${timeoutError.message}`
+        );
+        handler.error(timeoutError);
+        throw timeoutError;
+      }
       const durationMs = Date.now() - startTime;
       const normalizedError = this.normalizeError(error);
       logger.error(

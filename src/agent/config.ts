@@ -15,6 +15,11 @@ export const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 const API_KEY_ENV_VAR = 'ANTHROPIC_API_KEY';
 
 /**
+ * Environment variable name for stream creation timeout (milliseconds)
+ */
+const STREAM_TIMEOUT_MS_ENV_VAR = 'STREAM_TIMEOUT_MS';
+
+/**
  * Loads configuration values from environment variables
  *
  * @returns Partial configuration with values from environment
@@ -25,6 +30,14 @@ export function loadConfigFromEnv(): Partial<UserStoryAgentConfig> {
   const apiKey = process.env[API_KEY_ENV_VAR];
   if (apiKey) {
     config.apiKey = apiKey;
+  }
+
+  const streamTimeoutMs = process.env[STREAM_TIMEOUT_MS_ENV_VAR];
+  if (streamTimeoutMs !== undefined) {
+    const parsed = parseInt(streamTimeoutMs, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      config.streamTimeout = parsed;
+    }
   }
 
   return config;
@@ -53,6 +66,7 @@ export function mergeConfigWithDefaults(
     onIterationSelection: partial.onIterationSelection,
     maxRetries: partial.maxRetries ?? 3,
     streaming: partial.streaming,
+    streamTimeout: partial.streamTimeout ?? envConfig.streamTimeout ?? 60000,
     verify: partial.verify,
     strictEvaluation: partial.strictEvaluation ?? true,
     claudeClient: partial.claudeClient,

@@ -80,6 +80,7 @@ No additional required options. User selects iterations at runtime.
 | `--api-key <key>` | `ANTHROPIC_API_KEY` | API key (prefer env var) |
 | `--model <model>` | `claude-sonnet-4-20250514` | Claude model |
 | `--max-retries <n>` | `3` | Max retry attempts |
+| `--stream-timeout <ms>` | `60000` | Stream creation timeout (milliseconds); applies to streaming API calls |
 
 ### Feature Flags
 
@@ -151,6 +152,8 @@ interface UserStoryAgentConfig {
   onIterationSelection?: IterationSelectionCallback;
   maxRetries?: number;
   streaming?: boolean;
+  /** Stream creation timeout in ms (default: 60000). Env: STREAM_TIMEOUT_MS */
+  streamTimeout?: number;
   verify?: boolean;
   /** When true (default), throw on evaluator crash; when false, return with evaluationFailed flag */
   strictEvaluation?: boolean;

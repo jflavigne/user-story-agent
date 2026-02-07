@@ -55,6 +55,7 @@ interface CliArgs {
   modelGlobalJudge?: string;
   modelEvaluator?: string;
   maxRetries?: string;
+  streamTimeout?: string;
   help?: boolean;
   version?: boolean;
   verbose?: boolean;
@@ -100,6 +101,7 @@ Options:
   --model-global-judge    Model for global consistency (Pass 2b)
   --model-evaluator <m>   Model for iteration verification
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
+  --stream-timeout <ms>   Stream creation timeout in milliseconds (default: 60000)
   --stream                Enable streaming output for real-time progress
   --verify                Enable verification of each iteration's output quality
   --no-strict-evaluation  On evaluator crash, continue with degraded state (default: fail fast)
@@ -121,6 +123,7 @@ Quality presets (--quality-tier):
 
 Environment Variables:
   ANTHROPIC_API_KEY       API key for Anthropic Claude API
+  STREAM_TIMEOUT_MS       Stream creation timeout in milliseconds (default: 60000)
   LOG_LEVEL               Logging level: silent, error, warn, info, debug
 
 Available Iterations:
@@ -235,6 +238,11 @@ function parseArgs(argv: string[]): CliArgs {
       case '--max-retries':
         if (i + 1 < argv.length) {
           args.maxRetries = argv[++i];
+        }
+        break;
+      case '--stream-timeout':
+        if (i + 1 < argv.length) {
+          args.streamTimeout = argv[++i];
         }
         break;
       case '--help':
@@ -634,6 +642,23 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       partialConfig.maxRetries = maxRetries;
+    }
+
+    // Parse streamTimeout if provided
+    if (args.streamTimeout) {
+      const streamTimeout = parseInt(args.streamTimeout, 10);
+      const maxStreamTimeout = 600000; // 10 minutes
+      if (
+        isNaN(streamTimeout) ||
+        streamTimeout < 1 ||
+        streamTimeout > maxStreamTimeout
+      ) {
+        logger.error(
+          `Invalid --stream-timeout value: ${args.streamTimeout}. Must be a positive integer up to ${maxStreamTimeout}.`
+        );
+        process.exit(1);
+      }
+      partialConfig.streamTimeout = streamTimeout;
     }
 
     // Add iterations for individual mode (already validated)

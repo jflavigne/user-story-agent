@@ -3,7 +3,7 @@
 **Epic:** CODE-QUALITY - Code Quality Improvements
 **Type:** Bug
 **Priority:** High
-**Status:** Ready
+**Status:** Done
 **Dependencies:** None
 **Audit Date:** 2026-01-28
 **Audit Level:** 2 (Standard)
@@ -74,13 +74,13 @@ try {
 
 ## Acceptance Criteria
 
-- [ ] Streaming requests have configurable timeout (default: 60s)
-- [ ] Timeout enforced via AbortController or Promise.race
-- [ ] Timeout triggers typed TimeoutError (not generic Error)
-- [ ] CLI config: `--stream-timeout <ms>` or STREAM_TIMEOUT_MS env var
-- [ ] Test added: mock slow API response, verify timeout aborts
-- [ ] Test added: verify TimeoutError type and message
-- [ ] Documentation updated with timeout behavior
+- [x] Streaming requests have configurable timeout (default: 60s)
+- [x] Timeout enforced via AbortController or Promise.race
+- [x] Timeout triggers typed TimeoutError (not generic Error)
+- [x] CLI config: `--stream-timeout <ms>` or STREAM_TIMEOUT_MS env var
+- [x] Test added: mock slow API response, verify timeout aborts
+- [x] Test added: verify TimeoutError type and message
+- [x] Documentation updated with timeout behavior
 
 ## Files
 
