@@ -355,7 +355,7 @@ export class ClaudeClient {
         outputTokens,
       });
 
-      // Check for empty content before returning
+      // Empty stream: notify both event listeners (handler.error) and promise callers (throw).
       if (!handler.accumulated.trim()) {
         const errorMsg = 'Streaming response contained no text content';
         logger.warn(errorMsg);

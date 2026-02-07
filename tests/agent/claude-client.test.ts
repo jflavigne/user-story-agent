@@ -124,4 +124,39 @@ describe('ClaudeClient', () => {
       expect(result.usage).toEqual({ inputTokens: 1, outputTokens: 1 });
     });
   });
+
+  describe('sendMessageStreaming empty stream', () => {
+    it('emits error event and throws when stream has no text content', async () => {
+      const client = new ClaudeClient(
+        testApiKey,
+        'claude-sonnet-4-20250514',
+        3,
+        60_000
+      );
+      const handler = new StreamingHandler('test-iteration');
+      const errorMsg = 'Streaming response contained no text content';
+
+      let capturedErrorEvent: { error: Error } | undefined;
+      handler.once('error', (event: { error: Error }) => {
+        capturedErrorEvent = { error: event.error };
+      });
+
+      streamMock.mockImplementation(() => ({
+        async *[Symbol.asyncIterator]() {
+          // Yield no text_delta events so handler.accumulated stays ''
+        },
+        finalMessage: async () => ({
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }),
+      }));
+
+      await expect(client.sendMessageStreaming(defaultOptions, handler)).rejects.toThrow(
+        errorMsg
+      );
+
+      expect(capturedErrorEvent).toBeDefined();
+      expect(capturedErrorEvent!.error).toBeInstanceOf(Error);
+      expect(capturedErrorEvent!.error.message).toBe(errorMsg);
+    });
+  });
 });
