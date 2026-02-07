@@ -3,7 +3,7 @@
  *
  * Features:
  * - Level-based filtering (silent, error, warn, info, debug)
- * - Timestamps with millisecond precision
+ * - ISO8601 timestamps (date + time + Z, sortable)
  * - Token and timing accumulation for API calls
  * - All output to stderr (keeps stdout clean for data)
  * - Zero external dependencies
@@ -60,15 +60,10 @@ class Logger {
   };
 
   /**
-   * Formats the current timestamp for log output
+   * Formats the current timestamp for log output (ISO8601, sortable)
    */
   private formatTimestamp(): string {
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const millis = now.getMilliseconds().toString().padStart(3, '0');
-    return `${hours}:${minutes}:${seconds}.${millis}`;
+    return new Date().toISOString();
   }
 
   /**

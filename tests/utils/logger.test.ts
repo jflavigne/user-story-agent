@@ -135,8 +135,10 @@ describe('Logger', () => {
       expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
       const output = consoleErrorSpy.mock.calls[0][0];
 
-      // Check format: [HH:MM:SS.mmm] [LEVEL] message
-      expect(output).toMatch(/^\[\d{2}:\d{2}:\d{2}\.\d{3}\] \[INFO\] test message$/);
+      // Check format: [ISO8601] [LEVEL] message
+      expect(output).toMatch(
+        /^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] \[INFO\] test message$/
+      );
     });
 
     it('should use correct level labels', () => {
