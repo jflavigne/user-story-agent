@@ -3,7 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ChangeAppliedSchema, IterationOutputSchema } from '../../src/shared/schemas.js';
+import {
+  ChangeAppliedSchema,
+  IterationOutputSchema,
+  VerificationResultSchema,
+} from '../../src/shared/schemas.js';
 import { extractJSON } from '../../src/shared/json-utils.js';
 
 describe('ChangeAppliedSchema', () => {
@@ -210,6 +214,40 @@ describe('IterationOutputSchema', () => {
 
     expect(IterationOutputSchema.parse(output0).confidence).toBe(0);
     expect(IterationOutputSchema.parse(output1).confidence).toBe(1);
+  });
+});
+
+describe('VerificationResultSchema', () => {
+  const validPayload = (
+    score: number
+  ): { passed: boolean; score: number; reasoning: string; issues: unknown[] } => ({
+    passed: score >= 1,
+    score,
+    reasoning: 'Evaluation complete',
+    issues: [],
+  });
+
+  it('should accept score at lower boundary (0)', () => {
+    const result = VerificationResultSchema.parse(validPayload(0));
+    expect(result.score).toBe(0);
+  });
+
+  it('should accept score at upper boundary (1)', () => {
+    const result = VerificationResultSchema.parse(validPayload(1));
+    expect(result.score).toBe(1);
+  });
+
+  it('should accept score at documented midpoint (0.5)', () => {
+    const result = VerificationResultSchema.parse(validPayload(0.5));
+    expect(result.score).toBe(0.5);
+  });
+
+  it('should reject score below 0', () => {
+    expect(() => VerificationResultSchema.parse(validPayload(-0.1))).toThrow();
+  });
+
+  it('should reject score above 1', () => {
+    expect(() => VerificationResultSchema.parse(validPayload(1.1))).toThrow();
   });
 });
 

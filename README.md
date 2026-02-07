@@ -151,6 +151,16 @@ for await (const event of agent.runStreaming({ input })) {
 }
 ```
 
+### Verification score
+
+When you enable verification with `--verify`, each iteration result can include a `verification` object with a `score` in the range 0.0 to 1.0:
+
+- **0.0** — Complete failure (nothing usable)
+- **0.5** — Partial success (needs significant rework)
+- **1.0** — Perfect (no issues found)
+
+See [API Reference](docs/api/README.md) and [Configuration](docs/configuration.md) for details.
+
 ## Configuration
 
 ### Environment Variables

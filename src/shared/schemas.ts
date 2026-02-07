@@ -58,7 +58,12 @@ export const VerificationIssueSchema = z.object({
 export const VerificationResultSchema = z.object({
   /** Whether the verification passed */
   passed: z.boolean(),
-  /** Quality score from 0.0 to 1.0 */
+  /**
+   * Quality score from 0.0 to 1.0
+   * - 0.0: Complete failure (nothing usable)
+   * - 0.5: Partial success (needs significant rework)
+   * - 1.0: Perfect (no issues found)
+   */
   score: z.number().min(0).max(1),
   /** Brief explanation of the evaluation */
   reasoning: z.string().min(1),
