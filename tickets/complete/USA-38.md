@@ -1,6 +1,6 @@
 # USA-38: Update Remaining 11 Iterations to Return Patches
 
-**Status**: BLOCKED (needs USA-37)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-37
 **Size**: Large (11 files, ~1000 lines)
 **Track**: Track 2 (Patch-Based Infrastructure)

@@ -1,6 +1,6 @@
 # USA-37: Update One Iteration to Return Patches (interactive-elements)
 
-**Status**: BLOCKED (needs USA-36)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-36
 **Size**: Medium (~200 lines)
 **Track**: Track 2 (Patch-Based Infrastructure)

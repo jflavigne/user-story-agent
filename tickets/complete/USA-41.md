@@ -1,6 +1,6 @@
 # USA-41: Update System Prompt with Section Rules
 
-**Status**: READY TO START
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: None
 **Size**: Medium (~200 lines)
 **Track**: Track 3 (System Prompt & Template)

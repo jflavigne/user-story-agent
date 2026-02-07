@@ -19,7 +19,7 @@ This document describes the high-level architecture of User Story Agent.
 │                     UserStoryAgent                               │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │                    Agent Core                            │    │
-│  │  • Mode selection (individual/workflow/interactive)      │    │
+│  │  • Mode selection (individual/workflow/interactive/system-workflow) │    │
 │  │  • Iteration sequencing                                  │    │
 │  │  • Error handling & graceful degradation                 │    │
 │  └─────────────────────────────────────────────────────────┘    │
@@ -199,6 +199,12 @@ Executes:
   3. Run selected iterations in WORKFLOW_ORDER
   4. Run consolidation step
 ```
+
+### System-Workflow Mode
+
+Multi-pass pipeline: **Pass 0** (system discovery) → **Pass 1** (story generation with judge/rewrite and refinement) → **Pass 2** (interconnection) → **Pass 2b** (global consistency). Uses patch-based story structure and stable IDs. Requires `--product-type`.
+
+See [System-Workflow](system-workflow.md) for when to use it, pipeline details, judge/rewrite behavior, and [EXAMPLES](EXAMPLES.md) for pass inputs/outputs, patch format, and stable ID conventions.
 
 ## Iteration System
 

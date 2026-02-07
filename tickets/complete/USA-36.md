@@ -1,6 +1,6 @@
 # USA-36: Add allowedPaths to IterationDefinition
 
-**Status**: BLOCKED (needs USA-31)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-31
 **Size**: Small (~50 lines)
 **Track**: Track 2 (Patch-Based Infrastructure)

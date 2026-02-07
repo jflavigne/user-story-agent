@@ -1,6 +1,6 @@
 # USA-40: Add Judge-First Workflow (Pass 1c)
 
-**Status**: BLOCKED (needs USA-34, USA-39)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-34, USA-39
 **Size**: Medium (~150 lines)
 **Track**: Track 2 (Patch-Based Infrastructure)

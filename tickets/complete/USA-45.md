@@ -1,6 +1,6 @@
 # USA-45: Implement ID Registry (Deterministic ID Minting)
 
-**Status**: READY TO START
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: None
 **Size**: Medium (~200 lines)
 **Track**: Track 4 (Pass 0 - System Discovery)

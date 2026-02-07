@@ -1,6 +1,6 @@
 # USA-44: Implement runPass0Discovery()
 
-**Status**: BLOCKED (needs USA-43)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-43
 **Size**: Medium (~200 lines)
 **Track**: Track 4 (Pass 0 - System Discovery)

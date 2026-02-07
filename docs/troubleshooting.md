@@ -128,6 +128,45 @@ const agent = createAgent({
 });
 ```
 
+#### "Workflow and system-workflow modes require productContext with productType"
+
+**Cause:** Using `system-workflow` (or workflow) without `--product-type`.
+
+**Solution:**
+```bash
+npm run agent -- --mode system-workflow --product-type web --input seeds.txt
+```
+
+### System-Workflow Issues
+
+#### Low judge scores (Pass 1c)
+
+**Cause:** Story quality below threshold (default 3.5). Judge returns dimensions (sectionSeparation, correctnessVsSystemContext, testability, completeness) and recommendation `rewrite` or `manual-review`.
+
+**Solutions:**
+1. Check judge output (e.g. saved artifacts) for violations and missing elements.
+2. Improve story seeds or system context (Pass 0) so the model has clearer components and vocabulary.
+3. If scores stay low after rewrite, the story is marked for manual review; edit the output and re-run only Pass 2/2b if needed.
+4. Optionally tune the quality threshold in code (default 3.5) or use a stronger model for the judge.
+
+#### Patch rejections
+
+**Cause:** Patches from an iteration failed validation (invalid ID format, duplicate ID, path mismatch, or bounds).
+
+**Solutions:**
+1. Run with `--debug` and check logs for patch validator errors (e.g. "item.id must be alphanumeric, underscore, or hyphen", or wrong prefix for path).
+2. Ensure item IDs use the correct prefix for the path (e.g. `UVB-` for `userVisibleBehavior`). See [EXAMPLES](EXAMPLES.md#patch-based-advisor-format).
+3. If the iteration prompt produces malformed patches, adjust the prompt or add post-processing.
+
+#### Refinement / convergence failures (Pass 1)
+
+**Cause:** Pass 1 re-runs when the judge returns high-confidence new relationships (e.g. ≥ 0.75); if the loop does not converge or Pass 0/context is inconsistent, you may see repeated restarts or unstable output.
+
+**Solutions:**
+1. Ensure Pass 0 output is coherent (components and contracts align with story seeds).
+2. Check logs for "Restarting Pass 1 with updated context" and relationship merge counts; if many rounds, consider tightening confidence threshold or fixing discovery.
+3. For "Pass 0 did not produce story plan" when using empty seeds, provide explicit story seeds or ensure Figma/reference docs are supplied for planning.
+
 ### Iteration Issues
 
 #### "Invalid iteration ID"
@@ -314,6 +353,8 @@ LOG_LEVEL=debug npm run agent -- ...
 1. [CLI Reference](cli.md)
 2. [API Reference](api/README.md)
 3. [Configuration](configuration.md)
+4. [System-Workflow](system-workflow.md) (Pass 0 → 1 → 2 → 2b, judge, patches)
+5. [EXAMPLES](EXAMPLES.md) (pass examples, patch format, stable IDs)
 
 ### Report Issues
 

@@ -1,6 +1,6 @@
 # USA-47: Implement mergeNewRelationships()
 
-**Status**: BLOCKED (needs USA-46)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-46
 **Size**: Medium (~150 lines)
 **Track**: Track 4 (Pass 0 - System Discovery)

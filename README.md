@@ -9,7 +9,7 @@ User Story Agent analyzes visual mockups and existing user stories to generate d
 ## Features
 
 - **Multiple iteration types** - 12 specialized iterations covering accessibility, validation, performance, security, i18n, and more
-- **Three execution modes** - Individual (specific iterations), Workflow (full product-aware pipeline), Interactive (checkbox selection)
+- **Four execution modes** - Individual (specific iterations), Workflow (full product-aware pipeline), Interactive (checkbox selection), System-workflow (multi-pass: discovery → generation with judge/rewrite → interconnection → global consistency)
 - **Streaming support** - Real-time progress output for long-running operations
 - **Output verification** - Optional evaluator to verify iteration output quality
 - **Claude Code integration** - Available as slash commands (`/user-story/write`, etc.)
@@ -55,7 +55,7 @@ npm run agent -- [options]
 
 | Option | Description |
 |--------|-------------|
-| `--mode <mode>` | Agent mode: `individual`, `workflow`, or `interactive` (required) |
+| `--mode <mode>` | Agent mode: `individual`, `workflow`, `interactive`, or `system-workflow` (required) |
 | `--iterations <ids>` | Comma-separated iteration IDs (required for individual mode) |
 | `--product-type <type>` | Product type: `web`, `mobile-native`, `mobile-web`, `desktop`, `api` |
 | `--input <file>` | Input file path (default: stdin) |
@@ -84,6 +84,10 @@ npm run agent -- --mode interactive --input story.txt
 
 # With streaming output
 cat design-spec.txt | npm run agent -- --mode workflow --product-type mobile-native --stream
+
+# System-workflow: multiple story seeds, full pipeline (Pass 0 → 1 → 2 → 2b)
+printf "User logs in\nUser sees dashboard" | \
+  npm run agent -- --mode system-workflow --product-type web
 ```
 
 ## Available Iterations
@@ -246,6 +250,8 @@ user-story-agent/
 ## Documentation
 
 - [Architecture Overview](docs/architecture.md)
+- [System-Workflow](docs/system-workflow.md) (multi-pass pipeline, judge, patches)
+- [EXAMPLES](docs/EXAMPLES.md) (pass examples, patch format, stable IDs)
 - [CLI Reference](docs/cli.md)
 - [API Reference](docs/api/README.md)
 - [Iteration Guide](docs/iterations.md)

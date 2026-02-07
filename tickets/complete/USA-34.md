@@ -1,6 +1,6 @@
 # USA-34: Complete StoryJudge Implementation
 
-**Status**: BLOCKED (needs USA-31)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-31
 **Size**: Medium (~300 lines)
 **Track**: Track 1 (Foundation & Schemas)

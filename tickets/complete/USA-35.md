@@ -1,6 +1,6 @@
 # USA-35: Complete StoryRewriter Implementation
 
-**Status**: BLOCKED (needs USA-31, USA-34)
+**Status**: DONE (implementation verified 2026-02-06)
 **Depends on**: USA-31, USA-34
 **Size**: Small (~100 lines)
 **Track**: Track 1 (Foundation & Schemas)
