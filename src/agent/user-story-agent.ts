@@ -76,6 +76,7 @@ import { TitleGenerator } from './title-generator.js';
 import { mergeNewRelationships as mergeRelationships } from './relationship-merger.js';
 import { DEFAULT_MODEL } from './config.js';
 import { ArtifactSaver } from '../utils/artifact-saver.js';
+import { getModelIdsFromConfig, warnIfModelsStale } from './model-utils.js';
 
 /**
  * Classifies a canonical name as component, stateModel, or event based on which
@@ -123,6 +124,7 @@ export class UserStoryAgent extends EventEmitter {
     super();
     this.config = config;
     this.modelConfig = this.normalizeModelConfig(config.model);
+    warnIfModelsStale(getModelIdsFromConfig(this.modelConfig));
     this.streaming = config.streaming ?? false;
     this.validateConfig();
     const defaultModelStr =

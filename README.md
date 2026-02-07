@@ -170,6 +170,16 @@ See [API Reference](docs/api/README.md) and [Configuration](docs/configuration.m
 | `ANTHROPIC_API_KEY` | API key for Anthropic Claude API (required) |
 | `LOG_LEVEL` | Logging level: `silent`, `error`, `warn`, `info`, `debug` |
 
+### Model Overrides
+
+You can override which Claude models the agent uses:
+
+- **Quality presets** (default: `balanced`): `balanced`, `premium`, or `fast` — each defines per-operation models
+- **CLI**: `--model <id>` for a single model; `--quality-tier <preset>` for presets; `--model-discovery`, `--model-judge`, `--model-iteration`, etc. for per-operation overrides
+- **Programmatic**: `model: 'balanced' | 'premium' | 'fast' | 'claude-X-...' | ModelConfig` in `UserStoryAgentConfig`
+
+See [Configuration](docs/configuration.md) for full details.
+
 ### Product Types
 
 The `--product-type` flag determines which iterations are applicable:

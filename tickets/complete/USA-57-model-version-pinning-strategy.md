@@ -2,7 +2,7 @@
 
 **Type**: Maintenance
 **Priority**: P3
-**Status**: Open
+**Status**: COMPLETE (implementation verified 2026-02-06)
 **Created**: 2026-01-31
 
 ## Problem
@@ -73,10 +73,20 @@ Start with **Option 3** (document pinning) for now. Consider Option 1 or 2 if:
 
 ## Acceptance Criteria
 
-- [ ] Add documentation explaining version pinning strategy
-- [ ] Include "Last updated" date in comments
-- [ ] Add to README how users can override model versions
-- [ ] Consider adding warning log if using models >6 months old
+- [x] Add documentation explaining version pinning strategy
+- [x] Include "Last updated" date in comments
+- [x] Add to README how users can override model versions
+- [x] Consider adding warning log if using models >6 months old
+
+## Implementation Summary
+
+**Option 3** implemented. Added:
+
+- JSDoc and `MODEL_PINNING_LAST_UPDATED` in `src/agent/types.ts`
+- "Model Overrides" subsection in README (quality presets, CLI flags, programmatic API)
+- `src/agent/model-utils.ts` with `parseModelDate`, `warnIfModelsStale`, `getModelIdsFromConfig`
+- Stale-model warning at agent creation when models are >6 months old
+- Unit tests in `tests/agent/model-utils.test.ts`
 
 ## Related
 

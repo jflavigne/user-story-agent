@@ -44,7 +44,17 @@ export interface ModelConfig {
 /** Quality presets: balanced (cost/quality), premium (best quality), fast (speed) */
 export type QualityPreset = 'balanced' | 'premium' | 'fast';
 
-/** Model IDs used in quality presets */
+/**
+ * Model IDs for quality presets.
+ *
+ * These are intentionally pinned to specific versions for reproducibility
+ * and stability. Newer model versions may offer improvements but can introduce
+ * subtle behavior changes. Update manually after validating new versions.
+ *
+ * Last updated: 2026-02-06
+ */
+export const MODEL_PINNING_LAST_UPDATED = '2026-02-06';
+
 const OPUS_4_5 = 'claude-opus-4-20250514';
 const SONNET_4_5 = 'claude-sonnet-4-20250514';
 const HAIKU_4_5 = 'claude-3-5-haiku-20241022';

@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { QUALITY_PRESETS } from '../src/agent/types.js';
+import {
+  QUALITY_PRESETS,
+  MODEL_PINNING_LAST_UPDATED,
+} from '../src/agent/types.js';
 import type { ModelConfig, QualityPreset, UserStoryAgentConfig } from '../src/agent/types.js';
 import { mergeConfigWithDefaults } from '../src/agent/config.js';
 import { UserStoryAgent, createAgent } from '../src/agent/user-story-agent.js';
@@ -17,6 +20,10 @@ import { SECTION_SEPARATION_REWRITER_PROMPT } from '../src/prompts/rewriter/sect
 import { EVALUATOR_SYSTEM_PROMPT } from '../src/prompts/evaluator-prompt.js';
 
 describe('QUALITY_PRESETS', () => {
+  it('exports MODEL_PINNING_LAST_UPDATED for version pinning docs', () => {
+    expect(MODEL_PINNING_LAST_UPDATED).toBe('2026-02-06');
+  });
+
   it('defines balanced, premium, and fast presets', () => {
     expect(QUALITY_PRESETS.balanced).toBeDefined();
     expect(QUALITY_PRESETS.premium).toBeDefined();
