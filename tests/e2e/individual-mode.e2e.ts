@@ -278,6 +278,25 @@ describe('Individual Mode E2E', () => {
     });
   });
 
+  describe('Verification mode', () => {
+    it('should exit non-zero when evaluator crashes (strict mode)', async () => {
+      mockServer.queueResponses([
+        MOCK_RESPONSES.validation(),
+        MOCK_RESPONSES.apiError('API rate limit exceeded'),
+      ]);
+
+      const result = await cliWithMockServer(
+        ['--mode', 'individual', '--iterations', 'validation', '--verify', '--quiet'],
+        mockServerUrl,
+        SAMPLE_STORIES.login
+      );
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toMatch(/Evaluation failed|error/i);
+    });
+
+  });
+
   describe('API request verification', () => {
     it('should send correct model in API request', async () => {
       mockServer.queueResponse(MOCK_RESPONSES.validation());

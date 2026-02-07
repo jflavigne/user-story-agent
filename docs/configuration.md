@@ -87,6 +87,7 @@ No additional required options. User selects iterations at runtime.
 |--------|---------|-------------|
 | `--stream` | `false` | Enable streaming output |
 | `--verify` | `false` | Enable output verification |
+| `--no-strict-evaluation` | (strict) | When evaluator crashes, continue instead of exiting (use with `--verify`) |
 
 ### Logging Flags
 
@@ -151,6 +152,8 @@ interface UserStoryAgentConfig {
   maxRetries?: number;
   streaming?: boolean;
   verify?: boolean;
+  /** When true (default), throw on evaluator crash; when false, return with evaluationFailed flag */
+  strictEvaluation?: boolean;
 }
 ```
 

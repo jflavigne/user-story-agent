@@ -128,6 +128,8 @@ export interface UserStoryAgentConfig {
   streaming?: boolean;
   /** Whether to verify each iteration's output (defaults to false) */
   verify?: boolean;
+  /** When true (default), throw on evaluator crash; when false, return with evaluationFailed flag */
+  strictEvaluation?: boolean;
   /** Optional Claude client (for testing/benchmarking); when set, apiKey is not required */
   claudeClient?: ClaudeClient;
   /** Optional mockup images for vision analysis (Pass 0 and vision-enabled iterations) */

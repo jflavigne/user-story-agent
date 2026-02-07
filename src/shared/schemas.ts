@@ -64,6 +64,8 @@ export const VerificationResultSchema = z.object({
   reasoning: z.string().min(1),
   /** Array of issues found during verification */
   issues: z.array(VerificationIssueSchema),
+  /** True when the evaluator crashed (API/parse error); distinguishes from validation failure */
+  evaluationFailed: z.boolean().optional(),
 });
 
 /**

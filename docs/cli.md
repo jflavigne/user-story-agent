@@ -44,6 +44,7 @@ npm run agent -- [options]
 |--------|-------------|
 | `--stream` | Enable streaming output for real-time progress |
 | `--verify` | Enable verification of each iteration's output quality |
+| `--no-strict-evaluation` | On evaluator crash, continue with degraded state (default: fail fast, CLI exits 1) |
 
 ### Logging Options
 

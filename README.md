@@ -62,6 +62,7 @@ npm run agent -- [options]
 | `--output <file>` | Output file path (default: stdout) |
 | `--stream` | Enable streaming output for real-time progress |
 | `--verify` | Enable verification of each iteration's output quality |
+| `--no-strict-evaluation` | On evaluator crash, continue (default: fail fast) |
 | `--model <model>` | Claude model to use (default: claude-sonnet-4-20250514) |
 | `--verbose` | Enable info-level logging |
 | `--debug` | Enable debug-level logging |

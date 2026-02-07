@@ -33,6 +33,7 @@ import { QUALITY_PRESETS } from './index.js';
 import type { IterationId, ProductType } from './shared/iteration-registry.js';
 import type { ImageInput } from './utils/image-utils.js';
 import { logger, initializeLogger } from './utils/logger.js';
+import { EvaluationError } from './agent/evaluator.js';
 
 /**
  * CLI argument definitions
@@ -61,6 +62,8 @@ interface CliArgs {
   quiet?: boolean;
   stream?: boolean;
   verify?: boolean;
+  /** When true (default), throw on evaluator crash; --no-strict-evaluation disables */
+  strictEvaluation?: boolean;
   listSkills?: boolean;
   mockupImages?: string;
   /** Base directory for artifacts (requires --project) */
@@ -99,6 +102,7 @@ Options:
   --max-retries <n>       Maximum number of retry attempts for API calls (default: 3)
   --stream                Enable streaming output for real-time progress
   --verify                Enable verification of each iteration's output quality
+  --no-strict-evaluation  On evaluator crash, continue with degraded state (default: fail fast)
   --mockup-images <paths> Comma-separated mockup image paths (PNG, JPG, WEBP, GIF)
                           Images are analyzed alongside text descriptions
   --save-artifacts <dir>  Save pipeline artifacts to directory
@@ -256,6 +260,9 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--verify':
         args.verify = true;
+        break;
+      case '--no-strict-evaluation':
+        args.strictEvaluation = false;
         break;
       case '--mockup-images':
         if (i + 1 < argv.length) {
@@ -660,6 +667,9 @@ async function main(): Promise<void> {
     if (args.verify) {
       partialConfig.verify = true;
     }
+    if (args.strictEvaluation === false) {
+      partialConfig.strictEvaluation = false;
+    }
 
     // Add mockup images for vision (Pass 0 and vision-enabled iterations)
     let mockupImageInputs: ImageInput[] | undefined;
@@ -758,15 +768,35 @@ async function main(): Promise<void> {
           const verifiedIterations = result.iterationResults.filter((r) => r.verification);
           const passedCount = verifiedIterations.filter((r) => r.verification?.passed).length;
           const failedCount = verifiedIterations.length - passedCount;
+          const evalFailedIterations = verifiedIterations.filter(
+            (r) => r.verification?.evaluationFailed === true
+          );
+
+          if (evalFailedIterations.length > 0) {
+            logger.error(
+              `Evaluation failed (evaluator crashed) for ${evalFailedIterations.length} iteration(s). ` +
+                'Run with --no-strict-evaluation to continue with degraded state.'
+            );
+            for (const iterResult of evalFailedIterations) {
+              logger.error(
+                `  ${iterResult.iterationId}: ${iterResult.verification?.reasoning ?? 'Unknown error'}`
+              );
+            }
+            logger.endSession();
+            process.exit(1);
+          }
 
           if (verifiedIterations.length > 0) {
             logger.info(`Verification: ${passedCount} passed, ${failedCount} failed`);
 
-            // Log details for failed verifications
+            // Log details for failed verifications (validation failures, not eval crashes)
             for (const iterResult of verifiedIterations) {
               if (iterResult.verification && !iterResult.verification.passed) {
+                const label = iterResult.verification.evaluationFailed
+                  ? 'Evaluation failed (evaluator crashed)'
+                  : 'Validation failed (content issues)';
                 logger.warn(
-                  `  ${iterResult.iterationId}: ${iterResult.verification.reasoning} ` +
+                  `  ${iterResult.iterationId} [${label}]: ${iterResult.verification.reasoning} ` +
                     `(score: ${iterResult.verification.score.toFixed(2)})`
                 );
               }
@@ -788,6 +818,14 @@ async function main(): Promise<void> {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error occurred';
     logger.error(message);
+    if (args.debug && error instanceof Error) {
+      if (error.stack) {
+        console.error('\nStack trace:\n' + error.stack);
+      }
+      if (error instanceof EvaluationError && error.cause instanceof Error && error.cause.stack) {
+        console.error('\nCaused by:\n' + error.cause.stack);
+      }
+    }
     logger.endSession();
     process.exit(1);
   }

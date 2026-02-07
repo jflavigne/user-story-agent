@@ -136,7 +136,11 @@ export class UserStoryAgent extends EventEmitter {
 
     // Create evaluator if verification is enabled
     if (config.verify === true) {
-      this.evaluator = new Evaluator(this.claudeClient, this.resolveModel.bind(this));
+      this.evaluator = new Evaluator(
+        this.claudeClient,
+        this.resolveModel.bind(this),
+        config.strictEvaluation ?? true
+      );
     }
 
     // Create artifact saver if configured
@@ -474,8 +478,8 @@ export class UserStoryAgent extends EventEmitter {
           { headers: { 'X-Figma-Token': process.env.FIGMA_ACCESS_TOKEN } }
         );
         if (response.ok) {
-          const data = (await response.json()) as unknown;
-          if (data?.document) {
+          const data = (await response.json()) as { document?: unknown };
+          if (data.document) {
             const sections = parseSectionsWithDescriptions(data as FigmaDocument);
             if (sections.length > 0) {
               plannedStories = planStoriesFromFigmaSections(sections);
@@ -1076,30 +1080,27 @@ export class UserStoryAgent extends EventEmitter {
 
       // Verify the iteration output if evaluator is enabled
       if (this.evaluator) {
-        try {
-          const verification = await this.evaluator.verify(
-            inputStoryForResult,
-            result.outputStory,
-            iteration.id,
-            iteration.description
-          );
-          result.verification = verification;
+        const verification = await this.evaluator.verify(
+          inputStoryForResult,
+          result.outputStory,
+          iteration.id,
+          iteration.description
+        );
+        result.verification = verification;
 
-          // Log warning if verification failed, but continue (non-blocking)
-          if (!verification.passed) {
-            logger.warn(
-              `Verification failed for iteration "${iteration.id}": ${verification.reasoning} ` +
-                `(score: ${verification.score}, issues: ${verification.issues.length})`
-            );
-          } else {
-            logger.debug(
-              `Verification passed for iteration "${iteration.id}": score=${verification.score}`
-            );
-          }
-        } catch (error) {
-          // Log error but don't block the workflow
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          logger.warn(`Verification error for iteration "${iteration.id}": ${errorMessage}`);
+        // Log warning if verification failed, but continue (non-blocking)
+        if (!verification.passed) {
+          const label = verification.evaluationFailed
+            ? 'Evaluation failed (evaluator crashed)'
+            : 'Validation failed (content issues)';
+          logger.warn(
+            `${label} for iteration "${iteration.id}": ${verification.reasoning} ` +
+              `(score: ${verification.score}, issues: ${verification.issues.length})`
+          );
+        } else {
+          logger.debug(
+            `Verification passed for iteration "${iteration.id}": score=${verification.score}`
+          );
         }
       }
 

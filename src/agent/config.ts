@@ -54,6 +54,7 @@ export function mergeConfigWithDefaults(
     maxRetries: partial.maxRetries ?? 3,
     streaming: partial.streaming,
     verify: partial.verify,
+    strictEvaluation: partial.strictEvaluation ?? true,
     claudeClient: partial.claudeClient,
     artifactConfig: partial.artifactConfig,
   };

@@ -10,25 +10,41 @@ import { VerificationResultSchema, type VerificationResult } from '../shared/sch
 import { extractJSON } from '../shared/json-utils.js';
 import { logger } from '../utils/logger.js';
 
+/** Error thrown when evaluation crashes in strict mode */
+export class EvaluationError extends Error {
+  constructor(
+    message: string,
+    options?: { cause?: unknown }
+  ) {
+    super(message, options);
+    this.name = 'EvaluationError';
+    Object.setPrototypeOf(this, EvaluationError.prototype);
+  }
+}
+
 /**
  * Evaluator class that verifies iteration outputs
  */
 export class Evaluator {
   private claudeClient: ClaudeClient;
   private resolveModel: (opType: OperationType) => string | undefined;
+  private strictEvaluation: boolean;
 
   /**
    * Creates a new Evaluator instance
    *
    * @param claudeClient - The Claude client to use for evaluation
    * @param resolveModel - Resolver for per-operation model (evaluator)
+   * @param strictEvaluation - If true (default), throw on eval crash; if false, return with evaluationFailed flag
    */
   constructor(
     claudeClient: ClaudeClient,
-    resolveModel: (opType: OperationType) => string | undefined
+    resolveModel: (opType: OperationType) => string | undefined,
+    strictEvaluation = true
   ) {
     this.claudeClient = claudeClient;
     this.resolveModel = resolveModel;
+    this.strictEvaluation = strictEvaluation;
   }
 
   /**
@@ -91,16 +107,17 @@ Respond with JSON in the format specified in your system prompt.`;
 
       return verificationResult;
     } catch (error) {
-      // Log error but return a failed verification result instead of throwing
-      // This ensures verification failures don't block the main workflow
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.warn(`Evaluation failed for iteration ${iterationId}: ${errorMessage}`);
+      logger.error(`Evaluation crashed for iteration ${iterationId}: ${errorMessage}`);
 
-      // Return a failed verification result
+      if (this.strictEvaluation) {
+        throw new EvaluationError(`Evaluation failed: ${errorMessage}`, { cause: error });
+      }
+
       return {
         passed: false,
         score: 0.0,
-        reasoning: `Evaluation error: ${errorMessage}`,
+        reasoning: `EVAL_ERROR: ${errorMessage}`,
         issues: [
           {
             severity: 'error',
@@ -109,6 +126,7 @@ Respond with JSON in the format specified in your system prompt.`;
             suggestion: 'Review the iteration output manually',
           },
         ],
+        evaluationFailed: true,
       };
     }
   }

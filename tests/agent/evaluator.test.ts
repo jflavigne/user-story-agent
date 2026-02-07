@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Evaluator } from '../../src/agent/evaluator.js';
+import { Evaluator, EvaluationError } from '../../src/agent/evaluator.js';
 import { ClaudeClient } from '../../src/agent/claude-client.js';
 import { VerificationResultSchema } from '../../src/shared/schemas.js';
 
@@ -112,47 +112,115 @@ describe('Evaluator', () => {
       expect(result.issues[0].category).toBe('relevance');
     });
 
-    it('should handle parse errors gracefully', async () => {
+    it('should handle parse errors gracefully in non-strict mode', async () => {
+      const nonStrictEvaluator = new Evaluator(
+        mockClaudeClient as unknown as ClaudeClient,
+        () => undefined,
+        false
+      );
       const originalStory = 'As a user, I want to login';
       const enhancedStory = 'As a user, I want to login with validation';
       const iterationId = 'validation';
       const iterationPurpose = 'Add validation requirements';
 
-      // Mock response with invalid JSON
       mockSendMessage.mockResolvedValue({
         content: 'This is not valid JSON',
         stopReason: 'end_turn',
         usage: { inputTokens: 100, outputTokens: 50 },
       });
 
-      const result = await evaluator.verify(originalStory, enhancedStory, iterationId, iterationPurpose);
+      const result = await nonStrictEvaluator.verify(
+        originalStory,
+        enhancedStory,
+        iterationId,
+        iterationPurpose
+      );
 
-      // Should return a failed verification result instead of throwing
       expect(result.passed).toBe(false);
       expect(result.score).toBe(0.0);
-      expect(result.reasoning).toContain('Evaluation error');
+      expect(result.reasoning).toMatch(/^EVAL_ERROR:/);
+      expect(result.evaluationFailed).toBe(true);
       expect(result.issues).toHaveLength(1);
       expect(result.issues[0].severity).toBe('error');
       expect(result.issues[0].category).toBe('evaluation');
+      expect(() => VerificationResultSchema.parse(result)).not.toThrow();
     });
 
-    it('should handle API errors gracefully', async () => {
+    it('should handle API errors gracefully in non-strict mode', async () => {
+      const nonStrictEvaluator = new Evaluator(
+        mockClaudeClient as unknown as ClaudeClient,
+        () => undefined,
+        false
+      );
       const originalStory = 'As a user, I want to login';
       const enhancedStory = 'As a user, I want to login with validation';
       const iterationId = 'validation';
       const iterationPurpose = 'Add validation requirements';
 
-      // Mock API error
       mockSendMessage.mockRejectedValue(new Error('API rate limit exceeded'));
 
-      const result = await evaluator.verify(originalStory, enhancedStory, iterationId, iterationPurpose);
+      const result = await nonStrictEvaluator.verify(
+        originalStory,
+        enhancedStory,
+        iterationId,
+        iterationPurpose
+      );
 
-      // Should return a failed verification result instead of throwing
       expect(result.passed).toBe(false);
       expect(result.score).toBe(0.0);
-      expect(result.reasoning).toContain('Evaluation error');
+      expect(result.reasoning).toMatch(/^EVAL_ERROR:/);
+      expect(result.evaluationFailed).toBe(true);
       expect(result.issues).toHaveLength(1);
       expect(result.issues[0].description).toContain('API rate limit exceeded');
+      expect(() => VerificationResultSchema.parse(result)).not.toThrow();
+    });
+
+    it('should throw EvaluationError in strict mode when API fails', async () => {
+      mockSendMessage.mockRejectedValue(new Error('API rate limit exceeded'));
+
+      await expect(
+        evaluator.verify('story', 'story', 'validation', 'Add validation')
+      ).rejects.toThrow(EvaluationError);
+    });
+
+    it('should distinguish eval crash from validation failure', async () => {
+      const nonStrictEvaluator = new Evaluator(
+        mockClaudeClient as unknown as ClaudeClient,
+        () => undefined,
+        false
+      );
+
+      // Validation failure: API returns passed: false (no crash)
+      mockSendMessage.mockResolvedValue({
+        content: JSON.stringify({
+          passed: false,
+          score: 0.3,
+          reasoning: 'Content did not meet quality bar',
+          issues: [{ severity: 'warning', category: 'relevance', description: 'Needs improvement' }],
+        }),
+        stopReason: 'end_turn',
+        usage: { inputTokens: 100, outputTokens: 50 },
+      });
+      const validationResult = await nonStrictEvaluator.verify(
+        'story',
+        'story',
+        'validation',
+        'Add validation'
+      );
+      expect(validationResult.passed).toBe(false);
+      expect(validationResult.evaluationFailed).toBeUndefined();
+
+      // Eval crash: API throws
+      mockSendMessage.mockRejectedValue(new Error('Network error'));
+      const crashResult = await nonStrictEvaluator.verify(
+        'story',
+        'story',
+        'validation',
+        'Add validation'
+      );
+      expect(crashResult.passed).toBe(false);
+      expect(crashResult.evaluationFailed).toBe(true);
+      expect(crashResult.reasoning).toMatch(/^EVAL_ERROR:/);
     });
 
     it('should validate verification result against schema', async () => {
