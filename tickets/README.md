@@ -1,5 +1,7 @@
 # User Story Agent - Tickets
 
+**Completed tickets:** Implementation work → [./complete/](./complete/). Audit/artifact tickets (e.g. AUDIT-000, USA-30-schema-type-parity-audit) → [../archive/](../archive/).
+
 ## Epic: USA - User Story Agent
 
 ### Overview
@@ -50,7 +52,7 @@ Create a User Story Writer agent system with dual implementations:
 
 | Ticket | Title | Priority | Status | Dependencies |
 |--------|-------|----------|--------|--------------|
-| [USA-31](./USA-31.md) | Enterprise API Dependencies & Config | High | Ready | USA-30 |
+| [USA-31](../archive/USA-31.md) | Fix Schema Mismatches | High | ✅ Done | USA-30 |
 | [USA-32](./USA-32.md) | Database Schema & Migrations | High | Ready | USA-31 |
 | [USA-33](./USA-33.md) | PostgreSQL Client & Connection Pool | High | Ready | USA-32 |
 | [USA-34](./USA-34.md) | Express Server Foundation | High | Ready | USA-31 |
@@ -69,7 +71,7 @@ Create a User Story Writer agent system with dual implementations:
 | [USA-47](./USA-47.md) | Docker & Infrastructure Files | High | Ready | USA-34 |
 | [USA-48](./USA-48.md) | API Layer Tests | High | Ready | USA-40, USA-41, USA-42 |
 
-**Enterprise Deployment Progress: 0/18 tickets complete (0%)**
+**Enterprise Deployment Progress: 1/18 tickets complete (USA-31 schema fixes done)**
 
 ---
 

@@ -29,6 +29,11 @@ export {
 export type { ErrorCode } from './errors.js';
 
 /**
+ * Token estimation for Claude prompts (documented character-based rate)
+ */
+export { estimateClaudeInputTokens } from './token-estimate.js';
+
+/**
  * Iteration registry exports
  */
 export {

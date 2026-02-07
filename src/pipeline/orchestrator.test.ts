@@ -13,8 +13,8 @@ import type {
 } from "./types.js";
 import type { ComponentRow } from "../figma/table-parser.js";
 
-// Mock modules
-vi.mock("../../utils/figma-utils.js", () => ({
+// Mock modules (paths relative to src/pipeline/ so orchestrator's dynamic imports resolve to these)
+vi.mock("../utils/figma-utils.js", () => ({
   extractFigmaInfo: vi.fn((url: string) => ({
     isValid: url.includes("figma.com"),
     fileKey: "ABC",
@@ -23,7 +23,7 @@ vi.mock("../../utils/figma-utils.js", () => ({
   downloadFigmaScreenshot: vi.fn().mockResolvedValue(Buffer.from("mock-image-data")),
 }));
 
-vi.mock("../../utils/image-utils.js", () => ({
+vi.mock("../utils/image-utils.js", () => ({
   prepareImageForClaude: vi.fn().mockResolvedValue({
     type: "image",
     source: {
@@ -88,6 +88,7 @@ vi.mock("@anthropic-ai/sdk", () => ({
             }),
           },
         ],
+        usage: { input_tokens: 100, output_tokens: 50 },
       }),
     },
   })),

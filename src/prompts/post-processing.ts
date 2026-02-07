@@ -2,6 +2,8 @@
  * Post-processing prompt for refining and consolidating user stories
  */
 
+import { estimateClaudeInputTokens } from '../shared/token-estimate.js';
+
 /**
  * Post-processing prompt that provides guidelines for refining user stories
  * and acceptance criteria after initial generation.
@@ -54,5 +56,5 @@ After refining, present the updated user story with all sections completed, incl
 export const POST_PROCESSING_PROMPT_METADATA = {
   name: 'Post-Processing Prompt',
   description: 'Guidelines for consolidating, formatting, and refining user stories and acceptance criteria',
-  tokenEstimate: Math.ceil(POST_PROCESSING_PROMPT.length / 4),
+  tokenEstimate: estimateClaudeInputTokens(POST_PROCESSING_PROMPT),
 };

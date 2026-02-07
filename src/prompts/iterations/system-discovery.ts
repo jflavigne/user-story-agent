@@ -6,6 +6,7 @@
  * in this pass—IDs are minted separately by USA-45 ID Registry.
  */
 
+import { estimateClaudeInputTokens } from '../../shared/token-estimate.js';
 import type { IterationDefinition } from '../../shared/types.js';
 
 /**
@@ -225,5 +226,5 @@ export const SYSTEM_DISCOVERY_METADATA: IterationDefinition & { tokenEstimate: n
   category: 'elements',
   applicableWhen: 'When discovering system structure from mockups and reference documents (Pass 0)',
   order: 0,
-  tokenEstimate: Math.ceil(SYSTEM_DISCOVERY_PROMPT.length / 4),
+  tokenEstimate: estimateClaudeInputTokens(SYSTEM_DISCOVERY_PROMPT),
 };

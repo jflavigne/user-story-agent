@@ -17,6 +17,7 @@ import {
   getIterations,
   initializeIterationPrompts,
 } from '../../src/shared/iteration-registry.js';
+import { estimateClaudeInputTokens } from '../../src/shared/token-estimate.js';
 
 const ITERATIONS_DIR = path.join(process.cwd(), 'src', 'prompts', 'iterations');
 
@@ -176,6 +177,23 @@ describe('iteration-registry', () => {
         'responsive-web',
         'analytics',
       ]);
+    });
+  });
+
+  describe('token estimation', () => {
+    it('every iteration has tokenEstimate equal to shared estimate for its prompt', () => {
+      const iterations = getAllIterations();
+      for (const iteration of iterations) {
+        const expected = estimateClaudeInputTokens(iteration.prompt);
+        expect(iteration.tokenEstimate).toBe(expected);
+      }
+    });
+
+    it('token estimates are positive for all iterations', () => {
+      const iterations = getAllIterations();
+      for (const iteration of iterations) {
+        expect(iteration.tokenEstimate).toBeGreaterThan(0);
+      }
     });
   });
 });

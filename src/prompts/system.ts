@@ -2,6 +2,8 @@
  * Core system prompt for user story generation
  */
 
+import { estimateClaudeInputTokens } from '../shared/token-estimate.js';
+
 /**
  * Main system prompt that defines the AI user story writer persona and format instructions.
  * 
@@ -210,5 +212,5 @@ Example (bottom half — technical language; only when System Context provides t
 export const SYSTEM_PROMPT_METADATA = {
   name: 'System Prompt',
   description: 'Main persona and format instructions for user story generation',
-  tokenEstimate: Math.ceil(SYSTEM_PROMPT.length / 4),
+  tokenEstimate: estimateClaudeInputTokens(SYSTEM_PROMPT),
 };

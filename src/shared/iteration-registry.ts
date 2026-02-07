@@ -10,6 +10,7 @@ import type { IterationDefinition, IterationCategory, PatchPath } from './types.
 import { ITERATION_CATEGORIES } from './types.js';
 import { loadSkills, type LoadedSkill } from './skill-loader.js';
 import { loadIterationPrompts, type LoadedIterationPrompt } from './prompt-loader.js';
+import { estimateClaudeInputTokens } from './token-estimate.js';
 
 /**
  * Valid product types that iterations can apply to
@@ -122,7 +123,7 @@ export function promptToRegistryEntry(
     allowedPaths,
     outputFormat: (metadata.outputFormat as 'patches') ?? 'patches',
     supportsVision: metadata.supportsVision,
-    tokenEstimate: Math.ceil(prompt.length / 4),
+    tokenEstimate: estimateClaudeInputTokens(prompt),
   };
 }
 
@@ -238,7 +239,7 @@ function skillToRegistryEntry(skill: LoadedSkill): IterationRegistryEntry {
     applicableWhen: skill.metadata.applicableWhen,
     order: skill.metadata.order,
     applicableTo,
-    tokenEstimate: Math.ceil(skill.prompt.length / 4),
+    tokenEstimate: estimateClaudeInputTokens(skill.prompt),
   };
 }
 

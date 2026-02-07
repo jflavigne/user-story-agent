@@ -5,6 +5,7 @@
  * ownership (state/events), and related-story relationships. Enforces "no orphan stories."
  */
 
+import { estimateClaudeInputTokens } from '../../shared/token-estimate.js';
 import type { IterationDefinition, SystemDiscoveryContext } from '../../shared/types.js';
 
 /** Story summary for Pass 2 (id, title, content excerpt) */
@@ -327,5 +328,5 @@ export const STORY_INTERCONNECTION_METADATA: IterationDefinition & { tokenEstima
   category: 'post-processing',
   applicableWhen: 'When all stories are generated and cross-references/dependencies are needed (Pass 2)',
   order: 100,
-  tokenEstimate: Math.ceil(STORY_INTERCONNECTION_PROMPT.length / 4),
+  tokenEstimate: estimateClaudeInputTokens(STORY_INTERCONNECTION_PROMPT),
 };

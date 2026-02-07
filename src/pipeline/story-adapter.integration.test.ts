@@ -1,5 +1,6 @@
 /**
- * Integration test: Verify story-adapter works with real 100+ component CSV
+ * Integration test: Verify story-adapter works with real 100+ component CSV.
+ * Requires ANTHROPIC_API_KEY (parseTable uses LLM column mapping); skipped in CI when unset.
  */
 
 import { describe, it, expect } from "vitest";
@@ -7,8 +8,10 @@ import { readFile } from "fs/promises";
 import { parseTable } from "../figma/table-parser.js";
 import { adaptComponentRowsToPlannedStories } from "./story-adapter.js";
 
+const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+
 describe("story-adapter integration with real CSV", () => {
-  it("processes 100+ component CSV successfully", async () => {
+  it.skipIf(!hasApiKey)("processes 100+ component CSV successfully", async () => {
     // Read real CSV fixture
     const csvPath = "tests/fixtures/Full Component List - Sheet1.csv";
     const csvContent = await readFile(csvPath, "utf-8");
